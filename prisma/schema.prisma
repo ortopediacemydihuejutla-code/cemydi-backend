@@ -1,0 +1,326 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_DIRECT_URL")
+  schemas   = ["accounts", "catalog", "management", "public"]
+}
+
+model User {
+  id              Int            @id @default(autoincrement())
+  nombre          String
+  correo          String         @unique
+  password        String
+  telefono        String?
+  direccion       String?
+  rol             Rol            @default(CLIENT)
+  createdAt       DateTime       @default(now())
+  activo          Boolean        @default(true)
+  emailVerifiedAt DateTime?
+  authTokens      AuthToken[]
+  loginAttempts   LoginAttempt[]
+  sessions        UserSession[]
+  approvedReviews Review[]       @relation("ApprovedByAdmin")
+  reviews         Review[]       @relation("UserReviews")
+  shoppingCart    ShoppingCart?
+
+  @@map("users")
+  @@schema("accounts")
+}
+
+model Product {
+  id              Int             @id @default(autoincrement())
+  nombre          String
+  marca           String
+  modelo          String
+  descripcion     String
+  precio          Float
+  clasificacion   String
+  stock           Int
+  proveedor       String
+  tipoAdquisicion TipoAdquisicion
+  requiereReceta  Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  activo          Boolean         @default(true)
+  images          ProductImage[]
+  promotions      Promotion[]
+  reviews         Review[]
+  cartItems       ShoppingCartItem[]
+
+  @@index([clasificacion], map: "idx_products_clasificacion")
+  @@index([clasificacion, tipoAdquisicion, requiereReceta], map: "idx_products_filtros_busqueda")
+  @@index([requiereReceta], map: "idx_products_requiere_receta")
+  @@index([tipoAdquisicion], map: "idx_products_tipo_adquisicion")
+  @@map("products")
+  @@schema("catalog")
+}
+
+model ProductImage {
+  id                 Int      @id @default(autoincrement())
+  productId          Int
+  imageUrl           String
+  cloudinaryPublicId String?
+  sortOrder          Int      @default(0)
+  createdAt          DateTime @default(now())
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+  @@map("product_images")
+  @@schema("catalog")
+}
+
+model Promotion {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  startAt     DateTime
+  endAt       DateTime
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  descripcion String   @default("")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([startAt, endAt])
+  @@map("promotions")
+  @@schema("management")
+}
+
+model Brand {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("brands")
+  @@schema("catalog")
+}
+
+model Classification {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("classifications")
+  @@schema("catalog")
+}
+
+model Supplier {
+  id         Int      @id @default(autoincrement())
+  nombre     String   @unique
+  encargado  String
+  repartidor String
+  direccion  String
+  createdAt  DateTime @default(now())
+
+  @@map("suppliers")
+  @@schema("management")
+}
+
+model Review {
+  id           Int          @id @default(autoincrement())
+  productId    Int
+  userId       Int
+  rating       Int
+  comment      String
+  status       ReviewStatus @default(PENDING)
+  showOnHome   Boolean      @default(false)
+  approvedById Int?
+  approvedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  approvedBy   User?        @relation("ApprovedByAdmin", fields: [approvedById], references: [id])
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user         User         @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([status])
+  @@index([productId])
+  @@index([userId])
+  @@map("reviews")
+  @@schema("management")
+}
+
+model BackupRecord {
+  id        Int          @id @default(autoincrement())
+  fileName  String       @map("fileName")
+  sizeBytes Int          @map("sizeBytes")
+  createdAt DateTime     @default(now()) @map("createdAt")
+  origin    BackupOrigin @default(MANUAL)
+
+  @@index([createdAt])
+  @@index([origin, createdAt])
+  @@map("database_backups")
+  @@schema("management")
+}
+
+model BackupSchedule {
+  id            Int       @id @default(1)
+  isEnabled     Boolean   @default(false) @map("isEnabled")
+  intervalDays  Int       @default(1) @map("intervalDays")
+  runAtTime     String    @default("03:00") @map("runAtTime")
+  retentionDays Int       @default(7) @map("retentionDays")
+  lastRunAt     DateTime? @map("lastRunAt")
+  nextRunAt     DateTime? @map("nextRunAt")
+  createdAt     DateTime  @default(now()) @map("createdAt")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updatedAt")
+
+  @@map("database_backup_schedule")
+  @@schema("management")
+}
+
+model MaintenanceSchedule {
+  id           Int       @id @default(1)
+  isEnabled    Boolean   @default(false) @map("isEnabled")
+  intervalDays Int       @default(1) @map("intervalDays")
+  runAtTime    String    @default("04:00") @map("runAtTime")
+  operation    String    @default("VACUUM_ANALYZE")
+  tableName    String?   @map("tableName")
+  lastRunAt    DateTime? @map("lastRunAt")
+  nextRunAt    DateTime? @map("nextRunAt")
+  createdAt    DateTime  @default(now()) @map("createdAt")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updatedAt")
+
+  @@map("database_maintenance_schedule")
+  @@schema("management")
+}
+
+model AboutPage {
+  id                Int      @id @default(1)
+  heroTitle         String   @default("Quiénes somos")
+  heroSubtitle      String   @default("Cuidamos tu movilidad con orientación cercana, productos confiables y acompañamiento humano en cada etapa.")
+  missionTitle      String   @default("Misión")
+  missionText       String   @default("Brindar soluciones ortopédicas, de rehabilitación y cuidado en casa con asesoría clara, productos de calidad y atención cercana para mejorar la movilidad y bienestar de cada persona.")
+  visionTitle       String   @default("Visión")
+  visionText        String   @default("Ser la ortopedia de referencia en la región por nuestra calidez, innovación y capacidad de acompañar a pacientes, familias e instituciones con soluciones oportunas.")
+  valuesTitle       String   @default("Valores")
+  values            Json     @default("[\"Empatía\", \"Confianza\", \"Responsabilidad\", \"Servicio\", \"Calidad\"]")
+  storyTitle        String   @default("Atención pensada para personas reales")
+  storyText         String   @default("En CEMYDI reunimos experiencia, disponibilidad y orientación para que elegir un equipo ortopédico sea más sencillo. Escuchamos tu necesidad, resolvemos dudas y buscamos la alternativa adecuada para compra, renta o seguimiento.")
+  heroImageUrl      String?
+  secondaryImageUrl String?
+  updatedAt         DateTime @default(now()) @updatedAt
+  createdAt         DateTime @default(now())
+
+  @@map("about_page")
+  @@schema("management")
+}
+
+model UserSession {
+  id               String    @id @default(cuid())
+  tokenId          String    @unique @map("tokenId")
+  refreshTokenHash String?   @unique @map("refreshTokenHash")
+  userId           Int       @map("userId")
+  createdAt        DateTime  @default(now()) @map("createdAt")
+  expiresAt        DateTime  @map("expiresAt")
+  lastSeenAt       DateTime  @default(now()) @map("lastSeenAt")
+  endedAt          DateTime? @map("endedAt")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endedAt, expiresAt])
+  @@index([lastSeenAt])
+  @@map("user_sessions")
+  @@schema("accounts")
+}
+
+model LoginAttempt {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("userId")
+  correo      String
+  success     Boolean
+  reason      String?
+  attemptedAt DateTime @default(now()) @map("attemptedAt")
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([attemptedAt])
+  @@index([success, attemptedAt])
+  @@map("login_attempts")
+  @@schema("accounts")
+}
+
+model AuthToken {
+  id           String           @id @default(cuid())
+  userId       Int              @map("userId")
+  correo       String
+  purpose      AuthTokenPurpose
+  tokenHash    String?
+  codeHash     String?
+  attemptCount Int              @default(0) @map("attemptCount")
+  expiresAt    DateTime         @map("expiresAt")
+  consumedAt   DateTime?        @map("consumedAt")
+  createdAt    DateTime         @default(now()) @map("createdAt")
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, consumedAt, expiresAt])
+  @@index([correo, purpose, consumedAt, expiresAt])
+  @@map("auth_tokens")
+  @@schema("accounts")
+}
+
+model ShoppingCart {
+  id        String             @id @default(cuid())
+  userId    Int                @unique @map("userId")
+  createdAt DateTime           @default(now()) @map("createdAt")
+  updatedAt DateTime           @updatedAt @map("updatedAt")
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     ShoppingCartItem[]
+
+  @@map("shopping_carts")
+  @@schema("accounts")
+}
+
+model ShoppingCartItem {
+  id        Int          @id @default(autoincrement())
+  cartId    String       @map("cartId")
+  productId Int          @map("productId")
+  quantity  Int
+  createdAt DateTime     @default(now()) @map("createdAt")
+  updatedAt DateTime     @updatedAt @map("updatedAt")
+  cart      ShoppingCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@index([productId])
+  @@map("shopping_cart_items")
+  @@schema("accounts")
+}
+
+enum TipoAdquisicion {
+  VENTA
+  RENTA
+  MIXTO
+
+  @@schema("public")
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@schema("public")
+}
+
+enum AuthTokenPurpose {
+  EMAIL_VERIFICATION_LINK
+  PASSWORD_RESET_CODE
+
+  @@schema("public")
+}
+
+enum BackupOrigin {
+  MANUAL
+  AUTOMATIC
+  TABLE
+
+  @@schema("public")
+}
+
+enum Rol {
+  ADMIN
+  CLIENT
+
+  @@schema("public")
+}

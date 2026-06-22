@@ -1,0 +1,46 @@
+import { Rol } from '@prisma/client';
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+import { PasswordPolicy } from '../../auth/dto/password-policy.decorators';
+
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  nombre?: string;
+
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(120)
+  correo?: string;
+
+  @IsOptional()
+  @PasswordPolicy()
+  password?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  telefono?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(180)
+  direccion?: string;
+
+  @IsOptional()
+  @IsEnum(Rol)
+  rol?: Rol;
+
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
+}
