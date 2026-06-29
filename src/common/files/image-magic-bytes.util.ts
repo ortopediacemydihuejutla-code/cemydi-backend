@@ -74,3 +74,30 @@ export function assertImageBufferMagicBytes(
 
   return detectedMime;
 }
+
+export function detectPdfMimeFromBuffer(buffer: Buffer): string | null {
+  if (
+    buffer.length >= 5 &&
+    buffer.subarray(0, 5).toString('ascii') === '%PDF-'
+  ) {
+    return 'application/pdf';
+  }
+
+  return null;
+}
+
+export function assertPrescriptionDocumentMagicBytes(
+  buffer: Buffer,
+  fileLabel = 'archivo',
+): string {
+  const detectedMime =
+    detectImageMimeFromBuffer(buffer) ?? detectPdfMimeFromBuffer(buffer);
+
+  if (!detectedMime) {
+    throw new BadRequestException(
+      `El ${fileLabel} debe ser PDF o una imagen valida (JPEG, PNG, GIF, WEBP o AVIF)`,
+    );
+  }
+
+  return detectedMime;
+}

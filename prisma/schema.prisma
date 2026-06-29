@@ -27,6 +27,9 @@ model User {
   approvedReviews Review[]       @relation("ApprovedByAdmin")
   reviews         Review[]       @relation("UserReviews")
   shoppingCart    ShoppingCart?
+  rentalRequests  RentalRequest[] @relation("RentalRequestUser")
+  approvedRentals RentalRequest[] @relation("RentalRequestApprovedBy")
+  statusUpdatedRentals RentalRequest[] @relation("RentalRequestStatusUpdatedBy")
 
   @@map("users")
   @@schema("accounts")
@@ -44,12 +47,17 @@ model Product {
   proveedor       String
   tipoAdquisicion TipoAdquisicion
   requiereReceta  Boolean         @default(false)
+  rentalDailyPrice Float?
+  rentalMinDays    Int             @default(1)
+  rentalDeposit    Float           @default(0)
+  rentalTerms      String?
   createdAt       DateTime        @default(now())
   activo          Boolean         @default(true)
   images          ProductImage[]
   promotions      Promotion[]
   reviews         Review[]
   cartItems       ShoppingCartItem[]
+  rentalItems      RentalRequestItem[]
 
   @@index([clasificacion], map: "idx_products_clasificacion")
   @@index([clasificacion, tipoAdquisicion, requiereReceta], map: "idx_products_filtros_busqueda")
@@ -276,15 +284,96 @@ model ShoppingCartItem {
   cartId    String       @map("cartId")
   productId Int          @map("productId")
   quantity  Int
+  mode      CartItemMode @default(VENTA)
+  rentalStartDate DateTime? @map("rentalStartDate")
+  rentalEndDate   DateTime? @map("rentalEndDate")
+  rentalNotes     String?   @map("rentalNotes")
   createdAt DateTime     @default(now()) @map("createdAt")
   updatedAt DateTime     @updatedAt @map("updatedAt")
   cart      ShoppingCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@unique([cartId, productId])
+  @@index([cartId, productId, mode])
   @@index([productId])
   @@map("shopping_cart_items")
   @@schema("accounts")
+}
+
+model RentalRequest {
+  id              String              @id @default(cuid())
+  userId          Int                 @map("userId")
+  status          RentalRequestStatus @default(PENDING)
+  subtotal        Float               @default(0)
+  depositTotal    Float               @default(0) @map("depositTotal")
+  total           Float               @default(0)
+  notes           String?
+  rejectedReason  String?             @map("rejectedReason")
+  approvedById    Int?                @map("approvedById")
+  approvedAt      DateTime?           @map("approvedAt")
+  rejectedAt      DateTime?           @map("rejectedAt")
+  cancelledAt     DateTime?           @map("cancelledAt")
+  deliveredAt     DateTime?           @map("deliveredAt")
+  returnedAt      DateTime?           @map("returnedAt")
+  statusUpdatedById Int?              @map("statusUpdatedById")
+  statusUpdatedAt DateTime            @default(now()) @map("statusUpdatedAt")
+  createdAt       DateTime            @default(now()) @map("createdAt")
+  updatedAt       DateTime            @updatedAt @map("updatedAt")
+  user            User                @relation("RentalRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy      User?               @relation("RentalRequestApprovedBy", fields: [approvedById], references: [id])
+  statusUpdatedBy User?               @relation("RentalRequestStatusUpdatedBy", fields: [statusUpdatedById], references: [id])
+  items           RentalRequestItem[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("rental_requests")
+  @@schema("management")
+}
+
+model RentalRequestItem {
+  id              Int           @id @default(autoincrement())
+  rentalRequestId String        @map("rentalRequestId")
+  productId       Int           @map("productId")
+  quantity        Int
+  startDate       DateTime      @map("startDate")
+  endDate         DateTime      @map("endDate")
+  days            Int
+  dailyPrice      Float         @map("dailyPrice")
+  deposit         Float         @default(0)
+  lineSubtotal    Float         @map("lineSubtotal")
+  lineDeposit     Float         @default(0) @map("lineDeposit")
+  lineTotal       Float         @map("lineTotal")
+  notes           String?
+  prescriptionFileName String?  @map("prescriptionFileName")
+  prescriptionMimeType String?  @map("prescriptionMimeType")
+  prescriptionSizeBytes Int?    @map("prescriptionSizeBytes")
+  prescriptionData Bytes?       @map("prescriptionData")
+  createdAt       DateTime      @default(now()) @map("createdAt")
+  rentalRequest   RentalRequest @relation(fields: [rentalRequestId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id])
+
+  @@index([rentalRequestId])
+  @@index([productId])
+  @@index([startDate, endDate])
+  @@map("rental_request_items")
+  @@schema("management")
+}
+
+enum CartItemMode {
+  VENTA
+  RENTA
+
+  @@schema("public")
+}
+
+enum RentalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  DELIVERED
+  RETURNED
+
+  @@schema("public")
 }
 
 enum TipoAdquisicion {

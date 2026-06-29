@@ -69,19 +69,24 @@ export class AlexaService {
       where,
       include: productWithImagesInclude,
       orderBy: [{ stock: 'desc' }, { nombre: 'asc' }],
-      take: 24,
+      take: 100,
     });
+
+    const rentalProducts = this.filterRentalCatalogProducts(products).slice(
+      0,
+      24,
+    );
 
     return {
       screen: 'catalog',
       title: 'Catalogo de productos ortopedicos',
-      total: products.length,
+      total: rentalProducts.length,
       filters: {
         search: query.search ?? null,
         category: query.category ?? null,
         availableOnly: query.availableOnly,
       },
-      items: products.map((product) => this.mapProductCard(product)),
+      items: rentalProducts.map((product) => this.mapProductCard(product)),
     };
   }
 
@@ -94,18 +99,23 @@ export class AlexaService {
       },
       include: productWithImagesInclude,
       orderBy: [{ stock: 'desc' }, { nombre: 'asc' }],
-      take: 12,
+      take: 50,
     });
+
+    const rentalProducts = this.filterRentalCatalogProducts(products).slice(
+      0,
+      12,
+    );
 
     return {
       screen: 'voice-search',
       query,
-      total: products.length,
+      total: rentalProducts.length,
       speechText:
-        products.length > 0
-          ? `Encontre ${products.length} resultados para ${query}.`
-          : `No encontre productos para ${query}.`,
-      items: products.map((product) => this.mapProductCard(product)),
+        rentalProducts.length > 0
+          ? `Encontre ${rentalProducts.length} resultados para ${query}.`
+          : `No encontre productos de renta para ${query}.`,
+      items: rentalProducts.map((product) => this.mapProductCard(product)),
     };
   }
 
@@ -118,7 +128,7 @@ export class AlexaService {
       include: productWithImagesInclude,
     });
 
-    if (!product) {
+    if (!product || !this.isRentalCatalogProduct(product)) {
       throw new NotFoundException('Producto no encontrado');
     }
 
@@ -187,11 +197,15 @@ export class AlexaService {
       take: 12,
     });
 
+    const rentalPromotions = promotions.filter((promotion) =>
+      this.isRentalCatalogProduct(promotion.product),
+    );
+
     return {
       screen: 'promotions',
       title: 'Promociones activas',
-      total: promotions.length,
-      items: promotions.map((promotion) => ({
+      total: rentalPromotions.length,
+      items: rentalPromotions.map((promotion) => ({
         id: promotion.id,
         descripcion: promotion.descripcion,
         fechaInicio: promotion.startAt.toISOString(),
@@ -278,6 +292,40 @@ export class AlexaService {
       speechText:
         'Gracias por visitar Ortopedia CEMYDI. Estaremos listos para ayudarte cuando regreses.',
     };
+  }
+
+  private normalizeAcquisitionType(value: unknown): string {
+    return String(value ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\//g, ' ')
+      .replace(/_/g, ' ')
+      .replace(/-/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private isRentalCatalogProduct(product: {
+    tipoAdquisicion?: unknown;
+  }): boolean {
+    const tipo = this.normalizeAcquisitionType(product.tipoAdquisicion);
+
+    if (tipo === 'renta') {
+      return true;
+    }
+
+    if (tipo === 'mixto') {
+      return true;
+    }
+
+    return tipo.includes('venta') && tipo.includes('renta');
+  }
+
+  private filterRentalCatalogProducts<T extends { tipoAdquisicion?: unknown }>(
+    products: T[],
+  ): T[] {
+    return products.filter((product) => this.isRentalCatalogProduct(product));
   }
 
   private buildSearchClauses(search: string): Prisma.ProductWhereInput[] {

@@ -76,6 +76,32 @@ export class UpdateProductDto {
   tipoAdquisicion?: TipoAdquisicion;
 
   @IsOptional()
+  @Type(() => Number)
+  @Transform(transformNumber)
+  @IsNumber()
+  @Min(0)
+  rentalDailyPrice?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @Transform(transformNumber)
+  @IsInt()
+  @Min(1)
+  rentalMinDays?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @Transform(transformNumber)
+  @IsNumber()
+  @Min(0)
+  rentalDeposit?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(800)
+  rentalTerms?: string;
+
+  @IsOptional()
   @Transform(transformBoolean)
   @IsBoolean()
   requiereReceta?: boolean;

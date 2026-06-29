@@ -14,6 +14,7 @@ import { CatalogsModule } from './modules/catalogs/catalogs.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { RentalsModule } from './modules/rentals/rentals.module';
 import { BackupsModule } from './modules/backups/backups.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { AdminActivityModule } from './modules/admin-activity/admin-activity.module';
@@ -46,6 +47,7 @@ import { validateEnv } from './env.validation';
     SuppliersModule,
     PromotionsModule,
     ReviewsModule,
+    RentalsModule,
     AlexaModule,
     DatabaseToolsModule,
     BackupsModule,

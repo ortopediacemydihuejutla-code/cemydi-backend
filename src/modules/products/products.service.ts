@@ -79,6 +79,13 @@ function resolveProductOrderBy(
   }
 }
 
+function requiresRentalConfig(tipoAdquisicion: TipoAdquisicion) {
+  return (
+    tipoAdquisicion === TipoAdquisicion.RENTA ||
+    tipoAdquisicion === TipoAdquisicion.MIXTO
+  );
+}
+
 const productInclude = {
   images: {
     orderBy: {
@@ -321,6 +328,12 @@ export class ProductsService {
   }
 
   async create(dto: CreateProductDto, files: UploadedProductFile[] = []) {
+    this.validateRentalConfig({
+      tipoAdquisicion: dto.tipoAdquisicion,
+      rentalDailyPrice: dto.rentalDailyPrice,
+      rentalMinDays: dto.rentalMinDays,
+      rentalDeposit: dto.rentalDeposit,
+    });
     this.productsCloudinaryService.validateImageOperation(
       dto.imageUrls ?? [],
       files,
@@ -343,6 +356,18 @@ export class ProductsService {
           stock: dto.stock,
           proveedor: dto.proveedor.trim(),
           tipoAdquisicion: dto.tipoAdquisicion,
+          rentalDailyPrice: requiresRentalConfig(dto.tipoAdquisicion)
+            ? dto.rentalDailyPrice
+            : null,
+          rentalMinDays: requiresRentalConfig(dto.tipoAdquisicion)
+            ? (dto.rentalMinDays ?? 1)
+            : 1,
+          rentalDeposit: requiresRentalConfig(dto.tipoAdquisicion)
+            ? (dto.rentalDeposit ?? 0)
+            : 0,
+          rentalTerms: requiresRentalConfig(dto.tipoAdquisicion)
+            ? dto.rentalTerms?.trim() || null
+            : null,
           requiereReceta: dto.requiereReceta ?? false,
           activo: dto.activo ?? true,
           images: uploadedImages.length
@@ -406,6 +431,18 @@ export class ProductsService {
     if (dto.tipoAdquisicion !== undefined) {
       data.tipoAdquisicion = dto.tipoAdquisicion;
     }
+    if (dto.rentalDailyPrice !== undefined) {
+      data.rentalDailyPrice = dto.rentalDailyPrice;
+    }
+    if (dto.rentalMinDays !== undefined) {
+      data.rentalMinDays = dto.rentalMinDays;
+    }
+    if (dto.rentalDeposit !== undefined) {
+      data.rentalDeposit = dto.rentalDeposit;
+    }
+    if (dto.rentalTerms !== undefined) {
+      data.rentalTerms = dto.rentalTerms.trim() || null;
+    }
     if (dto.requiereReceta !== undefined) {
       data.requiereReceta = dto.requiereReceta;
     }
@@ -420,6 +457,30 @@ export class ProductsService {
 
     if (Object.keys(data).length === 0 && !wantsImageSync) {
       throw new BadRequestException('No hay campos para actualizar');
+    }
+
+    const nextTipoAdquisicion = dto.tipoAdquisicion ?? existing.tipoAdquisicion;
+    this.validateRentalConfig({
+      tipoAdquisicion: nextTipoAdquisicion,
+      rentalDailyPrice:
+        dto.rentalDailyPrice !== undefined
+          ? dto.rentalDailyPrice
+          : (existing.rentalDailyPrice ?? undefined),
+      rentalMinDays:
+        dto.rentalMinDays !== undefined
+          ? dto.rentalMinDays
+          : existing.rentalMinDays,
+      rentalDeposit:
+        dto.rentalDeposit !== undefined
+          ? dto.rentalDeposit
+          : existing.rentalDeposit,
+    });
+
+    if (!requiresRentalConfig(nextTipoAdquisicion)) {
+      data.rentalDailyPrice = null;
+      data.rentalMinDays = 1;
+      data.rentalDeposit = 0;
+      data.rentalTerms = null;
     }
 
     const keepImageIdsSet = new Set(
@@ -558,5 +619,46 @@ export class ProductsService {
       imageUrl: images[0]?.imageUrl ?? null,
       images,
     };
+  }
+
+  private validateRentalConfig(config: {
+    tipoAdquisicion: TipoAdquisicion;
+    rentalDailyPrice?: number | null;
+    rentalMinDays?: number | null;
+    rentalDeposit?: number | null;
+  }) {
+    if (!requiresRentalConfig(config.tipoAdquisicion)) {
+      return;
+    }
+
+    if (
+      config.rentalDailyPrice === undefined ||
+      config.rentalDailyPrice === null ||
+      config.rentalDailyPrice <= 0
+    ) {
+      throw new BadRequestException(
+        'La tarifa diaria de renta es obligatoria para productos de renta',
+      );
+    }
+
+    if (
+      config.rentalMinDays !== undefined &&
+      config.rentalMinDays !== null &&
+      (!Number.isInteger(config.rentalMinDays) || config.rentalMinDays < 1)
+    ) {
+      throw new BadRequestException(
+        'Los dias minimos de renta deben ser un entero mayor o igual a 1',
+      );
+    }
+
+    if (
+      config.rentalDeposit !== undefined &&
+      config.rentalDeposit !== null &&
+      config.rentalDeposit < 0
+    ) {
+      throw new BadRequestException(
+        'El deposito de renta no puede ser negativo',
+      );
+    }
   }
 }
