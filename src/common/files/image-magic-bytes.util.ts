@@ -86,16 +86,31 @@ export function detectPdfMimeFromBuffer(buffer: Buffer): string | null {
   return null;
 }
 
+function detectPrescriptionImageMimeFromBuffer(buffer: Buffer): string | null {
+  const detectedMime = detectImageMimeFromBuffer(buffer);
+
+  if (
+    detectedMime === 'image/jpeg' ||
+    detectedMime === 'image/png' ||
+    detectedMime === 'image/webp'
+  ) {
+    return detectedMime;
+  }
+
+  return null;
+}
+
 export function assertPrescriptionDocumentMagicBytes(
   buffer: Buffer,
   fileLabel = 'archivo',
 ): string {
   const detectedMime =
-    detectImageMimeFromBuffer(buffer) ?? detectPdfMimeFromBuffer(buffer);
+    detectPrescriptionImageMimeFromBuffer(buffer) ??
+    detectPdfMimeFromBuffer(buffer);
 
   if (!detectedMime) {
     throw new BadRequestException(
-      `El ${fileLabel} debe ser PDF o una imagen valida (JPEG, PNG, GIF, WEBP o AVIF)`,
+      `El ${fileLabel} debe ser PDF o una imagen valida (JPEG, PNG o WEBP)`,
     );
   }
 
