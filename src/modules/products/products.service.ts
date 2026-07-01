@@ -49,6 +49,11 @@ function buildProductSearchFilter(term: string): Prisma.ProductWhereInput {
         { clasificacion: { contains: token, mode: 'insensitive' } },
         { proveedor: { contains: token, mode: 'insensitive' } },
         { descripcion: { contains: token, mode: 'insensitive' } },
+        { medidas: { contains: token, mode: 'insensitive' } },
+        { pesoSoportado: { contains: token, mode: 'insensitive' } },
+        { material: { contains: token, mode: 'insensitive' } },
+        { contenidoCaja: { contains: token, mode: 'insensitive' } },
+        { indicacionesUso: { contains: token, mode: 'insensitive' } },
       ],
     })),
   };
@@ -351,6 +356,11 @@ export class ProductsService {
           marca: dto.marca.trim(),
           modelo: dto.modelo.trim(),
           descripcion: dto.descripcion.trim(),
+          medidas: dto.medidas?.trim() || null,
+          pesoSoportado: dto.pesoSoportado?.trim() || null,
+          material: dto.material?.trim() || null,
+          contenidoCaja: dto.contenidoCaja?.trim() || null,
+          indicacionesUso: dto.indicacionesUso?.trim() || null,
           precio: dto.precio,
           clasificacion: canonicalizeClassification(dto.clasificacion),
           stock: dto.stock,
@@ -421,6 +431,21 @@ export class ProductsService {
     if (dto.modelo !== undefined) data.modelo = dto.modelo.trim();
     if (dto.descripcion !== undefined) {
       data.descripcion = dto.descripcion.trim();
+    }
+    if (dto.medidas !== undefined) {
+      data.medidas = dto.medidas.trim() || null;
+    }
+    if (dto.pesoSoportado !== undefined) {
+      data.pesoSoportado = dto.pesoSoportado.trim() || null;
+    }
+    if (dto.material !== undefined) {
+      data.material = dto.material.trim() || null;
+    }
+    if (dto.contenidoCaja !== undefined) {
+      data.contenidoCaja = dto.contenidoCaja.trim() || null;
+    }
+    if (dto.indicacionesUso !== undefined) {
+      data.indicacionesUso = dto.indicacionesUso.trim() || null;
     }
     if (dto.precio !== undefined) data.precio = dto.precio;
     if (dto.clasificacion !== undefined) {

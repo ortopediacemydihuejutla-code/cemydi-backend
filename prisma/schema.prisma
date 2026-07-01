@@ -41,6 +41,11 @@ model Product {
   marca           String
   modelo          String
   descripcion     String
+  medidas         String?
+  pesoSoportado   String?
+  material        String?
+  contenidoCaja   String?
+  indicacionesUso String?
   precio          Float
   clasificacion   String
   stock           Int

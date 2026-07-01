@@ -42,8 +42,33 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString()
   @MinLength(5)
-  @MaxLength(400)
+  @MaxLength(1200)
   descripcion?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  medidas?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  pesoSoportado?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  material?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  contenidoCaja?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(400)
+  indicacionesUso?: string;
 
   @IsOptional()
   @Type(() => Number)
