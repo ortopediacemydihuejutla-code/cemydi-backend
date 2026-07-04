@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { Rol } from '@prisma/client';
+import { PRODUCT_IMAGE_UPLOAD_LIMITS } from '../../common/files/upload-limits.constants';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -75,7 +76,11 @@ export class ProductsController {
   @Post()
   @Roles(Rol.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseInterceptors(FilesInterceptor('images', 10))
+  @UseInterceptors(
+    FilesInterceptor('images', PRODUCT_IMAGE_UPLOAD_LIMITS.files, {
+      limits: PRODUCT_IMAGE_UPLOAD_LIMITS,
+    }),
+  )
   create(
     @Body() dto: CreateProductDto,
     @UploadedFiles() files: UploadedProductFile[] = [],
@@ -86,7 +91,11 @@ export class ProductsController {
   @Patch(':id')
   @Roles(Rol.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseInterceptors(FilesInterceptor('images', 10))
+  @UseInterceptors(
+    FilesInterceptor('images', PRODUCT_IMAGE_UPLOAD_LIMITS.files, {
+      limits: PRODUCT_IMAGE_UPLOAD_LIMITS,
+    }),
+  )
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateProductDto,

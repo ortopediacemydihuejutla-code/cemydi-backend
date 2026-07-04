@@ -7,6 +7,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'node:crypto';
 import { assertImageBufferMagicBytes } from '../../common/files/image-magic-bytes.util';
+import { sanitizeFileName } from '../../common/files/safe-file-name.util';
+import { MAX_IMAGE_UPLOAD_BYTES } from '../../common/files/upload-limits.constants';
 import type {
   UploadedProductFile,
   UploadedProductImage,
@@ -35,7 +37,7 @@ export class ProductsCloudinaryService {
     for (const file of files) {
       assertImageBufferMagicBytes(file.buffer, `archivo ${file.originalname}`);
 
-      if (file.size > 8 * 1024 * 1024) {
+      if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
         throw new BadRequestException(
           'Cada imagen debe pesar como maximo 8 MB',
         );
@@ -132,8 +134,12 @@ export class ProductsCloudinaryService {
   private async uploadRemoteImageToCloudinary(imageUrl: string) {
     try {
       const parsed = new URL(imageUrl);
-      if (!['http:', 'https:'].includes(parsed.protocol)) {
-        throw new Error('La URL debe usar http o https');
+      if (parsed.protocol !== 'https:') {
+        throw new Error('La URL debe usar https');
+      }
+
+      if (!this.isAllowedRemoteImageHost(parsed.hostname)) {
+        throw new Error('El dominio de la imagen no esta permitido');
       }
     } catch (error) {
       const message =
@@ -147,7 +153,10 @@ export class ProductsCloudinaryService {
   private async uploadFileToCloudinary(file: UploadedProductFile) {
     const bytes = new Uint8Array(file.buffer);
     const blob = new Blob([bytes], { type: file.mimetype });
-    return this.uploadToCloudinary(blob, file.originalname);
+    return this.uploadToCloudinary(
+      blob,
+      sanitizeFileName(file.originalname, 'imagen'),
+    );
   }
 
   private async uploadToCloudinary(file: string | Blob, fileName?: string) {
@@ -292,6 +301,25 @@ export class ProductsCloudinaryService {
       .get<string>('CLOUDINARY_PRODUCTS_FOLDER')
       ?.trim();
     return configured || 'cemydi/products';
+  }
+
+  private isAllowedRemoteImageHost(hostname: string) {
+    const configuredHosts = this.configService
+      .get<string>('ALLOWED_REMOTE_IMAGE_HOSTS')
+      ?.split(',')
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean);
+    const allowedHosts =
+      configuredHosts && configuredHosts.length > 0
+        ? configuredHosts
+        : ['res.cloudinary.com', 'images.unsplash.com'];
+    const normalizedHostname = hostname.toLowerCase();
+
+    return allowedHosts.some(
+      (allowedHost) =>
+        normalizedHostname === allowedHost ||
+        normalizedHostname.endsWith(`.${allowedHost}`),
+    );
   }
 
   private signCloudinaryParams(params: Record<string, string>) {

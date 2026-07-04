@@ -71,6 +71,13 @@ export function validateEnv(config: EnvRecord) {
   normalizeOptionalBoolean(normalized, 'AUTH_COOKIE_SECURE');
   normalizeOptionalBoolean(normalized, 'SWAGGER_ENABLED');
 
+  if (
+    isProduction &&
+    ['false', '0', 'no'].includes(String(normalized.AUTH_COOKIE_SECURE ?? ''))
+  ) {
+    throw new Error('AUTH_COOKIE_SECURE no puede desactivarse en production.');
+  }
+
   return normalized;
 }
 

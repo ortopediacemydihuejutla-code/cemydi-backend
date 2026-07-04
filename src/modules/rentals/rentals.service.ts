@@ -12,10 +12,11 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { assertPrescriptionDocumentMagicBytes } from '../../common/files/image-magic-bytes.util';
+import { sanitizeFileName } from '../../common/files/safe-file-name.util';
+import { MAX_PRESCRIPTION_UPLOAD_BYTES } from '../../common/files/upload-limits.constants';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const MAX_PRESCRIPTION_BYTES = 8 * 1024 * 1024;
 
 type UploadedPrescriptionFile = {
   fieldname?: string;
@@ -666,7 +667,7 @@ export class RentalsService {
   }
 
   private validatePrescriptionDocument(file: UploadedPrescriptionFile) {
-    if (file.size > MAX_PRESCRIPTION_BYTES) {
+    if (file.size > MAX_PRESCRIPTION_UPLOAD_BYTES) {
       throw new BadRequestException('La receta no debe superar 8 MB');
     }
 
@@ -676,7 +677,7 @@ export class RentalsService {
     );
 
     return {
-      fileName: file.originalname.trim() || 'receta',
+      fileName: sanitizeFileName(file.originalname, 'receta'),
       mimeType,
       size: file.size,
       buffer: file.buffer,

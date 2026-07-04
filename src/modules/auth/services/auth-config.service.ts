@@ -182,11 +182,21 @@ export class AuthConfigService {
   }
 
   private shouldUseSecureCookies(req?: Request) {
+    const isProduction =
+      this.configService.get<string>('NODE_ENV') === 'production';
     const explicitSecure = this.parseBooleanEnv(
       this.configService.get<string>('AUTH_COOKIE_SECURE'),
     );
     if (explicitSecure !== null) {
+      if (isProduction && explicitSecure === false) {
+        return true;
+      }
+
       return explicitSecure;
+    }
+
+    if (isProduction) {
+      return true;
     }
 
     if (this.isSecureRequest(req)) {

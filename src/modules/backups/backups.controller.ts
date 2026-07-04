@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { Rol } from '@prisma/client';
 import type { Response } from 'express';
+import { sanitizeFileName } from '../../common/files/safe-file-name.util';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -110,9 +111,10 @@ export class BackupsController {
     const backup = await this.backupsService.getDatabaseBackupRecord(id);
 
     response.setHeader('Content-Type', 'application/x-tar');
+    const safeFileName = sanitizeFileName(backup.fileName, 'backup.tar');
     response.setHeader(
       'Content-Disposition',
-      `attachment; filename="${backup.fileName}"`,
+      `attachment; filename="${encodeURIComponent(safeFileName)}"`,
     );
     response.status(200).send(backup.content);
   }
@@ -122,9 +124,10 @@ export class BackupsController {
     const backup = await this.backupsService.createDatabaseBackup();
 
     response.setHeader('Content-Type', 'application/x-tar');
+    const safeFileName = sanitizeFileName(backup.fileName, 'backup.tar');
     response.setHeader(
       'Content-Disposition',
-      `attachment; filename="${backup.fileName}"`,
+      `attachment; filename="${encodeURIComponent(safeFileName)}"`,
     );
     response.status(200).send(backup.content);
   }

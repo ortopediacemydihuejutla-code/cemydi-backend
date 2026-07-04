@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Rol } from '@prisma/client';
+import { ABOUT_PAGE_IMAGE_UPLOAD_LIMITS } from '../../common/files/upload-limits.constants';
 import type { UploadedProductFile } from '../products/products-cloudinary.types';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -29,10 +30,15 @@ export class AboutPageController {
   @Roles(Rol.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'heroImage', maxCount: 1 },
-      { name: 'secondaryImage', maxCount: 1 },
-    ]),
+    FileFieldsInterceptor(
+      [
+        { name: 'heroImage', maxCount: 1 },
+        { name: 'secondaryImage', maxCount: 1 },
+      ],
+      {
+        limits: ABOUT_PAGE_IMAGE_UPLOAD_LIMITS,
+      },
+    ),
   )
   update(
     @Body() dto: UpdateAboutPageDto,

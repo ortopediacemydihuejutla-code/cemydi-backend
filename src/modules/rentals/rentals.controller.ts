@@ -15,6 +15,8 @@ import {
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { Rol } from '@prisma/client';
+import { sanitizeFileName } from '../../common/files/safe-file-name.util';
+import { RENTAL_PRESCRIPTION_UPLOAD_LIMITS } from '../../common/files/upload-limits.constants';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -33,8 +35,6 @@ type UploadedPrescriptionFile = {
   buffer: Buffer;
 };
 
-const MAX_PRESCRIPTION_BYTES = 8 * 1024 * 1024;
-
 @Controller('rentals')
 @UseGuards(JwtAuthGuard)
 export class RentalsController {
@@ -52,7 +52,7 @@ export class RentalsController {
   @UseGuards(RolesGuard)
   @UseInterceptors(
     AnyFilesInterceptor({
-      limits: { fileSize: MAX_PRESCRIPTION_BYTES },
+      limits: RENTAL_PRESCRIPTION_UPLOAD_LIMITS,
     }),
   )
   createFromCart(
@@ -83,9 +83,10 @@ export class RentalsController {
     );
     res.setHeader('Content-Type', document.mimeType);
     res.setHeader('Content-Length', String(document.data.length));
+    const safeFileName = sanitizeFileName(document.fileName, 'receta');
     res.setHeader(
       'Content-Disposition',
-      `inline; filename="${encodeURIComponent(document.fileName)}"`,
+      `inline; filename="${encodeURIComponent(safeFileName)}"`,
     );
     res.send(document.data);
   }
