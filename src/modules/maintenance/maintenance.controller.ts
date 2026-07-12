@@ -7,6 +7,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Rol } from '@prisma/client';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -48,6 +49,7 @@ export class MaintenanceController {
   }
 
   @Post('run')
+  @Throttle({ default: { limit: 2, ttl: 300_000 } })
   async runMaintenance(@Body() body: RunMaintenanceDto) {
     const result = await this.maintenanceService.run({ ...body });
     return result;

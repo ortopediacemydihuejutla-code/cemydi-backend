@@ -1,5 +1,15 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 function transformCommaSeparatedStringArray(value: unknown) {
   if (Array.isArray(value)) {
@@ -34,6 +44,14 @@ function transformIncludeInactive(value: unknown) {
   return typeof value === 'string' && value.trim().toLowerCase() === 'true';
 }
 
+function transformOptionalInteger(value: unknown) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  return Number(value);
+}
+
 export class FindProductsQueryDto {
   @IsOptional()
   @Transform(({ value }) => transformOptionalTrimmedString(value))
@@ -43,14 +61,26 @@ export class FindProductsQueryDto {
 
   @IsOptional()
   @Transform(({ value }) => transformCommaSeparatedStringArray(value))
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
   clasificaciones: string[] = [];
 
   @IsOptional()
   @Transform(({ value }) => transformCommaSeparatedStringArray(value))
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
   marcas: string[] = [];
 
   @IsOptional()
   @Transform(({ value }) => transformCommaSeparatedStringArray(value))
+  @IsArray()
+  @ArrayMaxSize(3)
+  @IsString({ each: true })
+  @MaxLength(20, { each: true })
   tipos: string[] = [];
 
   @IsOptional()
@@ -59,14 +89,17 @@ export class FindProductsQueryDto {
   requiereReceta?: string;
 
   @IsOptional()
-  @Transform(({ value }) => transformOptionalTrimmedString(value))
-  @IsString()
-  page?: string;
+  @Transform(({ value }) => transformOptionalInteger(value))
+  @IsInt()
+  @Min(1)
+  page?: number;
 
   @IsOptional()
-  @Transform(({ value }) => transformOptionalTrimmedString(value))
-  @IsString()
-  pageSize?: string;
+  @Transform(({ value }) => transformOptionalInteger(value))
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  pageSize?: number;
 
   @IsOptional()
   @Transform(({ value }) => transformIncludeInactive(value))

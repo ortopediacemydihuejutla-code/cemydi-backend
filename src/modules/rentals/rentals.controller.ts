@@ -98,6 +98,8 @@ export class RentalsController {
     return this.rentalsService.listForAdmin({
       status: query.status,
       search: query.search,
+      page: query.page,
+      pageSize: query.pageSize,
     });
   }
 

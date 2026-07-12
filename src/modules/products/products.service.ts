@@ -25,8 +25,8 @@ type FindProductsQuery = {
   includeInactive: boolean;
   soloDisponibles?: boolean;
   sort?: string;
-  pageRaw?: string;
-  pageSizeRaw?: string;
+  pageRaw?: number;
+  pageSizeRaw?: number;
 };
 
 function buildProductSearchFilter(term: string): Prisma.ProductWhereInput {
@@ -184,39 +184,25 @@ export class ProductsService {
       query.pageRaw !== undefined || query.pageSizeRaw !== undefined;
     const pageSize =
       Number.isInteger(parsedPageSize) && parsedPageSize > 0
-        ? Math.min(parsedPageSize, 60)
-        : 9;
+        ? Math.min(parsedPageSize, 200)
+        : query.includeInactive
+          ? 200
+          : 60;
     const requestedPage =
       Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
-    let products: ProductWithImages[] = [];
-    let total = 0;
-    let page = 1;
-    let totalPages = 1;
+    const total = await db.product.count({ where });
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = paginationRequested ? Math.min(requestedPage, totalPages) : 1;
+    const skip = (page - 1) * pageSize;
 
-    if (paginationRequested) {
-      total = await db.product.count({ where });
-      totalPages = Math.max(1, Math.ceil(total / pageSize));
-      page = Math.min(requestedPage, totalPages);
-      const skip = (page - 1) * pageSize;
-
-      products = await db.product.findMany({
-        where,
-        include: productInclude,
-        orderBy: resolveProductOrderBy(query.sort),
-        skip,
-        take: pageSize,
-      });
-    } else {
-      products = await db.product.findMany({
-        where,
-        include: productInclude,
-        orderBy: resolveProductOrderBy(query.sort),
-      });
-      total = products.length;
-      totalPages = 1;
-      page = 1;
-    }
+    const products = await db.product.findMany({
+      where,
+      include: productInclude,
+      orderBy: resolveProductOrderBy(query.sort),
+      skip,
+      take: pageSize,
+    });
 
     const activeProductsWhere: Prisma.ProductWhereInput = query.includeInactive
       ? {}
@@ -301,7 +287,7 @@ export class ProductsService {
       },
       pagination: {
         page,
-        pageSize: paginationRequested ? pageSize : products.length || 1,
+        pageSize,
         total,
         totalPages,
         hasPrevious: page > 1,

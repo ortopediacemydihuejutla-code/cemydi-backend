@@ -304,9 +304,17 @@ export class RentalsService {
   async listForAdmin(params: {
     status?: RentalRequestStatus;
     search?: string;
+    page?: number;
+    pageSize?: number;
   }) {
     const where: Prisma.RentalRequestWhereInput = {};
     const search = params.search?.trim();
+    const pageSize =
+      Number.isInteger(params.pageSize) && params.pageSize! > 0
+        ? Math.min(params.pageSize!, 60)
+        : 20;
+    const requestedPage =
+      Number.isInteger(params.page) && params.page! > 0 ? params.page! : 1;
 
     if (params.status) {
       where.status = params.status;
@@ -327,13 +335,53 @@ export class RentalsService {
       ];
     }
 
+    const countWhere: Prisma.RentalRequestWhereInput = {};
+    if (where.OR) {
+      countWhere.OR = where.OR;
+    }
+    const [total, statusCounts] = await Promise.all([
+      this.prisma.rentalRequest.count({ where }),
+      this.prisma.rentalRequest.groupBy({
+        by: ['status'],
+        where: countWhere,
+        _count: { _all: true },
+      }),
+    ]);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(requestedPage, totalPages);
     const rentals = await this.prisma.rentalRequest.findMany({
       where,
       include: rentalInclude,
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     });
+    const counts = {
+      total: statusCounts.reduce((sum, item) => sum + item._count._all, 0),
+      PENDING: 0,
+      APPROVED: 0,
+      REJECTED: 0,
+      CANCELLED: 0,
+      DELIVERED: 0,
+      RETURNED: 0,
+    } satisfies Record<RentalRequestStatus, number> & { total: number };
 
-    return { rentals: rentals.map((rental) => this.mapRental(rental)) };
+    for (const item of statusCounts) {
+      counts[item.status] = item._count._all;
+    }
+
+    return {
+      rentals: rentals.map((rental) => this.mapRental(rental)),
+      counts,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+        hasPrevious: page > 1,
+        hasNext: page < totalPages,
+      },
+    };
   }
 
   async approve(currentUser: AuthUser, id: string) {

@@ -11,6 +11,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Rol } from '@prisma/client';
 import type { Response } from 'express';
 import { sanitizeFileName } from '../../common/files/safe-file-name.util';
@@ -68,6 +69,7 @@ export class BackupsController {
 
   @Post('database')
   @HttpCode(201)
+  @Throttle({ default: { limit: 2, ttl: 60_000 } })
   async createDatabaseBackup() {
     const result = await this.backupsService.createDatabaseBackupRecord();
     return {
@@ -79,6 +81,7 @@ export class BackupsController {
 
   @Post('database/table')
   @HttpCode(201)
+  @Throttle({ default: { limit: 4, ttl: 60_000 } })
   async createSingleTableBackup(@Body() body: CreateTableBackupDto) {
     const result = await this.backupsService.createSingleTableBackupRecord(
       body.tableName,
@@ -92,6 +95,7 @@ export class BackupsController {
 
   @Post('database/schema')
   @HttpCode(201)
+  @Throttle({ default: { limit: 4, ttl: 60_000 } })
   async createSingleSchemaBackup(@Body() body: CreateSchemaBackupDto) {
     const result = await this.backupsService.createSingleSchemaBackupRecord(
       body.schemaName,
@@ -104,6 +108,7 @@ export class BackupsController {
   }
 
   @Get('database/:id/download')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async downloadDatabaseBackupById(
     @Param('id', ParseIntPipe) id: number,
     @Res() response: Response,
@@ -120,6 +125,7 @@ export class BackupsController {
   }
 
   @Get('database')
+  @Throttle({ default: { limit: 2, ttl: 60_000 } })
   async downloadDatabaseBackup(@Res() response: Response) {
     const backup = await this.backupsService.createDatabaseBackup();
 
@@ -133,6 +139,7 @@ export class BackupsController {
   }
 
   @Post('database/:id/restore')
+  @Throttle({ default: { limit: 1, ttl: 300_000 } })
   async restoreDatabaseBackupById(@Param('id', ParseIntPipe) id: number) {
     const result = await this.backupsService.restoreDatabaseBackupRecord(id);
     return {

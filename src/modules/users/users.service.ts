@@ -73,9 +73,22 @@ export class UsersService {
     };
   }
 
-  async findAll() {
+  async findAll(query?: { page?: number; pageSize?: number }) {
+    const pageSize = Math.min(
+      Number.isInteger(query?.pageSize) && query!.pageSize! > 0
+        ? query!.pageSize!
+        : 200,
+      200,
+    );
+    const requestedPage =
+      Number.isInteger(query?.page) && query!.page! > 0 ? query!.page! : 1;
+    const total = await this.prisma.user.count();
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(requestedPage, totalPages);
     const users = await this.prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
       select: {
         id: true,
         nombre: true,
@@ -89,7 +102,17 @@ export class UsersService {
       },
     });
 
-    return { users };
+    return {
+      users,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+        hasPrevious: page > 1,
+        hasNext: page < totalPages,
+      },
+    };
   }
 
   async create(dto: CreateUserDto) {
