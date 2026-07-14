@@ -130,7 +130,7 @@ export class AuthConfigService {
   get googleRedirectUri() {
     return (
       this.configService.get<string>('GOOGLE_SIGNIN_REDIRECT_URI')?.trim() ||
-      new URL('/auth/google/callback', this.backendUrl).toString()
+      new URL('/api/auth/google/callback', this.frontendUrl).toString()
     );
   }
 
