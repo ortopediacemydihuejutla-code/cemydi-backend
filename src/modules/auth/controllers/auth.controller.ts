@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Post,
   Query,
   Req,
@@ -45,6 +46,8 @@ const AUTH_GOOGLE_STATE_COOKIE = 'cemydi_google_oauth_state';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly authConfigService: AuthConfigService,
@@ -136,6 +139,16 @@ export class AuthController {
     );
   }
 
+  private getGoogleLoginErrorReason(error: unknown) {
+    if (!(error instanceof UnauthorizedException)) {
+      return 'google';
+    }
+
+    const message =
+      typeof error.message === 'string' ? error.message.toLowerCase() : '';
+    return message.includes('inactiva') ? 'inactive' : 'google';
+  }
+
   @Post('register')
   @SkipCsrf()
   @Throttle(AUTH_REGISTER_THROTTLE)
@@ -175,31 +188,31 @@ export class AuthController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const cookies = req.cookies as Record<string, unknown> | undefined;
-    const expectedState = cookies?.[AUTH_GOOGLE_STATE_COOKIE];
-    this.clearGoogleStateCookie(req, res);
-
     const loginErrorUrl = (reason = 'google') =>
       this.authConfigService.buildFrontendLoginUrl({ googleError: reason });
 
-    if (googleError) {
-      return res.redirect(302, loginErrorUrl());
-    }
-
-    if (
-      typeof expectedState !== 'string' ||
-      !expectedState ||
-      !state ||
-      expectedState !== state
-    ) {
-      return res.redirect(302, loginErrorUrl());
-    }
-
-    if (!code?.trim()) {
-      throw new BadRequestException('Codigo de Google requerido');
-    }
-
     try {
+      const cookies = req.cookies as Record<string, unknown> | undefined;
+      const expectedState = cookies?.[AUTH_GOOGLE_STATE_COOKIE];
+      this.clearGoogleStateCookie(req, res);
+
+      if (googleError) {
+        return res.redirect(302, loginErrorUrl());
+      }
+
+      if (
+        typeof expectedState !== 'string' ||
+        !expectedState ||
+        !state ||
+        expectedState !== state
+      ) {
+        return res.redirect(302, loginErrorUrl());
+      }
+
+      if (!code?.trim()) {
+        throw new BadRequestException('Codigo de Google requerido');
+      }
+
       const result = await this.authService.loginWithGoogleCode(code);
       this.setAuthCookies(req, res, result);
       return res.redirect(
@@ -210,12 +223,13 @@ export class AuthController {
         ).toString(),
       );
     } catch (error) {
-      const reason =
-        error instanceof UnauthorizedException &&
-        error.message.toLowerCase().includes('inactiva')
-          ? 'inactive'
-          : 'google';
-      return res.redirect(302, loginErrorUrl(reason));
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Google OAuth callback failed: ${message}`, stack);
+      return res.redirect(
+        302,
+        loginErrorUrl(this.getGoogleLoginErrorReason(error)),
+      );
     }
   }
 

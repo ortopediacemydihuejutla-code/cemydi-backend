@@ -74,17 +74,31 @@ export class AuthConfigService {
   }
 
   get frontendUrl() {
-    return (
+    const value =
       this.configService.get<string>('CORS_ORIGIN')?.split(',')[0]?.trim() ||
-      'http://localhost:3000'
-    );
+      'http://localhost:3000';
+
+    try {
+      return new URL(value).toString().replace(/\/$/, '');
+    } catch {
+      throw new Error(
+        'CORS_ORIGIN debe iniciar con http:// o https:// para redirecciones de autenticacion.',
+      );
+    }
   }
 
   get backendUrl() {
-    return (
+    const value =
       this.configService.get<string>('BACKEND_PUBLIC_URL')?.trim() ||
-      `http://localhost:${this.configService.get<string>('PORT')?.trim() || '4000'}`
-    );
+      `http://localhost:${this.configService.get<string>('PORT')?.trim() || '4000'}`;
+
+    try {
+      return new URL(value).toString().replace(/\/$/, '');
+    } catch {
+      throw new Error(
+        'BACKEND_PUBLIC_URL debe iniciar con http:// o https:// para redirecciones de autenticacion.',
+      );
+    }
   }
 
   get googleClientId() {

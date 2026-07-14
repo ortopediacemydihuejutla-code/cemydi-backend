@@ -36,10 +36,12 @@ export function validateEnv(config: EnvRecord) {
       normalized.CORS_ORIGIN,
       'CORS_ORIGIN es obligatorio en production.',
     );
+    validateHttpUrlList(normalized.CORS_ORIGIN as string, 'CORS_ORIGIN');
     normalized.BACKEND_PUBLIC_URL = requireNonEmptyString(
       normalized.BACKEND_PUBLIC_URL,
       'BACKEND_PUBLIC_URL es obligatorio en production.',
     );
+    validateHttpUrl(normalized.BACKEND_PUBLIC_URL as string, 'BACKEND_PUBLIC_URL');
     normalized.CLOUDINARY_URL = requireNonEmptyString(
       normalized.CLOUDINARY_URL,
       'CLOUDINARY_URL es obligatorio en production.',
@@ -87,6 +89,32 @@ export function validateEnv(config: EnvRecord) {
   }
 
   return normalized;
+}
+
+function validateHttpUrl(value: string, key: string) {
+  try {
+    const parsed = new URL(value.trim());
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error();
+    }
+  } catch {
+    throw new Error(`${key} debe ser una URL valida http:// o https://.`);
+  }
+}
+
+function validateHttpUrlList(value: string, key: string) {
+  const origins = value
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (origins.length === 0) {
+    throw new Error(`${key} debe incluir al menos una URL valida.`);
+  }
+
+  for (const origin of origins) {
+    validateHttpUrl(origin, key);
+  }
 }
 
 function validatePostgresDatabaseUrl(value: string, key: string) {
