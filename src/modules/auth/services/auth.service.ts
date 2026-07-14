@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { AuthUser } from '../types/auth-user.interface';
 import { AuthEmailVerificationService } from './auth-email-verification.service';
+import { AuthGoogleService } from './auth-google.service';
 import { AuthLoginService } from './auth-login.service';
 import { AuthPasswordResetService } from './auth-password-reset.service';
 import { AuthSecurityOverviewService } from './auth-security-overview.service';
@@ -17,6 +18,7 @@ import type { SessionAuthResult } from '../types/auth.types';
 export class AuthService {
   constructor(
     private readonly authLoginService: AuthLoginService,
+    private readonly authGoogleService: AuthGoogleService,
     private readonly authSessionService: AuthSessionService,
     private readonly authEmailVerificationService: AuthEmailVerificationService,
     private readonly authPasswordResetService: AuthPasswordResetService,
@@ -29,6 +31,14 @@ export class AuthService {
 
   login(dto: LoginDto) {
     return this.authLoginService.login(dto);
+  }
+
+  buildGoogleAuthorizationUrl(state: string) {
+    return this.authGoogleService.buildGoogleAuthorizationUrl(state);
+  }
+
+  loginWithGoogleCode(code: string): Promise<SessionAuthResult> {
+    return this.authGoogleService.loginWithAuthorizationCode(code);
   }
 
   refresh(refreshTokenRaw: string): Promise<SessionAuthResult> {

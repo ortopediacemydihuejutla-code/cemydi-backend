@@ -52,6 +52,14 @@ export function validateEnv(config: EnvRecord) {
       normalized.MAIL_FROM,
       'MAIL_FROM es obligatorio en production.',
     );
+    normalized.GOOGLE_SIGNIN_CLIENT_ID = requireNonEmptyString(
+      normalized.GOOGLE_SIGNIN_CLIENT_ID,
+      'GOOGLE_SIGNIN_CLIENT_ID es obligatorio en production.',
+    );
+    normalized.GOOGLE_SIGNIN_CLIENT_SECRET = requireNonEmptyString(
+      normalized.GOOGLE_SIGNIN_CLIENT_SECRET,
+      'GOOGLE_SIGNIN_CLIENT_SECRET es obligatorio en production.',
+    );
   }
 
   normalizeOptionalPositiveInteger(normalized, 'PORT');

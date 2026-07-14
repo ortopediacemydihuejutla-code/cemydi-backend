@@ -5,6 +5,7 @@ import { AuthSessionService } from './services/auth-session.service';
 import { AuthEmailVerificationService } from './services/auth-email-verification.service';
 import { AuthPasswordResetService } from './services/auth-password-reset.service';
 import { AuthLoginService } from './services/auth-login.service';
+import { AuthGoogleService } from './services/auth-google.service';
 import { AuthSecurityOverviewService } from './services/auth-security-overview.service';
 import { AuthInfrastructureService } from './services/auth-infrastructure.service';
 import { AuthController } from './controllers/auth.controller';
@@ -48,6 +49,7 @@ import { RolesGuard } from './guards/roles.guard';
     AuthEmailVerificationService,
     AuthPasswordResetService,
     AuthLoginService,
+    AuthGoogleService,
     AuthSecurityOverviewService,
     AuthInfrastructureService,
     AuthConfigService,

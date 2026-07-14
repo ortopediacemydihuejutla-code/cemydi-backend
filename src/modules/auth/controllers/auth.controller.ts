@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -12,6 +13,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { Rol } from '@prisma/client';
 import type { Request, Response } from 'express';
+import { randomUUID } from 'node:crypto';
 import { AuthService } from '../services/auth.service';
 import { AuthConfigService } from '../services/auth-config.service';
 import type { AuthUser } from '../types/auth-user.interface';
@@ -38,6 +40,8 @@ import { VerifyPasswordResetCodeDto } from '../dto/verify-password-reset-code.dt
 import { SkipCsrf } from '../decorators/skip-csrf.decorator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
+
+const AUTH_GOOGLE_STATE_COOKIE = 'cemydi_google_oauth_state';
 
 @Controller('auth')
 export class AuthController {
@@ -117,6 +121,21 @@ export class AuthController {
     this.authConfigService.clearCsrfCookie(res, req);
   }
 
+  private setGoogleStateCookie(req: Request, res: Response, state: string) {
+    res.cookie(
+      AUTH_GOOGLE_STATE_COOKIE,
+      state,
+      this.authConfigService.buildAuthCookieSetOptions(10 * 60 * 1000, req),
+    );
+  }
+
+  private clearGoogleStateCookie(req: Request, res: Response) {
+    res.clearCookie(
+      AUTH_GOOGLE_STATE_COOKIE,
+      this.authConfigService.buildAuthCookieClearOptions(req),
+    );
+  }
+
   @Post('register')
   @SkipCsrf()
   @Throttle(AUTH_REGISTER_THROTTLE)
@@ -135,6 +154,69 @@ export class AuthController {
     const result = await this.authService.login(dto);
     this.setAuthCookies(req, res, result);
     return { user: result.user };
+  }
+
+  @Get('google')
+  @SkipCsrf()
+  @Throttle(AUTH_LOGIN_THROTTLE)
+  startGoogleLogin(@Req() req: Request, @Res() res: Response) {
+    const state = randomUUID();
+    this.setGoogleStateCookie(req, res, state);
+    return res.redirect(302, this.authService.buildGoogleAuthorizationUrl(state));
+  }
+
+  @Get('google/callback')
+  @SkipCsrf()
+  @Throttle(AUTH_LOGIN_THROTTLE)
+  async handleGoogleCallback(
+    @Query('code') code: string | undefined,
+    @Query('state') state: string | undefined,
+    @Query('error') googleError: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const cookies = req.cookies as Record<string, unknown> | undefined;
+    const expectedState = cookies?.[AUTH_GOOGLE_STATE_COOKIE];
+    this.clearGoogleStateCookie(req, res);
+
+    const loginErrorUrl = (reason = 'google') =>
+      this.authConfigService.buildFrontendLoginUrl({ googleError: reason });
+
+    if (googleError) {
+      return res.redirect(302, loginErrorUrl());
+    }
+
+    if (
+      typeof expectedState !== 'string' ||
+      !expectedState ||
+      !state ||
+      expectedState !== state
+    ) {
+      return res.redirect(302, loginErrorUrl());
+    }
+
+    if (!code?.trim()) {
+      throw new BadRequestException('Codigo de Google requerido');
+    }
+
+    try {
+      const result = await this.authService.loginWithGoogleCode(code);
+      this.setAuthCookies(req, res, result);
+      return res.redirect(
+        302,
+        new URL(
+          result.user.rol === Rol.ADMIN ? '/admin' : '/perfil',
+          this.authConfigService.frontendUrl,
+        ).toString(),
+      );
+    } catch (error) {
+      const reason =
+        error instanceof UnauthorizedException &&
+        error.message.toLowerCase().includes('inactiva')
+          ? 'inactive'
+          : 'google';
+      return res.redirect(302, loginErrorUrl(reason));
+    }
   }
 
   @Post('refresh')

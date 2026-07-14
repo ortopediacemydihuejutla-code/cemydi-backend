@@ -87,6 +87,39 @@ export class AuthConfigService {
     );
   }
 
+  get googleClientId() {
+    const value = this.configService
+      .get<string>('GOOGLE_SIGNIN_CLIENT_ID')
+      ?.trim();
+    if (!value) {
+      throw new Error(
+        'GOOGLE_SIGNIN_CLIENT_ID es obligatorio para iniciar con Google.',
+      );
+    }
+
+    return value;
+  }
+
+  get googleClientSecret() {
+    const value = this.configService
+      .get<string>('GOOGLE_SIGNIN_CLIENT_SECRET')
+      ?.trim();
+    if (!value) {
+      throw new Error(
+        'GOOGLE_SIGNIN_CLIENT_SECRET es obligatorio para iniciar con Google.',
+      );
+    }
+
+    return value;
+  }
+
+  get googleRedirectUri() {
+    return (
+      this.configService.get<string>('GOOGLE_SIGNIN_REDIRECT_URI')?.trim() ||
+      new URL('/auth/google/callback', this.backendUrl).toString()
+    );
+  }
+
   buildAuthCookieSetOptions(maxAgeMs: number, req?: Request): CookieOptions {
     return { ...this.authCookieBase(req), maxAge: maxAgeMs };
   }
