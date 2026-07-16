@@ -21,6 +21,7 @@ import { AdminActivityModule } from './modules/admin-activity/admin-activity.mod
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AlexaModule } from './modules/alexa/alexa.module';
 import { AboutPageModule } from './modules/about-page/about-page.module';
+import { LegalDocumentsModule } from './modules/legal-documents/legal-documents.module';
 import { DatabaseToolsModule } from './infrastructure/database-tools/database-tools.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CsrfGuard } from './modules/auth/guards/csrf.guard';
@@ -55,6 +56,7 @@ import { validateEnv } from './env.validation';
     AnalyticsModule,
     AdminActivityModule,
     AboutPageModule,
+    LegalDocumentsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -221,6 +221,19 @@ model AboutPage {
   @@schema("management")
 }
 
+model LegalDocument {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  title       String
+  description String
+  sections    Json
+  updatedAt   DateTime @default(now()) @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@map("legal_documents")
+  @@schema("management")
+}
+
 model UserSession {
   id               String    @id @default(cuid())
   tokenId          String    @unique @map("tokenId")
