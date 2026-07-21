@@ -63,6 +63,20 @@ export class ProductsController {
     );
   }
 
+  @Get('slug/:slug')
+  @UseGuards(OptionalJwtAuthGuard)
+  findOneBySlug(
+    @Param('slug') slug: string,
+    @Query() query: FindProductQueryDto,
+    @CurrentUser() user: AuthUser | undefined,
+  ) {
+    return this.productsService.findOneBySlug(
+      slug,
+      query.includeInactive,
+      user,
+    );
+  }
+
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
   findOne(

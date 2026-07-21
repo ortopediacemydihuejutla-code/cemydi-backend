@@ -56,14 +56,21 @@ export class AuthConfigService {
 
   get emailVerificationExpiresMinutes() {
     return Number(
-      this.configService.get<string>('EMAIL_VERIFICATION_EXPIRES_MINUTES') ??
+      this.configService.get<string>(
+        'EMAIL_VERIFICATION_TOKEN_EXPIRATION_MINUTES',
+      ) ??
+        this.configService.get<string>('EMAIL_VERIFICATION_EXPIRES_MINUTES') ??
         '60',
     );
   }
 
   get passwordResetExpiresMinutes() {
     return Number(
-      this.configService.get<string>('PASSWORD_RESET_EXPIRES_MINUTES') ?? '15',
+      this.configService.get<string>(
+        'PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES',
+      ) ??
+        this.configService.get<string>('PASSWORD_RESET_EXPIRES_MINUTES') ??
+        '30',
     );
   }
 
@@ -75,6 +82,7 @@ export class AuthConfigService {
 
   get frontendUrl() {
     const value =
+      this.configService.get<string>('FRONTEND_URL')?.trim() ||
       this.configService.get<string>('CORS_ORIGIN')?.split(',')[0]?.trim() ||
       'http://localhost:3000';
 

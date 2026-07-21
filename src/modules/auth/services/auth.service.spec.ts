@@ -8,6 +8,7 @@ import { AuthPasswordResetService } from './auth-password-reset.service';
 import { AuthLoginService } from './auth-login.service';
 import { AuthSecurityOverviewService } from './auth-security-overview.service';
 import { AuthConfigService } from './auth-config.service';
+import { AuthGoogleService } from './auth-google.service';
 import { MailService } from '../../mail/mail.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
@@ -26,6 +27,7 @@ describe('AuthService', () => {
   };
   let mailService: {
     sendEmailVerificationLink: jest.Mock;
+    sendPasswordResetCode: jest.Mock;
   };
   let prismaService: {
     user: {
@@ -42,8 +44,10 @@ describe('AuthService', () => {
       count: jest.Mock;
     };
     authToken: {
+      findFirst: jest.Mock;
       updateMany: jest.Mock;
       create: jest.Mock;
+      update: jest.Mock;
     };
     $transaction: jest.Mock;
     asAdmin: jest.Mock;
@@ -65,14 +69,17 @@ describe('AuthService', () => {
         count: jest.fn().mockResolvedValue(0),
       },
       authToken: {
+        findFirst: jest.fn().mockResolvedValue(null),
         updateMany: jest.fn(),
         create: jest.fn(),
+        update: jest.fn(),
       },
       $transaction: jest.fn().mockResolvedValue([]),
       asAdmin: jest.fn(),
     };
     mailService = {
       sendEmailVerificationLink: jest.fn(),
+      sendPasswordResetCode: jest.fn(),
     };
 
     jwtService = {
@@ -91,6 +98,13 @@ describe('AuthService', () => {
         AuthPasswordResetService,
         AuthLoginService,
         AuthSecurityOverviewService,
+        {
+          provide: AuthGoogleService,
+          useValue: {
+            buildGoogleAuthorizationUrl: jest.fn(),
+            loginWithAuthorizationCode: jest.fn(),
+          },
+        },
         {
           provide: PrismaService,
           useValue: prismaService,
@@ -131,6 +145,8 @@ describe('AuthService', () => {
       activo: true,
     });
 
+    // bcrypt's CommonJS export is mutable in Jest; its ESM namespace is not.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     jest.spyOn(require('bcrypt'), 'compare').mockResolvedValue(true);
 
     await expect(
@@ -229,6 +245,28 @@ describe('AuthService', () => {
     expect(mailService.sendEmailVerificationLink).toHaveBeenCalled();
   });
 
+  it('keeps the generic register response when the provider cannot send', async () => {
+    prismaService.user.findFirst.mockResolvedValue(null);
+    prismaService.user.create.mockResolvedValue({
+      id: 20,
+      correo: 'pending-send@example.com',
+      nombre: 'Pending Send',
+    });
+    mailService.sendEmailVerificationLink.mockRejectedValue(
+      new Error('provider unavailable'),
+    );
+
+    await expect(
+      service.register({
+        nombre: 'Pending Send',
+        correo: 'pending-send@example.com',
+        password: VALID_PASSWORD,
+      }),
+    ).resolves.toEqual(REGISTER_PUBLIC_RESPONSE);
+
+    expect(prismaService.user.create).toHaveBeenCalled();
+  });
+
   it('returns the same generic resend response when the email does not exist', async () => {
     prismaService.user.findFirst.mockResolvedValue(null);
 
@@ -284,10 +322,10 @@ describe('AuthService', () => {
 
     expect(prismaService.userSession.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
+        where: {
           tokenId: 'session-logout',
           endedAt: null,
-        }),
+        },
       }),
     );
   });

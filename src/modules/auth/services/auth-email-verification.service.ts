@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { AuthTokenPurpose } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { MailService } from '../../mail/mail.service';
@@ -10,6 +10,8 @@ import { RESEND_VERIFICATION_RESPONSE } from '../constants';
 
 @Injectable()
 export class AuthEmailVerificationService {
+  private readonly logger = new Logger(AuthEmailVerificationService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
@@ -28,7 +30,30 @@ export class AuthEmailVerificationService {
     });
 
     if (user && !user.emailVerifiedAt) {
-      await this.issueEmailVerificationLink(user.id, user.correo, user.nombre);
+      const cooldownStart = new Date(Date.now() - 60_000);
+      const recentToken = await this.prisma.authToken.findFirst({
+        where: {
+          userId: user.id,
+          purpose: AuthTokenPurpose.EMAIL_VERIFICATION_LINK,
+          createdAt: { gte: cooldownStart },
+        },
+        select: { id: true },
+      });
+
+      if (!recentToken) {
+        try {
+          await this.issueEmailVerificationLink(
+            user.id,
+            user.correo,
+            user.nombre,
+          );
+        } catch (error) {
+          const errorName = error instanceof Error ? error.name : 'Error';
+          this.logger.error(
+            `No se pudo reenviar la verificación. userId=${user.id} tipo=${errorName}`,
+          );
+        }
+      }
     }
 
     return { ...RESEND_VERIFICATION_RESPONSE };
@@ -128,10 +153,19 @@ export class AuthEmailVerificationService {
     const verificationUrl =
       this.authConfigService.buildFrontendEmailVerificationUrl(rawToken);
 
-    await this.mailService.sendEmailVerificationLink({
-      correo,
-      nombre,
-      verificationUrl,
-    });
+    try {
+      await this.mailService.sendEmailVerificationLink({
+        correo,
+        nombre,
+        verificationUrl,
+      });
+      return true;
+    } catch (error) {
+      const errorName = error instanceof Error ? error.name : 'Error';
+      this.logger.error(
+        `No se pudo enviar la verificación. userId=${userId} tipo=${errorName}`,
+      );
+      return false;
+    }
   }
 }

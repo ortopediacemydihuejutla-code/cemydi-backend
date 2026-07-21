@@ -21,9 +21,9 @@ describe('image-magic-bytes.util', () => {
   });
 
   it('accepts pdf documents for prescriptions', () => {
-    expect(assertPrescriptionDocumentMagicBytes(Buffer.from('%PDF-1.4\n'))).toBe(
-      'application/pdf',
-    );
+    expect(
+      assertPrescriptionDocumentMagicBytes(Buffer.from('%PDF-1.4\n')),
+    ).toBe('application/pdf');
   });
 
   it('rejects gif documents for prescriptions', () => {

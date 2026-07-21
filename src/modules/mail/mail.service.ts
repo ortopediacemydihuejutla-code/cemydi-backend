@@ -4,119 +4,42 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import nodemailer, { type Transporter } from 'nodemailer';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport';
-import dns from 'node:dns';
-import net from 'node:net';
-import tls from 'node:tls';
+import { randomUUID } from 'node:crypto';
+import type { SendEmailOptions } from './interfaces/send-email.interface';
+import { resetPasswordTemplate } from './templates/reset-password.template';
+import { verifyEmailTemplate } from './templates/verify-email.template';
+
+const BREVO_SEND_EMAIL_URL = 'https://api.brevo.com/v3/smtp/email';
+const REQUEST_TIMEOUT_MS = 10_000;
+const MAX_ATTEMPTS = 3;
+const BASE_RETRY_DELAY_MS = 200;
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: Transporter | null = null;
 
   constructor(private readonly configService: ConfigService) {}
-
-  private getTransporter() {
-    if (this.transporter) {
-      return this.transporter;
-    }
-
-    const host = this.configService.get<string>('SMTP_HOST')?.trim();
-    const port = Number(this.configService.get<string>('SMTP_PORT') ?? '587');
-    const user = this.configService.get<string>('SMTP_USER')?.trim();
-    const pass = this.configService.get<string>('SMTP_PASS')?.trim();
-    const secure =
-      `${this.configService.get<string>('SMTP_SECURE') ?? ''}`
-        .trim()
-        .toLowerCase() === 'true';
-
-    if (!host || !user || !pass || Number.isNaN(port)) {
-      throw new InternalServerErrorException(
-        'SMTP no esta configurado completamente. Define SMTP_HOST, SMTP_PORT, SMTP_USER y SMTP_PASS para enviar correos.',
-      );
-    }
-
-    const transportOptions: SMTPTransport.Options = {
-      host,
-      port,
-      secure,
-      auth: {
-        user,
-        pass,
-      },
-      tls: {
-        servername: host,
-      },
-      getSocket: (options, callback) => {
-        dns.lookup(
-          options.host ?? host,
-          { family: 4 },
-          (lookupError, address) => {
-            if (lookupError) {
-              callback(lookupError, false);
-              return;
-            }
-
-            const socket = options.secure
-              ? tls.connect({
-                  host: address,
-                  port: options.port ?? port,
-                  servername: options.host ?? host,
-                })
-              : net.connect({
-                  host: address,
-                  port: options.port ?? port,
-                });
-
-            socket.once('error', (socketError) => callback(socketError, false));
-            socket.once('connect', () =>
-              callback(null, { connection: socket }),
-            );
-          },
-        );
-      },
-    };
-
-    this.transporter = nodemailer.createTransport(transportOptions);
-
-    return this.transporter;
-  }
-
-  private getFromAddress() {
-    return (
-      this.configService.get<string>('MAIL_FROM')?.trim() ||
-      this.configService.get<string>('SMTP_USER')?.trim() ||
-      'no-reply@cemydi.local'
-    );
-  }
 
   async sendEmailVerificationLink(input: {
     correo: string;
     nombre: string;
     verificationUrl: string;
   }) {
-    await this.sendMail({
+    const expirationMinutes = this.getPositiveInteger(
+      'EMAIL_VERIFICATION_TOKEN_EXPIRATION_MINUTES',
+      this.getPositiveInteger('EMAIL_VERIFICATION_EXPIRES_MINUTES', 60),
+    );
+
+    await this.sendEmail({
       to: input.correo,
-      subject: 'Verifica tu cuenta de CEMYDI',
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-          <h2>Hola ${this.escapeHtml(input.nombre)}, confirma tu correo</h2>
-          <p>Haz clic en el siguiente boton para verificar tu cuenta:</p>
-          <p style="margin: 24px 0;">
-            <a
-              href="${input.verificationUrl}"
-              style="display: inline-block; padding: 12px 20px; border-radius: 12px; background: #1e6260; color: #ffffff; text-decoration: none; font-weight: 700;"
-            >
-              Verificar mi cuenta
-            </a>
-          </p>
-          <p>Si el boton no funciona, copia y pega este enlace en tu navegador:</p>
-          <p><a href="${input.verificationUrl}">${input.verificationUrl}</a></p>
-          <p>Si no solicitaste esta cuenta, puedes ignorar este mensaje.</p>
-        </div>
-      `,
-      text: `Hola ${input.nombre}, verifica tu cuenta entrando a este enlace: ${input.verificationUrl}`,
+      recipientName: input.nombre,
+      subject: 'Verifica tu correo en CEMYDI',
+      html: verifyEmailTemplate({
+        recipientName: input.nombre,
+        verificationUrl: input.verificationUrl,
+        expirationMinutes,
+      }),
+      text: `Hola ${input.nombre}. Verifica tu correo en ${input.verificationUrl}. El enlace vence en ${expirationMinutes} minutos.`,
     });
   }
 
@@ -125,83 +48,149 @@ export class MailService {
     nombre: string;
     code: string;
   }) {
-    await this.sendMail({
+    const expirationMinutes = this.getPositiveInteger(
+      'PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES',
+      this.getPositiveInteger('PASSWORD_RESET_EXPIRES_MINUTES', 30),
+    );
+
+    await this.sendEmail({
       to: input.correo,
+      recipientName: input.nombre,
       subject: 'Código para restablecer tu contraseña en CEMYDI',
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-          <h2>Hola ${this.escapeHtml(input.nombre)}</h2>
-          <p>Tu código para restablecer la contraseña es:</p>
-          <p style="font-size: 28px; font-weight: 700; letter-spacing: 6px;">${input.code}</p>
-          <p>Este código expira en pocos minutos. Si no solicitaste el cambio, ignora este mensaje.</p>
-        </div>
-      `,
-      text: `Hola ${input.nombre}, tu código para restablecer la contraseña es: ${input.code}`,
+      html: resetPasswordTemplate({
+        recipientName: input.nombre,
+        code: input.code,
+        expirationMinutes,
+      }),
+      text: `Hola ${input.nombre}. Tu código para restablecer la contraseña es ${input.code}. Vence en ${expirationMinutes} minutos.`,
     });
   }
 
-  private async sendMail(input: {
-    to: string;
-    subject: string;
-    html: string;
-    text: string;
-  }) {
-    const transporter = this.getTransporter();
-    try {
-      const result = (await transporter.sendMail({
-        from: this.getFromAddress(),
-        to: input.to,
-        subject: input.subject,
-        html: input.html,
-        text: input.text,
-      })) as SMTPTransport.SentMessageInfo;
-      const accepted = this.formatRecipientList(result.accepted);
-      const rejected = this.formatRecipientList(result.rejected);
-      this.logger.log(
-        `Correo enviado a ${input.to}. messageId=${result.messageId ?? 'N/A'} accepted=${accepted || 'N/A'} rejected=${rejected || 'N/A'}`,
-      );
+  async sendEmail(options: SendEmailOptions) {
+    const config = this.getBrevoConfig();
+    const idempotencyKey = randomUUID();
+    const payload = {
+      sender: {
+        name: config.senderName,
+        email: config.senderEmail,
+      },
+      to: [
+        {
+          email: options.to,
+          ...(options.recipientName?.trim()
+            ? { name: options.recipientName.trim() }
+            : {}),
+        },
+      ],
+      subject: options.subject,
+      htmlContent: options.html,
+      ...(options.text ? { textContent: options.text } : {}),
+    };
 
-      if (Array.isArray(result.rejected) && result.rejected.length > 0) {
-        throw new Error(`Destinatarios rechazados: ${rejected || 'N/A'}`);
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+      try {
+        const response = await this.postToBrevo(
+          config.apiKey,
+          idempotencyKey,
+          payload,
+        );
+
+        if (response.ok) {
+          this.logger.log(
+            `Correo transaccional aceptado por Brevo. intento=${attempt}`,
+          );
+          return;
+        }
+
+        const retryable = response.status === 429 || response.status >= 500;
+        if (retryable && attempt < MAX_ATTEMPTS) {
+          this.logger.warn(
+            `Brevo respondió con un error temporal. status=${response.status} intento=${attempt}`,
+          );
+          await this.waitBeforeRetry(
+            attempt,
+            response.headers.get('retry-after'),
+          );
+          continue;
+        }
+
+        this.logger.error(
+          `Brevo rechazó el correo transaccional. status=${response.status} intento=${attempt}`,
+        );
+        break;
+      } catch (error) {
+        const errorName = error instanceof Error ? error.name : 'Error';
+        if (attempt < MAX_ATTEMPTS) {
+          this.logger.warn(
+            `Fallo temporal al conectar con Brevo. tipo=${errorName} intento=${attempt}`,
+          );
+          await this.waitBeforeRetry(attempt);
+          continue;
+        }
+
+        this.logger.error(
+          `No fue posible conectar con Brevo. tipo=${errorName} intento=${attempt}`,
+        );
       }
-    } catch (error) {
-      const smtpError = error as {
-        code?: string;
-        command?: string;
-        response?: string;
-        responseCode?: number;
-        message?: string;
-      };
-      this.logger.error(
-        `No se pudo enviar el correo a ${input.to}. code=${smtpError.code ?? 'N/A'} command=${smtpError.command ?? 'N/A'} responseCode=${smtpError.responseCode ?? 'N/A'} message=${smtpError.message ?? 'N/A'} response=${smtpError.response ?? 'N/A'}`,
-      );
-      throw new InternalServerErrorException(
-        'No se pudo enviar el correo. Verifica la configuracion SMTP e intenta de nuevo.',
-      );
     }
+
+    throw new InternalServerErrorException(
+      'No se pudo enviar el correo en este momento. Intenta nuevamente más tarde.',
+    );
   }
 
-  private escapeHtml(value: string) {
-    return value
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#39;');
-  }
-
-  private formatRecipientList(
-    recipients: SMTPTransport.SentMessageInfo['accepted'],
+  private async postToBrevo(
+    apiKey: string,
+    idempotencyKey: string,
+    payload: object,
   ) {
-    if (!Array.isArray(recipients) || recipients.length === 0) {
-      return '';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    try {
+      return await fetch(BREVO_SEND_EMAIL_URL, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          idempotencyKey,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private getBrevoConfig() {
+    const apiKey = this.configService.get<string>('BREVO_API_KEY')?.trim();
+    const senderEmail = this.configService.get<string>('EMAIL_FROM')?.trim();
+    const senderName =
+      this.configService.get<string>('EMAIL_FROM_NAME')?.trim() || 'CEMYDI';
+
+    if (!apiKey || !senderEmail) {
+      throw new InternalServerErrorException(
+        'El servicio de correo no está configurado correctamente.',
+      );
     }
 
-    return recipients
-      .map((recipient) =>
-        typeof recipient === 'string' ? recipient : recipient.address,
-      )
-      .filter((recipient): recipient is string => Boolean(recipient?.trim()))
-      .join(', ');
+    return { apiKey, senderEmail, senderName };
+  }
+
+  private getPositiveInteger(key: string, fallback: number) {
+    const value = Number(this.configService.get<string>(key) ?? fallback);
+    return Number.isInteger(value) && value > 0 ? value : fallback;
+  }
+
+  private async waitBeforeRetry(attempt: number, retryAfter?: string | null) {
+    const retryAfterSeconds = Number(retryAfter);
+    const requestedDelay =
+      Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+        ? retryAfterSeconds * 1_000
+        : BASE_RETRY_DELAY_MS * attempt;
+    const boundedDelay = Math.min(requestedDelay, 2_000);
+    await new Promise((resolve) => setTimeout(resolve, boundedDelay));
   }
 }

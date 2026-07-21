@@ -20,6 +20,7 @@ import { AuthConfigService } from '../services/auth-config.service';
 import type { AuthUser } from '../types/auth-user.interface';
 import {
   AUTH_ACCESS_COOKIE,
+  AUTH_EMAIL_VERIFICATION_CONFIRM_THROTTLE,
   AUTH_EMAIL_VERIFICATION_SEND_THROTTLE,
   AUTH_LOGIN_THROTTLE,
   AUTH_PASSWORD_RESET_CONFIRM_THROTTLE,
@@ -175,7 +176,10 @@ export class AuthController {
   startGoogleLogin(@Req() req: Request, @Res() res: Response) {
     const state = randomUUID();
     this.setGoogleStateCookie(req, res, state);
-    return res.redirect(302, this.authService.buildGoogleAuthorizationUrl(state));
+    return res.redirect(
+      302,
+      this.authService.buildGoogleAuthorizationUrl(state),
+    );
   }
 
   @Get('google/callback')
@@ -277,7 +281,7 @@ export class AuthController {
 
   @Post('email-verification/confirm')
   @SkipCsrf()
-  @Throttle(AUTH_EMAIL_VERIFICATION_SEND_THROTTLE)
+  @Throttle(AUTH_EMAIL_VERIFICATION_CONFIRM_THROTTLE)
   confirmEmailVerification(@Body() dto: ConfirmEmailVerificationDto) {
     return this.authService.confirmEmailVerification(dto.token);
   }

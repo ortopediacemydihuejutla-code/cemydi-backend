@@ -11,57 +11,62 @@ datasource db {
 }
 
 model User {
-  id              Int            @id @default(autoincrement())
-  nombre          String
-  correo          String         @unique
-  password        String
-  telefono        String?
-  direccion       String?
-  rol             Rol            @default(CLIENT)
-  createdAt       DateTime       @default(now())
-  activo          Boolean        @default(true)
-  emailVerifiedAt DateTime?
-  authTokens      AuthToken[]
-  loginAttempts   LoginAttempt[]
-  sessions        UserSession[]
-  approvedReviews Review[]       @relation("ApprovedByAdmin")
-  reviews         Review[]       @relation("UserReviews")
-  shoppingCart    ShoppingCart?
-  rentalRequests  RentalRequest[] @relation("RentalRequestUser")
-  approvedRentals RentalRequest[] @relation("RentalRequestApprovedBy")
-  statusUpdatedRentals RentalRequest[] @relation("RentalRequestStatusUpdatedBy")
+  id                      Int                   @id @default(autoincrement())
+  nombre                  String
+  correo                  String                @unique
+  password                String
+  telefono                String?
+  direccion               String?
+  rol                     Rol                   @default(CLIENT)
+  createdAt               DateTime              @default(now())
+  activo                  Boolean               @default(true)
+  emailVerifiedAt         DateTime?
+  authTokens              AuthToken[]
+  loginAttempts           LoginAttempt[]
+  sessions                UserSession[]
+  approvedReviews         Review[]              @relation("ApprovedByAdmin")
+  reviews                 Review[]              @relation("UserReviews")
+  shoppingCart            ShoppingCart?
+  rentalRequests          RentalRequest[]       @relation("RentalRequestUser")
+  approvedRentals         RentalRequest[]       @relation("RentalRequestApprovedBy")
+  statusUpdatedRentals    RentalRequest[]       @relation("RentalRequestStatusUpdatedBy")
+  rentalDocuments         RentalDocument[]      @relation("RentalDocumentOwner")
+  reviewedRentalDocuments RentalDocument[]      @relation("RentalDocumentReviewedBy")
+  rentalStatusHistory     RentalStatusHistory[] @relation("RentalStatusHistoryActor")
+  depositResolvedRentals  RentalRequest[]       @relation("RentalRequestDepositResolvedBy")
 
   @@map("users")
   @@schema("accounts")
 }
 
 model Product {
-  id              Int             @id @default(autoincrement())
-  nombre          String
-  marca           String
-  modelo          String
-  descripcion     String
-  medidas         String?
-  pesoSoportado   String?
-  material        String?
-  contenidoCaja   String?
-  indicacionesUso String?
-  precio          Float
-  clasificacion   String
-  stock           Int
-  proveedor       String
-  tipoAdquisicion TipoAdquisicion
-  requiereReceta  Boolean         @default(false)
+  id               Int                 @id @default(autoincrement())
+  nombre           String
+  slug             String              @unique
+  marca            String
+  modelo           String
+  descripcion      String
+  medidas          String?
+  pesoSoportado    String?
+  material         String?
+  contenidoCaja    String?
+  indicacionesUso  String?
+  precio           Float
+  clasificacion    String
+  stock            Int
+  proveedor        String
+  tipoAdquisicion  TipoAdquisicion
+  requiereReceta   Boolean             @default(false)
   rentalDailyPrice Float?
-  rentalMinDays    Int             @default(1)
-  rentalDeposit    Float           @default(0)
+  rentalMinDays    Int                 @default(1)
+  rentalDeposit    Float               @default(0)
   rentalTerms      String?
-  createdAt       DateTime        @default(now())
-  activo          Boolean         @default(true)
-  images          ProductImage[]
-  promotions      Promotion[]
-  reviews         Review[]
-  cartItems       ShoppingCartItem[]
+  createdAt        DateTime            @default(now())
+  activo           Boolean             @default(true)
+  images           ProductImage[]
+  promotions       Promotion[]
+  reviews          Review[]
+  cartItems        ShoppingCartItem[]
   rentalItems      RentalRequestItem[]
 
   @@index([clasificacion], map: "idx_products_clasificacion")
@@ -271,7 +276,7 @@ model AuthToken {
   userId       Int              @map("userId")
   correo       String
   purpose      AuthTokenPurpose
-  tokenHash    String?
+  tokenHash    String?          @unique
   codeHash     String?
   attemptCount Int              @default(0) @map("attemptCount")
   expiresAt    DateTime         @map("expiresAt")
@@ -298,18 +303,19 @@ model ShoppingCart {
 }
 
 model ShoppingCartItem {
-  id        Int          @id @default(autoincrement())
-  cartId    String       @map("cartId")
-  productId Int          @map("productId")
-  quantity  Int
-  mode      CartItemMode @default(VENTA)
-  rentalStartDate DateTime? @map("rentalStartDate")
-  rentalEndDate   DateTime? @map("rentalEndDate")
-  rentalNotes     String?   @map("rentalNotes")
-  createdAt DateTime     @default(now()) @map("createdAt")
-  updatedAt DateTime     @updatedAt @map("updatedAt")
-  cart      ShoppingCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id              Int             @id @default(autoincrement())
+  cartId          String          @map("cartId")
+  productId       Int             @map("productId")
+  quantity        Int
+  mode            CartItemMode    @default(VENTA)
+  rentalStartDate DateTime?       @map("rentalStartDate")
+  rentalEndDate   DateTime?       @map("rentalEndDate")
+  rentalNotes     String?         @map("rentalNotes")
+  createdAt       DateTime        @default(now()) @map("createdAt")
+  updatedAt       DateTime        @updatedAt @map("updatedAt")
+  cart            ShoppingCart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rentalDocument  RentalDocument?
 
   @@index([cartId, productId, mode])
   @@index([productId])
@@ -318,28 +324,52 @@ model ShoppingCartItem {
 }
 
 model RentalRequest {
-  id              String              @id @default(cuid())
-  userId          Int                 @map("userId")
-  status          RentalRequestStatus @default(PENDING)
-  subtotal        Float               @default(0)
-  depositTotal    Float               @default(0) @map("depositTotal")
-  total           Float               @default(0)
-  notes           String?
-  rejectedReason  String?             @map("rejectedReason")
-  approvedById    Int?                @map("approvedById")
-  approvedAt      DateTime?           @map("approvedAt")
-  rejectedAt      DateTime?           @map("rejectedAt")
-  cancelledAt     DateTime?           @map("cancelledAt")
-  deliveredAt     DateTime?           @map("deliveredAt")
-  returnedAt      DateTime?           @map("returnedAt")
-  statusUpdatedById Int?              @map("statusUpdatedById")
-  statusUpdatedAt DateTime            @default(now()) @map("statusUpdatedAt")
-  createdAt       DateTime            @default(now()) @map("createdAt")
-  updatedAt       DateTime            @updatedAt @map("updatedAt")
-  user            User                @relation("RentalRequestUser", fields: [userId], references: [id], onDelete: Cascade)
-  approvedBy      User?               @relation("RentalRequestApprovedBy", fields: [approvedById], references: [id])
-  statusUpdatedBy User?               @relation("RentalRequestStatusUpdatedBy", fields: [statusUpdatedById], references: [id])
-  items           RentalRequestItem[]
+  id                    String                @id @default(cuid())
+  folio                 String?               @unique
+  userId                Int                   @map("userId")
+  status                RentalRequestStatus   @default(PENDING)
+  subtotal              Float                 @default(0)
+  depositTotal          Float                 @default(0) @map("depositTotal")
+  total                 Float                 @default(0)
+  depositStatus         RentalDepositStatus   @default(PENDING) @map("depositStatus")
+  depositReturnedAmount Float                 @default(0) @map("depositReturnedAmount")
+  depositRetainedAmount Float                 @default(0) @map("depositRetainedAmount")
+  depositNotes          String?               @map("depositNotes")
+  depositResolvedAt     DateTime?             @map("depositResolvedAt")
+  depositResolvedById   Int?                  @map("depositResolvedById")
+  notes                 String?
+  applicantName         String?               @map("applicantName")
+  applicantEmail        String?               @map("applicantEmail")
+  applicantPhone        String?               @map("applicantPhone")
+  isForAnotherPerson    Boolean               @default(false) @map("isForAnotherPerson")
+  patientName           String?               @map("patientName")
+  patientRelationship   String?               @map("patientRelationship")
+  deliveryMethod        RentalDeliveryMethod? @map("deliveryMethod")
+  deliveryAddress       String?               @map("deliveryAddress")
+  deliveryNeighborhood  String?               @map("deliveryNeighborhood")
+  deliveryPostalCode    String?               @map("deliveryPostalCode")
+  deliveryMunicipality  String?               @map("deliveryMunicipality")
+  deliveryReferences    String?               @map("deliveryReferences")
+  preferredSchedule     String?               @map("preferredSchedule")
+  rentalTermsAcceptedAt DateTime?             @map("rentalTermsAcceptedAt")
+  privacyAcceptedAt     DateTime?             @map("privacyAcceptedAt")
+  rejectedReason        String?               @map("rejectedReason")
+  approvedById          Int?                  @map("approvedById")
+  approvedAt            DateTime?             @map("approvedAt")
+  rejectedAt            DateTime?             @map("rejectedAt")
+  cancelledAt           DateTime?             @map("cancelledAt")
+  deliveredAt           DateTime?             @map("deliveredAt")
+  returnedAt            DateTime?             @map("returnedAt")
+  statusUpdatedById     Int?                  @map("statusUpdatedById")
+  statusUpdatedAt       DateTime              @default(now()) @map("statusUpdatedAt")
+  createdAt             DateTime              @default(now()) @map("createdAt")
+  updatedAt             DateTime              @updatedAt @map("updatedAt")
+  user                  User                  @relation("RentalRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy            User?                 @relation("RentalRequestApprovedBy", fields: [approvedById], references: [id])
+  statusUpdatedBy       User?                 @relation("RentalRequestStatusUpdatedBy", fields: [statusUpdatedById], references: [id])
+  depositResolvedBy     User?                 @relation("RentalRequestDepositResolvedBy", fields: [depositResolvedById], references: [id])
+  items                 RentalRequestItem[]
+  statusHistory         RentalStatusHistory[]
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
@@ -347,32 +377,87 @@ model RentalRequest {
   @@schema("management")
 }
 
+model RentalStatusHistory {
+  id              Int                  @id @default(autoincrement())
+  rentalRequestId String               @map("rentalRequestId")
+  fromStatus      RentalRequestStatus? @map("fromStatus")
+  toStatus        RentalRequestStatus  @map("toStatus")
+  note            String?
+  actorId         Int?                 @map("actorId")
+  createdAt       DateTime             @default(now()) @map("createdAt")
+  rentalRequest   RentalRequest        @relation(fields: [rentalRequestId], references: [id], onDelete: Cascade)
+  actor           User?                @relation("RentalStatusHistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([rentalRequestId, createdAt])
+  @@index([actorId])
+  @@map("rental_status_history")
+  @@schema("management")
+}
+
 model RentalRequestItem {
-  id              Int           @id @default(autoincrement())
-  rentalRequestId String        @map("rentalRequestId")
-  productId       Int           @map("productId")
-  quantity        Int
-  startDate       DateTime      @map("startDate")
-  endDate         DateTime      @map("endDate")
-  days            Int
-  dailyPrice      Float         @map("dailyPrice")
-  deposit         Float         @default(0)
-  lineSubtotal    Float         @map("lineSubtotal")
-  lineDeposit     Float         @default(0) @map("lineDeposit")
-  lineTotal       Float         @map("lineTotal")
-  notes           String?
-  prescriptionFileName String?  @map("prescriptionFileName")
-  prescriptionMimeType String?  @map("prescriptionMimeType")
-  prescriptionSizeBytes Int?    @map("prescriptionSizeBytes")
-  prescriptionData Bytes?       @map("prescriptionData")
-  createdAt       DateTime      @default(now()) @map("createdAt")
-  rentalRequest   RentalRequest @relation(fields: [rentalRequestId], references: [id], onDelete: Cascade)
-  product         Product       @relation(fields: [productId], references: [id])
+  id                           Int             @id @default(autoincrement())
+  rentalRequestId              String          @map("rentalRequestId")
+  productId                    Int             @map("productId")
+  quantity                     Int
+  startDate                    DateTime        @map("startDate")
+  endDate                      DateTime        @map("endDate")
+  days                         Int
+  dailyPrice                   Float           @map("dailyPrice")
+  deposit                      Float           @default(0)
+  lineSubtotal                 Float           @map("lineSubtotal")
+  lineDeposit                  Float           @default(0) @map("lineDeposit")
+  lineTotal                    Float           @map("lineTotal")
+  notes                        String?
+  productNameSnapshot          String?         @map("productNameSnapshot")
+  productBrandSnapshot         String?         @map("productBrandSnapshot")
+  productModelSnapshot         String?         @map("productModelSnapshot")
+  productSkuSnapshot           String?         @map("productSkuSnapshot")
+  productImageSnapshot         String?         @map("productImageSnapshot")
+  productClassSnapshot         String?         @map("productClassSnapshot")
+  prescriptionRequiredSnapshot Boolean?        @map("prescriptionRequiredSnapshot")
+  createdAt                    DateTime        @default(now()) @map("createdAt")
+  rentalRequest                RentalRequest   @relation(fields: [rentalRequestId], references: [id], onDelete: Cascade)
+  product                      Product         @relation(fields: [productId], references: [id])
+  rentalDocument               RentalDocument?
 
   @@index([rentalRequestId])
   @@index([productId])
   @@index([startDate, endDate])
   @@map("rental_request_items")
+  @@schema("management")
+}
+
+model RentalDocument {
+  id                  String                 @id @default(uuid())
+  userId              Int                    @map("userId")
+  shoppingCartItemId  Int?                   @unique @map("shoppingCartItemId")
+  rentalRequestItemId Int?                   @unique @map("rentalRequestItemId")
+  assetId             String                 @unique @map("assetId")
+  publicId            String                 @map("publicId")
+  resourceType        CloudinaryResourceType @map("resourceType")
+  deliveryType        CloudinaryDeliveryType @default(AUTHENTICATED) @map("deliveryType")
+  format              String
+  bytes               Int
+  originalFilename    String                 @map("originalFilename")
+  mimeType            String                 @map("mimeType")
+  status              RentalDocumentStatus   @default(PENDIENTE)
+  uploadedAt          DateTime               @default(now()) @map("uploadedAt")
+  associatedAt        DateTime?              @map("associatedAt")
+  cleanupAfter        DateTime?              @map("cleanupAfter")
+  pendingAssetCleanup Json?                  @map("pendingAssetCleanup")
+  reviewedAt          DateTime?              @map("reviewedAt")
+  reviewedById        Int?                   @map("reviewedById")
+  rejectionReason     String?                @map("rejectionReason")
+  updatedAt           DateTime               @updatedAt @map("updatedAt")
+  user                User                   @relation("RentalDocumentOwner", fields: [userId], references: [id], onDelete: Cascade)
+  shoppingCartItem    ShoppingCartItem?      @relation(fields: [shoppingCartItemId], references: [id], onDelete: SetNull)
+  rentalRequestItem   RentalRequestItem?     @relation(fields: [rentalRequestItemId], references: [id], onDelete: SetNull)
+  reviewedBy          User?                  @relation("RentalDocumentReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([userId, uploadedAt])
+  @@index([cleanupAfter])
+  @@index([status])
+  @@map("rental_documents")
   @@schema("management")
 }
 
@@ -390,6 +475,44 @@ enum RentalRequestStatus {
   CANCELLED
   DELIVERED
   RETURNED
+
+  @@schema("public")
+}
+
+enum RentalDeliveryMethod {
+  PICKUP
+  HOME_DELIVERY
+
+  @@schema("public")
+}
+
+enum RentalDepositStatus {
+  PENDING
+  RETURNED
+  RETAINED
+  PARTIALLY_RETAINED
+
+  @@schema("public")
+}
+
+enum RentalDocumentStatus {
+  PENDIENTE
+  EN_REVISION
+  APROBADO
+  RECHAZADO
+
+  @@schema("public")
+}
+
+enum CloudinaryResourceType {
+  IMAGE
+  RAW
+
+  @@schema("public")
+}
+
+enum CloudinaryDeliveryType {
+  AUTHENTICATED
 
   @@schema("public")
 }

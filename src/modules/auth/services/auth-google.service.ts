@@ -36,7 +36,10 @@ export class AuthGoogleService {
   buildGoogleAuthorizationUrl(state: string) {
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.searchParams.set('client_id', this.authConfigService.googleClientId);
-    url.searchParams.set('redirect_uri', this.authConfigService.googleRedirectUri);
+    url.searchParams.set(
+      'redirect_uri',
+      this.authConfigService.googleRedirectUri,
+    );
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('scope', 'openid email profile');
     url.searchParams.set('state', state);
@@ -47,7 +50,9 @@ export class AuthGoogleService {
   async loginWithAuthorizationCode(code: string): Promise<SessionAuthResult> {
     const tokenResponse = await this.exchangeCodeForTokens(code);
     if (!tokenResponse.id_token) {
-      throw new UnauthorizedException('Google no devolvio una identidad valida');
+      throw new UnauthorizedException(
+        'Google no devolvio una identidad valida',
+      );
     }
 
     const profile = await this.verifyGoogleIdentity(tokenResponse.id_token);
@@ -114,7 +119,9 @@ export class AuthGoogleService {
       body: params,
     });
 
-    const body = (await response.json().catch(() => ({}))) as GoogleTokenResponse;
+    const body = (await response
+      .json()
+      .catch(() => ({}))) as GoogleTokenResponse;
     if (!response.ok) {
       throw new ServiceUnavailableException(
         body.error_description || 'No se pudo conectar con Google',
@@ -129,7 +136,9 @@ export class AuthGoogleService {
     url.searchParams.set('id_token', idToken);
 
     const response = await fetch(url);
-    const body = (await response.json().catch(() => ({}))) as GoogleTokenInfoResponse;
+    const body = (await response
+      .json()
+      .catch(() => ({}))) as GoogleTokenInfoResponse;
 
     if (!response.ok || body.aud !== this.authConfigService.googleClientId) {
       throw new UnauthorizedException('Identidad de Google invalida');

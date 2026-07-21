@@ -5,6 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { CartItemMode, Prisma, TipoAdquisicion } from '@prisma/client';
+import {
+  formatDateOnlyForDto,
+  getDateOnlyToday,
+  parseDateOnlyToUtc,
+} from '../../common/dates/date-only.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
@@ -17,6 +22,17 @@ const cartInclude = {
   items: {
     orderBy: { updatedAt: 'desc' },
     include: {
+      rentalDocument: {
+        select: {
+          id: true,
+          originalFilename: true,
+          mimeType: true,
+          bytes: true,
+          status: true,
+          uploadedAt: true,
+          associatedAt: true,
+        },
+      },
       product: {
         include: {
           images: {
@@ -50,6 +66,7 @@ export class CartService {
   async addItem(currentUser: AuthUser, dto: AddCartItemDto) {
     const db = this.prisma.forUser(currentUser);
     const cart = await db.$transaction(async (tx) => {
+      await this.lockUserRentalFlow(tx, currentUser.sub);
       await this.assertActiveUser(tx, currentUser.sub);
       const mode = dto.mode ?? CartItemMode.VENTA;
       const product = await this.ensureProductForCartMode(
@@ -119,6 +136,7 @@ export class CartService {
   ) {
     const db = this.prisma.forUser(currentUser);
     const cart = await db.$transaction(async (tx) => {
+      await this.lockUserRentalFlow(tx, currentUser.sub);
       await this.assertActiveUser(tx, currentUser.sub);
 
       const item = await tx.shoppingCartItem.findFirst({
@@ -192,6 +210,7 @@ export class CartService {
   async removeItem(currentUser: AuthUser, itemId: number) {
     const db = this.prisma.forUser(currentUser);
     const cart = await db.$transaction(async (tx) => {
+      await this.lockUserRentalFlow(tx, currentUser.sub);
       await this.assertActiveUser(tx, currentUser.sub);
 
       const item = await tx.shoppingCartItem.findFirst({
@@ -210,6 +229,11 @@ export class CartService {
       if (!item) {
         throw new NotFoundException('Elemento del carrito no encontrado');
       }
+
+      await tx.rentalDocument.updateMany({
+        where: { shoppingCartItemId: itemId },
+        data: { shoppingCartItemId: null, cleanupAfter: new Date() },
+      });
 
       await tx.shoppingCartItem.delete({
         where: { id: itemId },
@@ -232,6 +256,7 @@ export class CartService {
   async clearCart(currentUser: AuthUser) {
     const db = this.prisma.forUser(currentUser);
     const cart = await db.$transaction(async (tx) => {
+      await this.lockUserRentalFlow(tx, currentUser.sub);
       await this.assertActiveUser(tx, currentUser.sub);
       const existingCart = await tx.shoppingCart.findUnique({
         where: { userId: currentUser.sub },
@@ -241,6 +266,11 @@ export class CartService {
       if (!existingCart) {
         return this.findCartByUserId(tx, currentUser.sub);
       }
+
+      await tx.rentalDocument.updateMany({
+        where: { shoppingCartItem: { cartId: existingCart.id } },
+        data: { shoppingCartItemId: null, cleanupAfter: new Date() },
+      });
 
       await tx.shoppingCartItem.deleteMany({
         where: {
@@ -262,6 +292,46 @@ export class CartService {
     };
   }
 
+  async clearRentals(currentUser: AuthUser) {
+    const db = this.prisma.forUser(currentUser);
+    const cart = await db.$transaction(async (tx) => {
+      await this.lockUserRentalFlow(tx, currentUser.sub);
+      await this.assertActiveUser(tx, currentUser.sub);
+      const existingCart = await tx.shoppingCart.findUnique({
+        where: { userId: currentUser.sub },
+        select: { id: true },
+      });
+
+      if (!existingCart) {
+        return this.findCartByUserId(tx, currentUser.sub);
+      }
+
+      await tx.rentalDocument.updateMany({
+        where: {
+          shoppingCartItem: {
+            cartId: existingCart.id,
+            mode: CartItemMode.RENTA,
+          },
+        },
+        data: { shoppingCartItemId: null, cleanupAfter: new Date() },
+      });
+      await tx.shoppingCartItem.deleteMany({
+        where: { cartId: existingCart.id, mode: CartItemMode.RENTA },
+      });
+      await tx.shoppingCart.update({
+        where: { id: existingCart.id },
+        data: { updatedAt: new Date() },
+      });
+
+      return this.findCartByUserId(tx, currentUser.sub);
+    });
+
+    return {
+      message: 'Productos de renta eliminados del carrito',
+      cart: this.mapCart(cart),
+    };
+  }
+
   private async assertActiveUser(db: CartDbClient, userId: number) {
     const user = await db.user.findUnique({
       where: { id: userId },
@@ -271,6 +341,19 @@ export class CartService {
     if (!user || !user.activo) {
       throw new UnauthorizedException('No autenticado');
     }
+  }
+
+  private async lockUserRentalFlow(
+    tx: Prisma.TransactionClient,
+    userId: number,
+  ) {
+    await tx.$queryRaw<Array<{ acquired: number }>>`
+      SELECT 1::integer AS acquired
+      FROM pg_advisory_xact_lock(
+        CAST(73391 AS integer),
+        CAST(${userId} AS integer)
+      )
+    `;
   }
 
   private async ensureProductForCartMode(
@@ -349,15 +432,30 @@ export class CartService {
       };
     }
 
+    if (!dto.rentalStartDate && !dto.rentalEndDate) {
+      return {
+        startDate: null,
+        endDate: null,
+        notes: dto.rentalNotes?.trim() || null,
+        days: 0,
+      };
+    }
+
     if (!dto.rentalStartDate || !dto.rentalEndDate) {
       throw new BadRequestException(
-        'Selecciona fecha de inicio y fin para la renta',
+        'Captura juntas la fecha de inicio y la fecha de fin de la renta',
       );
     }
 
-    const startDate = this.parseDateOnly(dto.rentalStartDate);
-    const endDate = this.parseDateOnly(dto.rentalEndDate);
-    const today = this.startOfUtcDay(new Date());
+    let startDate: Date;
+    let endDate: Date;
+    try {
+      startDate = parseDateOnlyToUtc(dto.rentalStartDate);
+      endDate = parseDateOnlyToUtc(dto.rentalEndDate);
+    } catch {
+      throw new BadRequestException('Fecha de renta invalida');
+    }
+    const today = getDateOnlyToday();
 
     if (startDate < today) {
       throw new BadRequestException(
@@ -386,36 +484,8 @@ export class CartService {
     };
   }
 
-  private parseDateOnly(value: string) {
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!match) {
-      throw new BadRequestException('Fecha de renta invalida');
-    }
-
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    const date = new Date(Date.UTC(year, month - 1, day));
-
-    if (
-      date.getUTCFullYear() !== year ||
-      date.getUTCMonth() !== month - 1 ||
-      date.getUTCDate() !== day
-    ) {
-      throw new BadRequestException('Fecha de renta invalida');
-    }
-
-    return date;
-  }
-
   private formatDateOnlyForDto(value: Date | null) {
-    return value?.toISOString().slice(0, 10);
-  }
-
-  private startOfUtcDay(date: Date) {
-    return new Date(
-      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-    );
+    return formatDateOnlyForDto(value);
   }
 
   private countRentalDays(startDate: Date, endDate: Date) {
@@ -476,6 +546,7 @@ export class CartService {
           rentalItems: 0,
           saleItems: 0,
           hasUnavailableItems: false,
+          hasUnconfiguredRentalItems: false,
         },
       };
     }
@@ -494,16 +565,18 @@ export class CartService {
         0,
         Math.min(item.product.stock, MAX_CART_ITEM_QUANTITY),
       );
-      const rentalDays =
+      const isRentalConfigured = Boolean(
         item.mode === CartItemMode.RENTA &&
         item.rentalStartDate &&
-        item.rentalEndDate
-          ? this.countRentalDays(item.rentalStartDate, item.rentalEndDate)
-          : 0;
-      const rentalDailyPrice = item.product.rentalDailyPrice ?? 0;
-      const rentalSubtotal = Number(
-        (item.quantity * rentalDailyPrice * rentalDays).toFixed(2),
+        item.rentalEndDate,
       );
+      const rentalDays = isRentalConfigured
+        ? this.countRentalDays(item.rentalStartDate!, item.rentalEndDate!)
+        : null;
+      const rentalDailyPrice = item.product.rentalDailyPrice ?? 0;
+      const rentalSubtotal = isRentalConfigured
+        ? Number((item.quantity * rentalDailyPrice * rentalDays!).toFixed(2))
+        : null;
       const rentalDeposit = Number(
         (item.quantity * item.product.rentalDeposit).toFixed(2),
       );
@@ -512,12 +585,18 @@ export class CartService {
       );
       const lineTotal =
         item.mode === CartItemMode.RENTA
-          ? Number((rentalSubtotal + rentalDeposit).toFixed(2))
+          ? rentalSubtotal === null
+            ? null
+            : Number((rentalSubtotal + rentalDeposit).toFixed(2))
           : saleLineTotal;
 
       return {
         id: item.id,
         mode: item.mode,
+        configurationStatus:
+          item.mode === CartItemMode.RENTA && !isRentalConfigured
+            ? 'PENDING'
+            : 'COMPLETE',
         quantity: item.quantity,
         rentalStartDate: item.rentalStartDate?.toISOString() ?? null,
         rentalEndDate: item.rentalEndDate?.toISOString() ?? null,
@@ -537,6 +616,18 @@ export class CartService {
                 total: lineTotal,
               }
             : null,
+        document: item.rentalDocument
+          ? {
+              id: item.rentalDocument.id,
+              originalFilename: item.rentalDocument.originalFilename,
+              mimeType: item.rentalDocument.mimeType,
+              bytes: item.rentalDocument.bytes,
+              status: item.rentalDocument.status,
+              uploadedAt: item.rentalDocument.uploadedAt.toISOString(),
+              associatedAt:
+                item.rentalDocument.associatedAt?.toISOString() ?? null,
+            }
+          : null,
         availability: {
           isAvailable,
           maxQuantity,
@@ -548,6 +639,7 @@ export class CartService {
         },
         product: {
           id: item.product.id,
+          slug: item.product.slug,
           nombre: item.product.nombre,
           marca: item.product.marca,
           modelo: item.product.modelo,
@@ -572,7 +664,7 @@ export class CartService {
     const saleSubtotal = Number(
       items
         .filter((item) => item.mode === CartItemMode.VENTA)
-        .reduce((sum, item) => sum + item.lineTotal, 0)
+        .reduce((sum, item) => sum + (item.lineTotal ?? 0), 0)
         .toFixed(2),
     );
     const rentalSubtotal = Number(
@@ -583,7 +675,11 @@ export class CartService {
     );
     const rentalDepositTotal = Number(
       items
-        .filter((item) => item.mode === CartItemMode.RENTA)
+        .filter(
+          (item) =>
+            item.mode === CartItemMode.RENTA &&
+            item.configurationStatus === 'COMPLETE',
+        )
         .reduce((sum, item) => sum + (item.rentalSummary?.depositTotal ?? 0), 0)
         .toFixed(2),
     );
@@ -609,6 +705,11 @@ export class CartService {
           .length,
         hasUnavailableItems: items.some(
           (item) => !item.availability.isAvailable,
+        ),
+        hasUnconfiguredRentalItems: items.some(
+          (item) =>
+            item.mode === CartItemMode.RENTA &&
+            item.configurationStatus === 'PENDING',
         ),
       },
     };

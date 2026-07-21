@@ -91,6 +91,17 @@ function requiresRentalConfig(tipoAdquisicion: TipoAdquisicion) {
   );
 }
 
+function slugifyProductName(value: string) {
+  const slug = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return slug || 'producto';
+}
+
 const productInclude = {
   images: {
     orderBy: {
@@ -318,6 +329,28 @@ export class ProductsService {
     return { product: this.mapProduct(product) };
   }
 
+  async findOneBySlug(slug: string, includeInactive: boolean, user?: AuthUser) {
+    const db = this.prisma.forUser(user);
+    const where: Prisma.ProductWhereInput = { slug };
+
+    if (includeInactive) {
+      assertAdmin(user);
+    } else {
+      where.activo = true;
+    }
+
+    const product = await db.product.findFirst({
+      where,
+      include: productInclude,
+    });
+
+    if (!product) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+
+    return { product: this.mapProduct(product) };
+  }
+
   async create(dto: CreateProductDto, files: UploadedProductFile[] = []) {
     this.validateRentalConfig({
       tipoAdquisicion: dto.tipoAdquisicion,
@@ -336,9 +369,11 @@ export class ProductsService {
       );
 
     try {
+      const nombre = dto.nombre.trim();
       const product = await this.prisma.product.create({
         data: {
-          nombre: dto.nombre.trim(),
+          nombre,
+          slug: await this.createUniqueSlug(nombre),
           marca: dto.marca.trim(),
           modelo: dto.modelo.trim(),
           descripcion: dto.descripcion.trim(),
@@ -412,7 +447,10 @@ export class ProductsService {
 
     const data: Prisma.ProductUpdateInput = {};
 
-    if (dto.nombre !== undefined) data.nombre = dto.nombre.trim();
+    if (dto.nombre !== undefined) {
+      data.nombre = dto.nombre.trim();
+      data.slug = await this.createUniqueSlug(dto.nombre, id);
+    }
     if (dto.marca !== undefined) data.marca = dto.marca.trim();
     if (dto.modelo !== undefined) data.modelo = dto.modelo.trim();
     if (dto.descripcion !== undefined) {
@@ -630,6 +668,27 @@ export class ProductsService {
       imageUrl: images[0]?.imageUrl ?? null,
       images,
     };
+  }
+
+  private async createUniqueSlug(nombre: string, excludeId?: number) {
+    const baseSlug = slugifyProductName(nombre);
+    let slug = baseSlug;
+    let suffix = 2;
+
+    while (
+      await this.prisma.product.findFirst({
+        where: {
+          slug,
+          ...(excludeId ? { NOT: { id: excludeId } } : {}),
+        },
+        select: { id: true },
+      })
+    ) {
+      slug = `${baseSlug}-${suffix}`;
+      suffix += 1;
+    }
+
+    return slug;
   }
 
   private validateRentalConfig(config: {

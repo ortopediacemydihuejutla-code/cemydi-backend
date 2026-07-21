@@ -41,19 +41,28 @@ export function validateEnv(config: EnvRecord) {
       normalized.BACKEND_PUBLIC_URL,
       'BACKEND_PUBLIC_URL es obligatorio en production.',
     );
-    validateHttpUrl(normalized.BACKEND_PUBLIC_URL as string, 'BACKEND_PUBLIC_URL');
+    validateHttpUrl(
+      normalized.BACKEND_PUBLIC_URL as string,
+      'BACKEND_PUBLIC_URL',
+    );
     normalized.CLOUDINARY_URL = requireNonEmptyString(
       normalized.CLOUDINARY_URL,
       'CLOUDINARY_URL es obligatorio en production.',
     );
-    normalized.SMTP_HOST = requireNonEmptyString(
-      normalized.SMTP_HOST,
-      'SMTP_HOST es obligatorio en production.',
+    normalized.BREVO_API_KEY = requireNonEmptyString(
+      normalized.BREVO_API_KEY,
+      'BREVO_API_KEY es obligatorio en production.',
     );
-    normalized.MAIL_FROM = requireNonEmptyString(
-      normalized.MAIL_FROM,
-      'MAIL_FROM es obligatorio en production.',
+    normalized.EMAIL_FROM = requireNonEmptyString(
+      normalized.EMAIL_FROM,
+      'EMAIL_FROM es obligatorio en production.',
     );
+    validateEmailAddress(normalized.EMAIL_FROM as string, 'EMAIL_FROM');
+    normalized.FRONTEND_URL = requireNonEmptyString(
+      normalized.FRONTEND_URL,
+      'FRONTEND_URL es obligatorio en production.',
+    );
+    validateHttpUrl(normalized.FRONTEND_URL as string, 'FRONTEND_URL');
     normalized.GOOGLE_SIGNIN_CLIENT_ID = requireNonEmptyString(
       normalized.GOOGLE_SIGNIN_CLIENT_ID,
       'GOOGLE_SIGNIN_CLIENT_ID es obligatorio en production.',
@@ -65,7 +74,15 @@ export function validateEnv(config: EnvRecord) {
   }
 
   normalizeOptionalPositiveInteger(normalized, 'PORT');
-  normalizeOptionalPositiveInteger(normalized, 'SMTP_PORT');
+  normalizeOptionalPositiveInteger(
+    normalized,
+    'EMAIL_VERIFICATION_TOKEN_EXPIRATION_MINUTES',
+  );
+  normalizeOptionalPositiveInteger(
+    normalized,
+    'PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES',
+  );
+  // Alias heredados: se conservan durante la transición de despliegues existentes.
   normalizeOptionalPositiveInteger(
     normalized,
     'EMAIL_VERIFICATION_EXPIRES_MINUTES',
@@ -78,12 +95,18 @@ export function validateEnv(config: EnvRecord) {
   normalizeOptionalPositiveInteger(normalized, 'JWT_REFRESH_EXPIRES_DAYS');
   normalizeOptionalPositiveInteger(normalized, 'LOGIN_MAX_FAILED_ATTEMPTS');
   normalizeOptionalPositiveInteger(normalized, 'LOGIN_LOCKOUT_MINUTES');
+  normalizeOptionalPositiveInteger(
+    normalized,
+    'RENTAL_TEMP_DOCUMENT_TTL_HOURS',
+  );
   normalizeOptionalBoolean(normalized, 'AUTH_COOKIE_SECURE');
   normalizeOptionalBoolean(normalized, 'SWAGGER_ENABLED');
 
+  const authCookieSecure = normalized.AUTH_COOKIE_SECURE;
   if (
     isProduction &&
-    ['false', '0', 'no'].includes(String(normalized.AUTH_COOKIE_SECURE ?? ''))
+    typeof authCookieSecure === 'string' &&
+    ['false', '0', 'no'].includes(authCookieSecure)
   ) {
     throw new Error('AUTH_COOKIE_SECURE no puede desactivarse en production.');
   }
@@ -114,6 +137,12 @@ function validateHttpUrlList(value: string, key: string) {
 
   for (const origin of origins) {
     validateHttpUrl(origin, key);
+  }
+}
+
+function validateEmailAddress(value: string, key: string) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+    throw new Error(`${key} debe ser un correo electrónico válido.`);
   }
 }
 

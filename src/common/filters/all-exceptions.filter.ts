@@ -20,7 +20,14 @@ type ErrorResponseBody = {
   error?: string;
   timestamp: string;
   path: string;
+};
+
+type ResolvedException = {
+  statusCode: number;
+  message: string | string[];
+  errorName?: string;
   stack?: string;
+  internalMessage?: string;
 };
 
 @Catch()
@@ -51,16 +58,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
     };
 
-    if (!isProduction && resolved.stack) {
-      body.stack = resolved.stack;
-    }
-
     this.logException(request, statusCode, resolved);
 
     response.status(statusCode).json(body);
   }
 
-  private resolveException(exception: unknown) {
+  private resolveException(exception: unknown): ResolvedException {
     if (exception instanceof HttpException) {
       const statusCode = exception.getStatus();
       const response = exception.getResponse();
@@ -116,7 +119,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     exception: unknown,
   ) {
     const isServerError =
-      resolved.statusCode >= HttpStatus.INTERNAL_SERVER_ERROR;
+      resolved.statusCode >= Number(HttpStatus.INTERNAL_SERVER_ERROR);
 
     if (isProduction && isServerError) {
       return 'Error interno del servidor';
@@ -166,12 +169,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       : resolved.message;
     const logMessage = `${request.method} ${request.url} -> ${statusCode} ${messageText}`;
 
-    if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (statusCode >= Number(HttpStatus.INTERNAL_SERVER_ERROR)) {
       this.logger.error(logMessage, resolved.stack);
       return;
     }
 
-    if (statusCode >= HttpStatus.BAD_REQUEST) {
+    if (statusCode >= Number(HttpStatus.BAD_REQUEST)) {
       this.logger.warn(logMessage);
     }
   }

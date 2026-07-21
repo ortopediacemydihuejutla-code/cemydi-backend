@@ -48,6 +48,11 @@ export class CartController {
     return this.cartService.removeItem(user, itemId);
   }
 
+  @Delete('rentals')
+  clearRentals(@CurrentUser() user: AuthUser) {
+    return this.cartService.clearRentals(user);
+  }
+
   @Delete()
   clearCart(@CurrentUser() user: AuthUser) {
     return this.cartService.clearCart(user);

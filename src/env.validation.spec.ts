@@ -38,4 +38,42 @@ describe('validateEnv', () => {
       }),
     ).toThrow('CORS_ORIGIN es obligatorio en production');
   });
+
+  it('accepts Brevo HTTPS configuration in production', () => {
+    const productionEnv = {
+      ...baseDevEnv,
+      NODE_ENV: 'production',
+      CORS_ORIGIN: 'https://cemydi.example',
+      BACKEND_PUBLIC_URL: 'https://api.cemydi.example',
+      FRONTEND_URL: 'https://cemydi.example',
+      CLOUDINARY_URL: 'cloudinary://key:secret@cloud',
+      BREVO_API_KEY: 'xkeysib-test',
+      EMAIL_FROM: 'sender@example.com',
+      GOOGLE_SIGNIN_CLIENT_ID: 'google-client',
+      GOOGLE_SIGNIN_CLIENT_SECRET: 'google-secret',
+    };
+
+    expect(validateEnv(productionEnv)).toMatchObject({
+      BREVO_API_KEY: 'xkeysib-test',
+      EMAIL_FROM: 'sender@example.com',
+      FRONTEND_URL: 'https://cemydi.example',
+    });
+  });
+
+  it('rejects an invalid Brevo sender address', () => {
+    expect(() =>
+      validateEnv({
+        ...baseDevEnv,
+        NODE_ENV: 'production',
+        CORS_ORIGIN: 'https://cemydi.example',
+        BACKEND_PUBLIC_URL: 'https://api.cemydi.example',
+        FRONTEND_URL: 'https://cemydi.example',
+        CLOUDINARY_URL: 'cloudinary://key:secret@cloud',
+        BREVO_API_KEY: 'xkeysib-test',
+        EMAIL_FROM: 'not-an-email',
+        GOOGLE_SIGNIN_CLIENT_ID: 'google-client',
+        GOOGLE_SIGNIN_CLIENT_SECRET: 'google-secret',
+      }),
+    ).toThrow('EMAIL_FROM debe ser un correo electrónico válido');
+  });
 });

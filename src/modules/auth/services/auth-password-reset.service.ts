@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { AuthTokenPurpose } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { BCRYPT_ROUNDS } from '../../../common/crypto/bcrypt.constants';
@@ -14,9 +14,12 @@ import { AuthSessionService } from './auth-session.service';
 import { ConfirmPasswordResetDto } from '../dto/confirm-password-reset.dto';
 import { RequestPasswordResetDto } from '../dto/request-password-reset.dto';
 import { VerifyPasswordResetCodeDto } from '../dto/verify-password-reset-code.dto';
+import { PASSWORD_RESET_PUBLIC_RESPONSE } from '../constants';
 
 @Injectable()
 export class AuthPasswordResetService {
+  private readonly logger = new Logger(AuthPasswordResetService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
@@ -36,10 +39,21 @@ export class AuthPasswordResetService {
     });
 
     if (!user) {
-      return {
-        message:
-          'Si el correo existe, enviaremos un código para restablecer la contraseña.',
-      };
+      return { ...PASSWORD_RESET_PUBLIC_RESPONSE };
+    }
+
+    const cooldownStart = new Date(Date.now() - 60_000);
+    const recentToken = await this.prisma.authToken.findFirst({
+      where: {
+        userId: user.id,
+        purpose: AuthTokenPurpose.PASSWORD_RESET_CODE,
+        createdAt: { gte: cooldownStart },
+      },
+      select: { id: true },
+    });
+
+    if (recentToken) {
+      return { ...PASSWORD_RESET_PUBLIC_RESPONSE };
     }
 
     const code = generateNumericAuthCode();
@@ -72,16 +86,20 @@ export class AuthPasswordResetService {
       }),
     ]);
 
-    await this.mailService.sendPasswordResetCode({
-      correo: user.correo,
-      nombre: user.nombre,
-      code,
-    });
+    try {
+      await this.mailService.sendPasswordResetCode({
+        correo: user.correo,
+        nombre: user.nombre,
+        code,
+      });
+    } catch (error) {
+      const errorName = error instanceof Error ? error.name : 'Error';
+      this.logger.error(
+        `No se pudo enviar la recuperación de contraseña. userId=${user.id} tipo=${errorName}`,
+      );
+    }
 
-    return {
-      message:
-        'Si el correo existe, enviaremos un código para restablecer la contraseña.',
-    };
+    return { ...PASSWORD_RESET_PUBLIC_RESPONSE };
   }
 
   async verifyPasswordResetCode(dto: VerifyPasswordResetCodeDto) {

@@ -1,0 +1,14 @@
+{
+  "browser": {
+    "launchOptions": {
+      "executablePath": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+      "headless": true
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      }
+    }
+  }
+}

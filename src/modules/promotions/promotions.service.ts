@@ -41,6 +41,7 @@ export class PromotionsService {
         product: {
           select: {
             id: true,
+            slug: true,
             nombre: true,
             clasificacion: true,
             precio: true,
@@ -98,6 +99,7 @@ export class PromotionsService {
           product: {
             select: {
               id: true,
+              slug: true,
               nombre: true,
               clasificacion: true,
               precio: true,
@@ -147,6 +149,7 @@ export class PromotionsService {
             product: {
               select: {
                 id: true,
+                slug: true,
                 nombre: true,
                 clasificacion: true,
                 precio: true,
@@ -244,6 +247,7 @@ export class PromotionsService {
           product: {
             select: {
               id: true,
+              slug: true,
               nombre: true,
               clasificacion: true,
               precio: true,
