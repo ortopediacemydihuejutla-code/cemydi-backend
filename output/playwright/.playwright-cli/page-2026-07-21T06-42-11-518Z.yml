@@ -1,9 +1,0 @@
-- generic [active] [ref=f1e1]:
-  - text: C CEMYDI Cuenta y seguridad Solicitud de seguridad
-  - heading "Restablece tu contraseña" [level=1] [ref=f1e2]
-  - paragraph [ref=f1e3]: Hola Victoria,
-  - paragraph [ref=f1e4]: "Recibimos una solicitud para cambiar la contraseña de tu cuenta. Ingresa el siguiente código en CEMYDI para continuar:"
-  - text: Código de recuperación 48392017 Vigencia del código 15 minutos · Un solo uso Si no solicitaste este cambio, ignora el mensaje. Tu contraseña actual seguirá funcionando y no se modificará.
-  - paragraph [ref=f1e5]: Protegemos el acceso a tu cuenta
-  - paragraph [ref=f1e6]: CEMYDI nunca te pedirá tu contraseña por correo. Este es un mensaje automático; por favor, no respondas.
-  - paragraph [ref=f1e7]: CEMYDI · Atención ortopédica y movilidad
