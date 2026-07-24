@@ -1,6 +1,6 @@
 import { AuthLinkToken } from './auth-link-token.decorators';
 
-export class ConfirmEmailVerificationDto {
+export class VerifyPasswordResetTokenDto {
   @AuthLinkToken()
   token: string;
 }

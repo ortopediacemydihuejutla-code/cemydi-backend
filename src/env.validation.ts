@@ -73,10 +73,15 @@ export function validateEnv(config: EnvRecord) {
     );
   }
 
+  validateOptionalBrevoApiKey(normalized);
   normalizeOptionalPositiveInteger(normalized, 'PORT');
   normalizeOptionalPositiveInteger(
     normalized,
     'EMAIL_VERIFICATION_TOKEN_EXPIRATION_MINUTES',
+  );
+  normalizeOptionalPositiveInteger(
+    normalized,
+    'EMAIL_VERIFICATION_MAX_ATTEMPTS',
   );
   normalizeOptionalPositiveInteger(
     normalized,
@@ -178,6 +183,29 @@ function validateOptionalScopedDatabaseUrl(config: EnvRecord, key: string) {
   }
 
   config[key] = validatePostgresDatabaseUrl(rawValue, key);
+}
+
+function validateOptionalBrevoApiKey(config: EnvRecord) {
+  const rawValue = config.BREVO_API_KEY;
+
+  if (typeof rawValue !== 'string' || !rawValue.trim()) {
+    return;
+  }
+
+  const apiKey = rawValue.trim();
+  if (apiKey.startsWith('xsmtpsib-')) {
+    throw new Error(
+      'BREVO_API_KEY contiene una clave SMTP (xsmtpsib-). Genera una API key v3 en Brevo > SMTP & API > API Keys y usa la que inicia con xkeysib-.',
+    );
+  }
+
+  if (!apiKey.startsWith('xkeysib-')) {
+    throw new Error(
+      'BREVO_API_KEY debe ser una API key v3 de Brevo que inicie con xkeysib-.',
+    );
+  }
+
+  config.BREVO_API_KEY = apiKey;
 }
 
 function requireNonEmptyString(value: unknown, message: string) {

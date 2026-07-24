@@ -114,6 +114,61 @@ type ProductWithImages = Prisma.ProductGetPayload<{
   include: typeof productInclude;
 }>;
 
+function normalizeRecommendationText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function productTokens(product: ProductWithImages) {
+  const weightedFields: Array<[string, number]> = [
+    [product.clasificacion, 5],
+    [product.tipoAdquisicion, 4],
+    [product.marca, 3],
+    [product.material ?? '', 3],
+    [product.nombre, 2],
+    [product.descripcion, 1],
+    [product.indicacionesUso ?? '', 1],
+    [product.medidas ?? '', 1],
+  ];
+  const tokens: string[] = [];
+  for (const [value, weight] of weightedFields) {
+    const words = normalizeRecommendationText(value)
+      .split(/\s+/)
+      .filter(Boolean);
+    for (let repeat = 0; repeat < weight; repeat += 1) tokens.push(...words);
+  }
+  tokens.push(
+    `price-${Math.floor(Math.log10(Math.max(product.precio, 1)) * 2)}`,
+  );
+  if (product.requiereReceta) tokens.push('requiere-receta');
+  return tokens;
+}
+
+function cosineSimilarity(left: string[], right: string[]) {
+  const leftCounts = new Map<string, number>();
+  const rightCounts = new Map<string, number>();
+  left.forEach((token) =>
+    leftCounts.set(token, (leftCounts.get(token) ?? 0) + 1),
+  );
+  right.forEach((token) =>
+    rightCounts.set(token, (rightCounts.get(token) ?? 0) + 1),
+  );
+  let dot = 0;
+  for (const [token, count] of leftCounts)
+    dot += count * (rightCounts.get(token) ?? 0);
+  const leftNorm = Math.sqrt(
+    [...leftCounts.values()].reduce((sum, count) => sum + count ** 2, 0),
+  );
+  const rightNorm = Math.sqrt(
+    [...rightCounts.values()].reduce((sum, count) => sum + count ** 2, 0),
+  );
+  return leftNorm && rightNorm ? dot / (leftNorm * rightNorm) : 0;
+}
+
 @Injectable()
 export class ProductsService {
   constructor(
@@ -349,6 +404,66 @@ export class ProductsService {
     }
 
     return { product: this.mapProduct(product) };
+  }
+
+  async getRecommendations(id: number, limitRaw?: string) {
+    const parsedLimit = Number(limitRaw);
+    const limit = Number.isInteger(parsedLimit)
+      ? Math.max(1, Math.min(parsedLimit, 16))
+      : 8;
+    const products = await this.prisma.product.findMany({
+      where: { activo: true },
+      include: productInclude,
+    });
+    const target = products.find((product) => product.id === id);
+    if (!target) throw new NotFoundException('Producto no encontrado');
+    const targetTokens = productTokens(target);
+    const recommendations = products
+      .filter((product) => product.id !== id)
+      .map((product) => {
+        const reasons: string[] = [];
+        if (
+          areEquivalentClassifications(
+            product.clasificacion,
+            target.clasificacion,
+          )
+        ) {
+          reasons.push('Misma categoría');
+        }
+        if (product.tipoAdquisicion === target.tipoAdquisicion) {
+          reasons.push('Misma modalidad');
+        }
+        if (product.material && product.material === target.material) {
+          reasons.push('Material similar');
+        }
+        if (
+          Math.abs(product.precio - target.precio) /
+            Math.max(target.precio, 1) <=
+          0.3
+        ) {
+          reasons.push('Rango de precio parecido');
+        }
+        return {
+          product,
+          score: cosineSimilarity(targetTokens, productTokens(product)),
+          reasons: reasons.slice(0, 2),
+        };
+      })
+      .sort((a, b) => b.score - a.score || b.product.stock - a.product.stock)
+      .slice(0, limit)
+      .map(({ product, score, reasons }) => ({
+        ...this.mapProduct(product),
+        recommendationScore: Number(score.toFixed(3)),
+        recommendationReasons: reasons.length
+          ? reasons
+          : ['Características relacionadas'],
+      }));
+
+    return {
+      method: 'Similitud de contenido (coseno)',
+      sourceProductId: id,
+      recommendations,
+    };
   }
 
   async create(dto: CreateProductDto, files: UploadedProductFile[] = []) {

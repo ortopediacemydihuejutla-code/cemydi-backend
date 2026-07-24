@@ -22,6 +22,16 @@ lerna-debug.log*
 # Tests
 /coverage
 /.nyc_output
+/test-results/
+/playwright-report/
+/blob-report/
+
+# Local test and browser artifacts
+/.playwright-cli/
+/output/
+
+# Local SQL scripts and test data
+/sql/
 
 # IDEs and editors
 /.idea

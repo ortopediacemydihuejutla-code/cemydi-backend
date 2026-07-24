@@ -36,6 +36,7 @@ describe('AuthEmailVerificationService', () => {
     mail = { sendEmailVerificationLink: jest.fn() };
     const config = {
       emailVerificationExpiresMinutes: 60,
+      emailVerificationMaxAttempts: 5,
       buildFrontendEmailVerificationUrl: jest.fn(
         (token: string) => `https://cemydi.example/verify-email?token=${token}`,
       ),
@@ -55,19 +56,77 @@ describe('AuthEmailVerificationService', () => {
     const sentUrl = mail.sendEmailVerificationLink.mock.calls[0][0]
       .verificationUrl as string;
     const rawToken = new URL(sentUrl).searchParams.get('token');
+    const sentCode = mail.sendEmailVerificationLink.mock.calls[0][0]
+      .code as string;
 
     expect(rawToken).toMatch(/^[a-f0-9]{64}$/);
     expect(createInput.data).toMatchObject({
       userId: 7,
       purpose: AuthTokenPurpose.EMAIL_VERIFICATION_LINK,
       tokenHash: hashAuthValue(rawToken ?? ''),
+      codeHash: expect.any(String),
     });
+    expect(sentCode).toMatch(/^\d{8}$/);
+    expect(createInput.data.codeHash).not.toBe(sentCode);
     expect(createInput.data.tokenHash).not.toBe(rawToken);
+    expect(mail.sendEmailVerificationLink).toHaveBeenCalledWith(
+      expect.objectContaining({ expirationMinutes: 60 }),
+    );
     expect(prisma.authToken.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ userId: 7, consumedAt: null }),
       }),
     );
+  });
+
+  it('verifies a valid numeric code and consumes the shared token', async () => {
+    prisma.authToken.findFirst.mockResolvedValue({
+      id: 'verification-code',
+      userId: 7,
+      codeHash: 'hash',
+      attemptCount: 0,
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    jest.spyOn(require('bcrypt'), 'compare').mockResolvedValue(true);
+
+    await expect(
+      service.confirmEmailVerificationCode({
+        correo: 'user@example.com',
+        codigo: '12345678',
+      }),
+    ).resolves.toEqual({ message: 'Correo verificado correctamente' });
+    expect(prisma.authToken.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'verification-code' },
+        data: { consumedAt: expect.any(Date) },
+      }),
+    );
+  });
+
+  it('counts an invalid verification code attempt', async () => {
+    prisma.authToken.findFirst.mockResolvedValue({
+      id: 'verification-code',
+      userId: 7,
+      codeHash: 'hash',
+      attemptCount: 0,
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    jest.spyOn(require('bcrypt'), 'compare').mockResolvedValue(false);
+
+    await expect(
+      service.confirmEmailVerificationCode({
+        correo: 'user@example.com',
+        codigo: '12345678',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.authToken.update).toHaveBeenCalledWith({
+      where: { id: 'verification-code' },
+      data: { attemptCount: { increment: 1 } },
+    });
   });
 
   it('verifies a valid token and consumes all pending verification links', async () => {

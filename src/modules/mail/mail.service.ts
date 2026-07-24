@@ -24,12 +24,9 @@ export class MailService {
     correo: string;
     nombre: string;
     verificationUrl: string;
+    code: string;
+    expirationMinutes: number;
   }) {
-    const expirationMinutes = this.getPositiveInteger(
-      'EMAIL_VERIFICATION_TOKEN_EXPIRATION_MINUTES',
-      this.getPositiveInteger('EMAIL_VERIFICATION_EXPIRES_MINUTES', 60),
-    );
-
     await this.sendEmail({
       to: input.correo,
       recipientName: input.nombre,
@@ -37,9 +34,18 @@ export class MailService {
       html: verifyEmailTemplate({
         recipientName: input.nombre,
         verificationUrl: input.verificationUrl,
-        expirationMinutes,
+        code: input.code,
+        expirationMinutes: input.expirationMinutes,
       }),
-      text: `Hola ${input.nombre}. Verifica tu correo en ${input.verificationUrl}. El enlace vence en ${expirationMinutes} minutos.`,
+      text: [
+        `Hola ${input.nombre},`,
+        'Gracias por crear tu cuenta en CEMYDI.',
+        `Tu código de verificación es: ${input.code}`,
+        `También puedes confirmar tu correo desde este enlace: ${input.verificationUrl}`,
+        `El código y el enlace vencen en ${input.expirationMinutes} minutos. Puedes utilizar cualquiera de las dos opciones una sola vez.`,
+        'Si no creaste esta cuenta, puedes ignorar el mensaje.',
+      ].join('\n\n'),
+      tag: 'email-verification',
     });
   }
 
@@ -47,12 +53,9 @@ export class MailService {
     correo: string;
     nombre: string;
     code: string;
+    resetUrl: string;
+    expirationMinutes: number;
   }) {
-    const expirationMinutes = this.getPositiveInteger(
-      'PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES',
-      this.getPositiveInteger('PASSWORD_RESET_EXPIRES_MINUTES', 30),
-    );
-
     await this.sendEmail({
       to: input.correo,
       recipientName: input.nombre,
@@ -60,9 +63,18 @@ export class MailService {
       html: resetPasswordTemplate({
         recipientName: input.nombre,
         code: input.code,
-        expirationMinutes,
+        resetUrl: input.resetUrl,
+        expirationMinutes: input.expirationMinutes,
       }),
-      text: `Hola ${input.nombre}. Tu código para restablecer la contraseña es ${input.code}. Vence en ${expirationMinutes} minutos.`,
+      text: [
+        `Hola ${input.nombre},`,
+        'Recibimos una solicitud para cambiar la contraseña de tu cuenta CEMYDI.',
+        `Tu código de recuperación es: ${input.code}`,
+        `También puedes continuar desde este enlace: ${input.resetUrl}`,
+        `El código y el enlace vencen en ${input.expirationMinutes} minutos. Puedes utilizar cualquiera de las dos opciones una sola vez.`,
+        'Si no solicitaste este cambio, ignora el mensaje. Tu contraseña actual no se modificará.',
+      ].join('\n\n'),
+      tag: 'password-reset',
     });
   }
 
@@ -85,6 +97,10 @@ export class MailService {
       subject: options.subject,
       htmlContent: options.html,
       ...(options.text ? { textContent: options.text } : {}),
+      headers: {
+        idempotencyKey,
+      },
+      ...(options.tag ? { tags: [options.tag] } : {}),
     };
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
@@ -114,8 +130,9 @@ export class MailService {
           continue;
         }
 
+        const providerCode = await this.readBrevoErrorCode(response);
         this.logger.error(
-          `Brevo rechazó el correo transaccional. status=${response.status} intento=${attempt}`,
+          `Brevo rechazó el correo transaccional. status=${response.status} code=${providerCode ?? 'unknown'} intento=${attempt}`,
         );
         break;
       } catch (error) {
@@ -154,7 +171,6 @@ export class MailService {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'api-key': apiKey,
-          idempotencyKey,
         },
         body: JSON.stringify(payload),
         signal: controller.signal,
@@ -176,12 +192,37 @@ export class MailService {
       );
     }
 
+    if (apiKey.startsWith('xsmtpsib-')) {
+      throw new InternalServerErrorException(
+        'BREVO_API_KEY contiene una clave SMTP. Configura una API key v3 que inicie con xkeysib-.',
+      );
+    }
+
+    if (!apiKey.startsWith('xkeysib-')) {
+      throw new InternalServerErrorException(
+        'BREVO_API_KEY no tiene el formato de una API key v3 de Brevo.',
+      );
+    }
+
     return { apiKey, senderEmail, senderName };
   }
 
-  private getPositiveInteger(key: string, fallback: number) {
-    const value = Number(this.configService.get<string>(key) ?? fallback);
-    return Number.isInteger(value) && value > 0 ? value : fallback;
+  private async readBrevoErrorCode(response: Response) {
+    try {
+      const payload = (await response.json()) as unknown;
+      if (
+        payload &&
+        typeof payload === 'object' &&
+        'code' in payload &&
+        typeof payload.code === 'string'
+      ) {
+        return payload.code;
+      }
+    } catch {
+      // Algunas respuestas del proveedor no incluyen cuerpo JSON.
+    }
+
+    return null;
   }
 
   private async waitBeforeRetry(attempt: number, retryAfter?: string | null) {

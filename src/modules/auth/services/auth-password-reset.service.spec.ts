@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { MailService } from '../../mail/mail.service';
 import { PASSWORD_RESET_PUBLIC_RESPONSE } from '../constants';
+import { hashAuthValue } from '../utils/auth-crypto.util';
 import { AuthConfigService } from './auth-config.service';
 import { AuthPasswordResetService } from './auth-password-reset.service';
 import { AuthSessionService } from './auth-session.service';
@@ -38,6 +39,10 @@ describe('AuthPasswordResetService', () => {
     const config = {
       passwordResetExpiresMinutes: 30,
       passwordResetMaxAttempts: 5,
+      buildFrontendPasswordResetUrl: jest.fn(
+        (token: string) =>
+          `https://cemydi.example/reset-password?token=${token}`,
+      ),
     };
 
     service = new AuthPasswordResetService(
@@ -71,14 +76,69 @@ describe('AuthPasswordResetService', () => {
     ).resolves.toEqual(PASSWORD_RESET_PUBLIC_RESPONSE);
 
     const sentCode = mail.sendPasswordResetCode.mock.calls[0][0].code as string;
+    const sentUrl = mail.sendPasswordResetCode.mock.calls[0][0]
+      .resetUrl as string;
+    const rawToken = new URL(sentUrl).searchParams.get('token');
     const createData = prisma.authToken.create.mock.calls[0][0].data;
     expect(sentCode).toMatch(/^\d{8}$/);
     expect(createData.codeHash).toEqual(expect.any(String));
     expect(createData.codeHash).not.toBe(sentCode);
+    expect(rawToken).toMatch(/^[a-f0-9]{64}$/);
+    expect(createData.tokenHash).toBe(hashAuthValue(rawToken ?? ''));
+    expect(mail.sendPasswordResetCode).toHaveBeenCalledWith(
+      expect.objectContaining({ expirationMinutes: 30 }),
+    );
     expect(prisma.authToken.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ userId: 9, consumedAt: null }),
       }),
+    );
+  });
+
+  it('verifies a password reset link by its stored hash', async () => {
+    const token = 'c'.repeat(64);
+    prisma.authToken.findFirst.mockResolvedValue({
+      id: 'reset-link',
+      userId: 9,
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    await expect(
+      service.verifyPasswordResetToken(token),
+    ).resolves.toMatchObject({
+      message: 'Enlace verificado correctamente',
+    });
+    expect(prisma.authToken.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tokenHash: hashAuthValue(token) }),
+      }),
+    );
+  });
+
+  it('updates the password through a valid reset link', async () => {
+    prisma.authToken.findFirst.mockResolvedValue({
+      id: 'reset-link',
+      userId: 9,
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    await expect(
+      service.confirmPasswordResetToken({
+        token: 'd'.repeat(64),
+        newPassword: 'NewSecure@1',
+      }),
+    ).resolves.toEqual({ message: 'Contraseña actualizada correctamente' });
+    expect(prisma.authToken.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'reset-link' },
+        data: { consumedAt: expect.any(Date) },
+      }),
+    );
+    expect(sessions.buildRevokeSessionsQuery).toHaveBeenCalledWith(
+      9,
+      expect.any(Date),
     );
   });
 

@@ -55,29 +55,31 @@ export class AuthConfigService {
   }
 
   get emailVerificationExpiresMinutes() {
-    return Number(
-      this.configService.get<string>(
+    return this.getPositiveInteger(
+      [
         'EMAIL_VERIFICATION_TOKEN_EXPIRATION_MINUTES',
-      ) ??
-        this.configService.get<string>('EMAIL_VERIFICATION_EXPIRES_MINUTES') ??
-        '60',
+        'EMAIL_VERIFICATION_EXPIRES_MINUTES',
+      ],
+      60,
     );
   }
 
   get passwordResetExpiresMinutes() {
-    return Number(
-      this.configService.get<string>(
+    return this.getPositiveInteger(
+      [
         'PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES',
-      ) ??
-        this.configService.get<string>('PASSWORD_RESET_EXPIRES_MINUTES') ??
-        '30',
+        'PASSWORD_RESET_EXPIRES_MINUTES',
+      ],
+      30,
     );
   }
 
   get passwordResetMaxAttempts() {
-    return Number(
-      this.configService.get<string>('PASSWORD_RESET_MAX_ATTEMPTS') ?? '5',
-    );
+    return this.getPositiveInteger(['PASSWORD_RESET_MAX_ATTEMPTS'], 5);
+  }
+
+  get emailVerificationMaxAttempts() {
+    return this.getPositiveInteger(['EMAIL_VERIFICATION_MAX_ATTEMPTS'], 5);
   }
 
   get frontendUrl() {
@@ -164,6 +166,12 @@ export class AuthConfigService {
 
   buildFrontendEmailVerificationUrl(token: string) {
     const url = new URL('/verify-email', this.frontendUrl);
+    url.searchParams.set('token', token);
+    return url.toString();
+  }
+
+  buildFrontendPasswordResetUrl(token: string) {
+    const url = new URL('/reset-password', this.frontendUrl);
     url.searchParams.set('token', token);
     return url.toString();
   }
@@ -294,6 +302,22 @@ export class AuthConfigService {
     }
 
     return null;
+  }
+
+  private getPositiveInteger(keys: string[], fallback: number) {
+    for (const key of keys) {
+      const configuredValue = this.configService.get<string>(key)?.trim();
+      if (!configuredValue) {
+        continue;
+      }
+
+      const parsedValue = Number(configuredValue);
+      if (Number.isInteger(parsedValue) && parsedValue > 0) {
+        return parsedValue;
+      }
+    }
+
+    return fallback;
   }
 
   private isSecureRequest(req?: Request) {

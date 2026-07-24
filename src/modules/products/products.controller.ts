@@ -87,6 +87,15 @@ export class ProductsController {
     return this.productsService.findOne(id, query.includeInactive, user);
   }
 
+  @Get(':id/recommendations')
+  @UseGuards(OptionalJwtAuthGuard)
+  getRecommendations(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('limit') limit: string | undefined,
+  ) {
+    return this.productsService.getRecommendations(id, limit);
+  }
+
   @Post()
   @Roles(Rol.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)

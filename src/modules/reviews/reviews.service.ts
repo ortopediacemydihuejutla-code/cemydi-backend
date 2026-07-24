@@ -119,19 +119,6 @@ export class ReviewsService {
       throw new NotFoundException('Producto no encontrado');
     }
 
-    const existingReview = await db.review.findUnique({
-      where: {
-        userId_productId: {
-          userId: currentUser.sub,
-          productId: dto.productId,
-        },
-      },
-      select: {
-        rating: true,
-      },
-    });
-
-    const ratingToPersist = existingReview?.rating ?? dto.rating;
     const status = ReviewStatus.PENDING;
 
     const review = await db.review.upsert({
@@ -144,7 +131,7 @@ export class ReviewsService {
       create: {
         productId: dto.productId,
         userId: currentUser.sub,
-        rating: ratingToPersist,
+        rating: dto.rating,
         comment: dto.comment.trim(),
         status,
         showOnHome: false,
@@ -152,7 +139,7 @@ export class ReviewsService {
         approvedById: null,
       },
       update: {
-        rating: ratingToPersist,
+        rating: dto.rating,
         comment: dto.comment.trim(),
         status,
         showOnHome: false,

@@ -34,11 +34,14 @@ import { CurrentUser } from '../decorators/current-user.decorator';
 import { Roles } from '../decorators/roles.decorator';
 import { RegisterDto } from '../dto/register.dto';
 import { ConfirmEmailVerificationDto } from '../dto/confirm-email-verification.dto';
+import { ConfirmEmailVerificationCodeDto } from '../dto/confirm-email-verification-code.dto';
 import { ConfirmPasswordResetDto } from '../dto/confirm-password-reset.dto';
+import { ConfirmPasswordResetTokenDto } from '../dto/confirm-password-reset-token.dto';
 import { EmailActionDto } from '../dto/email-action.dto';
 import { LoginDto } from '../dto/login.dto';
 import { RequestPasswordResetDto } from '../dto/request-password-reset.dto';
 import { VerifyPasswordResetCodeDto } from '../dto/verify-password-reset-code.dto';
+import { VerifyPasswordResetTokenDto } from '../dto/verify-password-reset-token.dto';
 import { SkipCsrf } from '../decorators/skip-csrf.decorator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
@@ -286,6 +289,13 @@ export class AuthController {
     return this.authService.confirmEmailVerification(dto.token);
   }
 
+  @Post('email-verification/confirm-code')
+  @SkipCsrf()
+  @Throttle(AUTH_EMAIL_VERIFICATION_CONFIRM_THROTTLE)
+  confirmEmailVerificationCode(@Body() dto: ConfirmEmailVerificationCodeDto) {
+    return this.authService.confirmEmailVerificationCode(dto);
+  }
+
   /**
    * Legacy: correos antiguos apuntaban al backend. Redirige al frontend unificado.
    */
@@ -314,11 +324,25 @@ export class AuthController {
     return this.authService.verifyPasswordResetCode(dto);
   }
 
+  @Post('password-reset/verify-token')
+  @SkipCsrf()
+  @Throttle(AUTH_PASSWORD_RESET_VERIFY_CODE_THROTTLE)
+  verifyPasswordResetToken(@Body() dto: VerifyPasswordResetTokenDto) {
+    return this.authService.verifyPasswordResetToken(dto);
+  }
+
   @Post('password-reset/confirm')
   @SkipCsrf()
   @Throttle(AUTH_PASSWORD_RESET_CONFIRM_THROTTLE)
   confirmPasswordReset(@Body() dto: ConfirmPasswordResetDto) {
     return this.authService.confirmPasswordReset(dto);
+  }
+
+  @Post('password-reset/confirm-token')
+  @SkipCsrf()
+  @Throttle(AUTH_PASSWORD_RESET_CONFIRM_THROTTLE)
+  confirmPasswordResetToken(@Body() dto: ConfirmPasswordResetTokenDto) {
+    return this.authService.confirmPasswordResetToken(dto);
   }
 
   @Post('logout')

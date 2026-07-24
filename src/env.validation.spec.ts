@@ -76,4 +76,22 @@ describe('validateEnv', () => {
       }),
     ).toThrow('EMAIL_FROM debe ser un correo electrónico válido');
   });
+
+  it('rejects a Brevo SMTP key used as an API key', () => {
+    expect(() =>
+      validateEnv({
+        ...baseDevEnv,
+        BREVO_API_KEY: 'xsmtpsib-this-is-an-smtp-key',
+      }),
+    ).toThrow('BREVO_API_KEY contiene una clave SMTP');
+  });
+
+  it('rejects an unknown Brevo credential format', () => {
+    expect(() =>
+      validateEnv({
+        ...baseDevEnv,
+        BREVO_API_KEY: 'not-a-brevo-api-key',
+      }),
+    ).toThrow('BREVO_API_KEY debe ser una API key v3');
+  });
 });

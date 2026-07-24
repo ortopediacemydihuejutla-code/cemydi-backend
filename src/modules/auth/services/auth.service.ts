@@ -7,11 +7,14 @@ import { AuthPasswordResetService } from './auth-password-reset.service';
 import { AuthSecurityOverviewService } from './auth-security-overview.service';
 import { AuthSessionService } from './auth-session.service';
 import { ConfirmPasswordResetDto } from '../dto/confirm-password-reset.dto';
+import { ConfirmPasswordResetTokenDto } from '../dto/confirm-password-reset-token.dto';
+import { ConfirmEmailVerificationCodeDto } from '../dto/confirm-email-verification-code.dto';
 import { EmailActionDto } from '../dto/email-action.dto';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { RequestPasswordResetDto } from '../dto/request-password-reset.dto';
 import { VerifyPasswordResetCodeDto } from '../dto/verify-password-reset-code.dto';
+import { VerifyPasswordResetTokenDto } from '../dto/verify-password-reset-token.dto';
 import type { SessionAuthResult } from '../types/auth.types';
 
 @Injectable()
@@ -53,6 +56,10 @@ export class AuthService {
     return this.authEmailVerificationService.confirmEmailVerification(token);
   }
 
+  confirmEmailVerificationCode(dto: ConfirmEmailVerificationCodeDto) {
+    return this.authEmailVerificationService.confirmEmailVerificationCode(dto);
+  }
+
   requestPasswordReset(dto: RequestPasswordResetDto) {
     return this.authPasswordResetService.requestPasswordReset(dto);
   }
@@ -61,8 +68,16 @@ export class AuthService {
     return this.authPasswordResetService.verifyPasswordResetCode(dto);
   }
 
+  verifyPasswordResetToken(dto: VerifyPasswordResetTokenDto) {
+    return this.authPasswordResetService.verifyPasswordResetToken(dto.token);
+  }
+
   confirmPasswordReset(dto: ConfirmPasswordResetDto) {
     return this.authPasswordResetService.confirmPasswordReset(dto);
+  }
+
+  confirmPasswordResetToken(dto: ConfirmPasswordResetTokenDto) {
+    return this.authPasswordResetService.confirmPasswordResetToken(dto);
   }
 
   tryLogoutWithToken(token: string | null | undefined): Promise<void> {

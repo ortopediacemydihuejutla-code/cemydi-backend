@@ -4,8 +4,14 @@ import { randomBytes } from 'crypto';
 import { MailService } from '../../mail/mail.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AuthConfigService } from './auth-config.service';
-import { hashAuthValue } from '../utils/auth-crypto.util';
+import {
+  generateNumericAuthCode,
+  hashAuthCode,
+  hashAuthValue,
+  verifyAuthCode,
+} from '../utils/auth-crypto.util';
 import { EmailActionDto } from '../dto/email-action.dto';
+import { ConfirmEmailVerificationCodeDto } from '../dto/confirm-email-verification-code.dto';
 import { RESEND_VERIFICATION_RESPONSE } from '../constants';
 
 @Injectable()
@@ -83,26 +89,86 @@ export class AuthEmailVerificationService {
       );
     }
 
+    await this.completeEmailVerification(authToken.id, authToken.userId, now);
+
+    return {
+      message: 'Correo verificado correctamente',
+    };
+  }
+
+  async confirmEmailVerificationCode(dto: ConfirmEmailVerificationCodeDto) {
+    const correo = dto.correo.trim().toLowerCase();
+    const codigo = dto.codigo.trim();
+    const now = new Date();
+    const authToken = await this.prisma.authToken.findFirst({
+      where: {
+        correo,
+        purpose: AuthTokenPurpose.EMAIL_VERIFICATION_LINK,
+        consumedAt: null,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+    });
+
+    if (!authToken || authToken.expiresAt <= now) {
+      throw new BadRequestException('El código es inválido o expiró');
+    }
+
+    if (
+      authToken.attemptCount >=
+      this.authConfigService.emailVerificationMaxAttempts
+    ) {
+      throw new BadRequestException(
+        'El código excedió el número de intentos permitidos',
+      );
+    }
+
+    const codeValid =
+      authToken.codeHash && (await verifyAuthCode(codigo, authToken.codeHash));
+
+    if (!codeValid) {
+      await this.prisma.authToken.update({
+        where: { id: authToken.id },
+        data: {
+          attemptCount: {
+            increment: 1,
+          },
+        },
+      });
+      throw new BadRequestException('El código es inválido o expiró');
+    }
+
+    await this.completeEmailVerification(authToken.id, authToken.userId, now);
+
+    return {
+      message: 'Correo verificado correctamente',
+    };
+  }
+
+  private async completeEmailVerification(
+    authTokenId: string,
+    userId: number,
+    now: Date,
+  ) {
     await this.prisma.$transaction([
       this.prisma.user.update({
-        where: { id: authToken.userId },
+        where: { id: userId },
         data: {
           emailVerifiedAt: now,
         },
       }),
       this.prisma.authToken.update({
-        where: { id: authToken.id },
+        where: { id: authTokenId },
         data: {
           consumedAt: now,
         },
       }),
       this.prisma.authToken.updateMany({
         where: {
-          userId: authToken.userId,
+          userId,
           purpose: AuthTokenPurpose.EMAIL_VERIFICATION_LINK,
           consumedAt: null,
           id: {
-            not: authToken.id,
+            not: authTokenId,
           },
         },
         data: {
@@ -110,10 +176,6 @@ export class AuthEmailVerificationService {
         },
       }),
     ]);
-
-    return {
-      message: 'Correo verificado correctamente',
-    };
   }
 
   async issueEmailVerificationLink(
@@ -122,11 +184,12 @@ export class AuthEmailVerificationService {
     nombre: string,
   ) {
     const rawToken = randomBytes(32).toString('hex');
+    const code = generateNumericAuthCode();
+    const codeHash = await hashAuthCode(code);
     const now = new Date();
-    const expiresAt = new Date(
-      now.getTime() +
-        this.authConfigService.emailVerificationExpiresMinutes * 60 * 1000,
-    );
+    const expirationMinutes =
+      this.authConfigService.emailVerificationExpiresMinutes;
+    const expiresAt = new Date(now.getTime() + expirationMinutes * 60 * 1000);
 
     await this.prisma.$transaction([
       this.prisma.authToken.updateMany({
@@ -145,6 +208,7 @@ export class AuthEmailVerificationService {
           correo,
           purpose: AuthTokenPurpose.EMAIL_VERIFICATION_LINK,
           tokenHash: hashAuthValue(rawToken),
+          codeHash,
           expiresAt,
         },
       }),
@@ -158,12 +222,16 @@ export class AuthEmailVerificationService {
         correo,
         nombre,
         verificationUrl,
+        code,
+        expirationMinutes,
       });
       return true;
     } catch (error) {
       const errorName = error instanceof Error ? error.name : 'Error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Error desconocido';
       this.logger.error(
-        `No se pudo enviar la verificación. userId=${userId} tipo=${errorName}`,
+        `No se pudo enviar la verificación. userId=${userId} tipo=${errorName} detalle=${errorMessage}`,
       );
       return false;
     }

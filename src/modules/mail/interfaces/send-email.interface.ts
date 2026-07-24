@@ -4,4 +4,5 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   text?: string;
+  tag?: string;
 }
