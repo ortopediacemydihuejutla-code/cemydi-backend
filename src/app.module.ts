@@ -9,6 +9,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CartModule } from './modules/cart/cart.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CatalogsModule } from './modules/catalogs/catalogs.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
@@ -43,6 +44,7 @@ import { validateEnv } from './env.validation';
     ProductsModule,
     AuthModule,
     CartModule,
+    CouponsModule,
     PrismaModule,
     CatalogsModule,
     SuppliersModule,

@@ -64,6 +64,11 @@ export class ProductsCloudinaryService {
     }
   }
 
+  async uploadPromotionImage(file: UploadedProductFile) {
+    this.validateImageOperation([], [file]);
+    return this.uploadFileToCloudinary(file, this.getCloudinaryPromotionFolder());
+  }
+
   async deleteUploadedImagesQuietly(images: UploadedProductImage[]) {
     await Promise.all(
       images
@@ -150,19 +155,27 @@ export class ProductsCloudinaryService {
     return this.uploadToCloudinary(imageUrl);
   }
 
-  private async uploadFileToCloudinary(file: UploadedProductFile) {
+  private async uploadFileToCloudinary(
+    file: UploadedProductFile,
+    folder?: string,
+  ) {
     const bytes = new Uint8Array(file.buffer);
     const blob = new Blob([bytes], { type: file.mimetype });
     return this.uploadToCloudinary(
       blob,
       sanitizeFileName(file.originalname, 'imagen'),
+      folder,
     );
   }
 
-  private async uploadToCloudinary(file: string | Blob, fileName?: string) {
+  private async uploadToCloudinary(
+    file: string | Blob,
+    fileName?: string,
+    targetFolder?: string,
+  ) {
     const credentials = this.getCloudinaryCredentials();
     const timestamp = Math.floor(Date.now() / 1000);
-    const folder = this.getCloudinaryProductFolder();
+    const folder = targetFolder ?? this.getCloudinaryProductFolder();
     const publicId = randomUUID();
     const normalizedFileName = fileName?.trim() || '';
     const signature = this.signCloudinaryParams({
@@ -301,6 +314,13 @@ export class ProductsCloudinaryService {
       .get<string>('CLOUDINARY_PRODUCTS_FOLDER')
       ?.trim();
     return configured || 'cemydi/products';
+  }
+
+  private getCloudinaryPromotionFolder() {
+    const configured = this.configService
+      .get<string>('CLOUDINARY_PROMOTIONS_FOLDER')
+      ?.trim();
+    return configured || 'cemydi/promotions';
   }
 
   private isAllowedRemoteImageHost(hostname: string) {

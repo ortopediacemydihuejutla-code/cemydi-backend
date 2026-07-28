@@ -57,7 +57,11 @@ export class AdminActivityService {
             id: true,
             descripcion: true,
             createdAt: true,
-            product: { select: { nombre: true } },
+            products: {
+              take: 1,
+              select: { product: { select: { nombre: true } } },
+            },
+            _count: { select: { products: true } },
           },
         }),
         this.prisma.supplier.findMany({
@@ -99,7 +103,11 @@ export class AdminActivityService {
       ...promotions.map((row) => ({
         id: `promotion:${row.id}:${row.createdAt.toISOString()}`,
         category: 'promotion' as const,
-        title: `Promoción creada: ${row.descripcion || row.product.nombre}`,
+        title: `Promoción creada: ${
+          row.descripcion ||
+          row.products[0]?.product.nombre ||
+          `${row._count.products} productos`
+        }`,
         occurredAt: row.createdAt.toISOString(),
         href: '/admin/promotions',
       })),

@@ -14,6 +14,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CartService } from './cart.service';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
+import { ApplyCouponDto } from './dto/apply-coupon.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 
 @Controller('cart')
@@ -38,6 +39,19 @@ export class CartController {
     @Body() dto: UpdateCartItemDto,
   ) {
     return this.cartService.updateItem(user, itemId, dto);
+  }
+
+  @Post('coupon')
+  applyCoupon(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ApplyCouponDto,
+  ) {
+    return this.cartService.applyCoupon(user, dto);
+  }
+
+  @Delete('coupon')
+  removeCoupon(@CurrentUser() user: AuthUser) {
+    return this.cartService.removeCoupon(user);
   }
 
   @Delete('items/:itemId')

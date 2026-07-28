@@ -65,6 +65,7 @@ function rentalProduct(overrides: Partial<Record<string, unknown>> = {}) {
     rentalTerms: null,
     activo: true,
     images: [],
+    promotionLinks: [],
     ...overrides,
   };
 }
@@ -342,6 +343,67 @@ describe('RentalsService', () => {
       where: { cartId: 'cart_1', mode: CartItemMode.RENTA },
     });
     expect(result.rental.id).toBe(created.id);
+  });
+
+  it('persists the active promotion in the authoritative rental price', async () => {
+    const { service, tx } = createService();
+    const startDate = futureDate(2);
+    const endDate = futureDate(3);
+    const created = rentalRequest();
+
+    tx.shoppingCart.findUnique.mockResolvedValue({
+      id: 'cart_1',
+      items: [
+        {
+          id: 1,
+          cartId: 'cart_1',
+          productId: 20,
+          quantity: 2,
+          mode: CartItemMode.RENTA,
+          rentalStartDate: startDate,
+          rentalEndDate: endDate,
+          rentalNotes: null,
+          rentalDocument: null,
+          product: rentalProduct({
+            promotionLinks: [
+              {
+                promotion: {
+                  id: 8,
+                  descripcion: 'Renta especial',
+                  discountPercent: 20,
+                  startAt: new Date('2020-01-01T00:00:00.000Z'),
+                  endAt: new Date('2099-12-31T00:00:00.000Z'),
+                },
+              },
+            ],
+          }),
+        },
+      ],
+    });
+    tx.rentalRequest.create.mockResolvedValue({ id: created.id });
+    tx.rentalRequestItem.create.mockResolvedValue({ id: 1 });
+    tx.rentalRequest.findUniqueOrThrow.mockResolvedValue(created);
+
+    await service.createFromCart(clientUser, rentalRequirements());
+
+    expect(tx.rentalRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          subtotal: 384,
+          depositTotal: 600,
+          total: 984,
+        }),
+      }),
+    );
+    expect(tx.rentalRequestItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          dailyPrice: 96,
+          lineSubtotal: 384,
+          lineTotal: 984,
+        }),
+      }),
+    );
   });
 
   it('requires a prescription document when any rental product requires one', async () => {

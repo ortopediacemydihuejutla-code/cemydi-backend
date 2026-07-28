@@ -189,7 +189,11 @@ export class AnalyticsService {
         where: {
           startAt: { lte: now },
           endAt: { gte: now },
-          product: { activo: true, stock: { gt: 0 } },
+          products: {
+            some: {
+              product: { activo: true, stock: { gt: 0 } },
+            },
+          },
         },
       }),
       this.prisma.user.count({
@@ -473,10 +477,16 @@ export class AnalyticsService {
         },
         endAt: { gte: forecastDate },
       },
-      select: { productId: true },
+      select: {
+        products: {
+          select: { productId: true },
+        },
+      },
     });
     const promoted = new Set(
-      promotionRows.map((promotion) => promotion.productId),
+      promotionRows.flatMap((promotion) =>
+        promotion.products.map((product) => product.productId),
+      ),
     );
     const forecasts = latestRows.map((row) => {
       const input: DemandDatasetRow = {

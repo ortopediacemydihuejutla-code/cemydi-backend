@@ -183,36 +183,52 @@ export class AlexaService {
       where: {
         startAt: { lte: now },
         endAt: { gte: now },
-        product: {
-          activo: true,
-          stock: { gt: 0 },
+        products: {
+          some: {
+            product: {
+              activo: true,
+              stock: { gt: 0 },
+            },
+          },
         },
       },
       include: {
-        product: {
-          include: productWithImagesInclude,
+        products: {
+          where: {
+            product: {
+              activo: true,
+              stock: { gt: 0 },
+            },
+          },
+          include: {
+            product: {
+              include: productWithImagesInclude,
+            },
+          },
         },
       },
       orderBy: [{ startAt: 'asc' }, { createdAt: 'desc' }],
       take: 12,
     });
 
-    const rentalPromotions = promotions.filter((promotion) =>
-      this.isRentalCatalogProduct(promotion.product),
+    const rentalPromotions = promotions.flatMap((promotion) =>
+      promotion.products
+        .filter(({ product }) => this.isRentalCatalogProduct(product))
+        .map(({ product }) => ({ promotion, product })),
     );
 
     return {
       screen: 'promotions',
       title: 'Promociones activas',
       total: rentalPromotions.length,
-      items: rentalPromotions.map((promotion) => ({
-        id: promotion.id,
+      items: rentalPromotions.map(({ promotion, product }) => ({
+        id: `${promotion.id}:${product.id}`,
         descripcion: promotion.descripcion,
         fechaInicio: promotion.startAt.toISOString(),
         fechaFin: promotion.endAt.toISOString(),
         imagen:
-          promotion.imageUrl || promotion.product.images[0]?.imageUrl || null,
-        product: this.mapProductCard(promotion.product),
+          promotion.imageUrl || product.images[0]?.imageUrl || null,
+        product: this.mapProductCard(product),
       })),
     };
   }

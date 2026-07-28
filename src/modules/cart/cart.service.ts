@@ -12,13 +12,20 @@ import {
 } from '../../common/dates/date-only.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../auth/types/auth-user.interface';
+import { validateCouponForSubtotal } from '../coupons/coupon-pricing.util';
+import {
+  calculateDiscountedPrice,
+  getBestActivePromotion,
+} from '../promotions/promotion-pricing.util';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
+import { ApplyCouponDto } from './dto/apply-coupon.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 
 const MAX_CART_ITEM_QUANTITY = 25;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const cartInclude = {
+  coupon: true,
   items: {
     orderBy: { updatedAt: 'desc' },
     include: {
@@ -37,6 +44,19 @@ const cartInclude = {
         include: {
           images: {
             orderBy: { sortOrder: 'asc' },
+          },
+          promotionLinks: {
+            include: {
+              promotion: {
+                select: {
+                  id: true,
+                  descripcion: true,
+                  discountPercent: true,
+                  startAt: true,
+                  endAt: true,
+                },
+              },
+            },
           },
         },
       },
@@ -125,6 +145,78 @@ export class CartService {
 
     return {
       message: 'Producto agregado al carrito',
+      cart: this.mapCart(cart),
+    };
+  }
+
+  async applyCoupon(currentUser: AuthUser, dto: ApplyCouponDto) {
+    const db = this.prisma.forUser(currentUser);
+    await this.assertActiveUser(db, currentUser.sub);
+    const currentCart = await this.findCartByUserId(db, currentUser.sub);
+    if (!currentCart || currentCart.items.length === 0) {
+      throw new BadRequestException(
+        'Agrega productos al carrito antes de usar un cupón',
+      );
+    }
+
+    const coupon = await db.coupon.findUnique({
+      where: { code: dto.code.trim().toUpperCase() },
+    });
+    if (!coupon) {
+      throw new BadRequestException('El código de cupón no existe');
+    }
+
+    const mappedCart = this.mapCart({
+      ...currentCart,
+      coupon: null,
+      couponId: null,
+    });
+    const eligibleSubtotal = Math.max(
+      0,
+      (mappedCart.summary.saleSubtotal ?? 0) -
+        (mappedCart.summary.promotionDiscountTotal ?? 0),
+    );
+    const validation = validateCouponForSubtotal(
+      coupon,
+      eligibleSubtotal,
+    );
+    if (!validation.valid) {
+      throw new BadRequestException(validation.reason);
+    }
+
+    await db.shoppingCart.update({
+      where: { id: currentCart.id },
+      data: { couponId: coupon.id },
+    });
+    const cart = await this.findCartByUserId(db, currentUser.sub);
+    return {
+      message: `Cupón ${coupon.code} aplicado`,
+      cart: this.mapCart(cart),
+    };
+  }
+
+  async removeCoupon(currentUser: AuthUser) {
+    const db = this.prisma.forUser(currentUser);
+    await this.assertActiveUser(db, currentUser.sub);
+    const cartRecord = await db.shoppingCart.findUnique({
+      where: { userId: currentUser.sub },
+      select: { id: true },
+    });
+
+    if (!cartRecord) {
+      return {
+        message: 'No había un cupón aplicado',
+        cart: this.mapCart(null),
+      };
+    }
+
+    await db.shoppingCart.update({
+      where: { id: cartRecord.id },
+      data: { couponId: null },
+    });
+    const cart = await this.findCartByUserId(db, currentUser.sub);
+    return {
+      message: 'Cupón retirado',
       cart: this.mapCart(cart),
     };
   }
@@ -534,6 +626,7 @@ export class CartService {
         id: null,
         createdAt: null,
         updatedAt: null,
+        appliedCoupon: null,
         items: [],
         summary: {
           distinctItems: 0,
@@ -542,6 +635,9 @@ export class CartService {
           saleSubtotal: 0,
           rentalSubtotal: 0,
           rentalDepositTotal: 0,
+          promotionDiscountTotal: 0,
+          couponDiscountTotal: 0,
+          discountTotal: 0,
           total: 0,
           rentalItems: 0,
           saleItems: 0,
@@ -574,15 +670,48 @@ export class CartService {
         ? this.countRentalDays(item.rentalStartDate!, item.rentalEndDate!)
         : null;
       const rentalDailyPrice = item.product.rentalDailyPrice ?? 0;
-      const rentalSubtotal = isRentalConfigured
+      const originalRentalSubtotal = isRentalConfigured
         ? Number((item.quantity * rentalDailyPrice * rentalDays!).toFixed(2))
         : null;
       const rentalDeposit = Number(
         (item.quantity * item.product.rentalDeposit).toFixed(2),
       );
-      const saleLineTotal = Number(
+      const originalSaleLineTotal = Number(
         (item.quantity * item.product.precio).toFixed(2),
       );
+      const activePromotion = getBestActivePromotion(
+        item.product.promotionLinks.map((link) => link.promotion),
+      );
+      const originalUnitPrice =
+        item.mode === CartItemMode.RENTA
+          ? rentalDailyPrice
+          : item.product.precio;
+      const discountedUnitPrice = activePromotion
+        ? calculateDiscountedPrice(
+            originalUnitPrice,
+            activePromotion.discountPercent,
+          )
+        : originalUnitPrice;
+      const saleLineTotal = Number(
+        (item.quantity * discountedUnitPrice).toFixed(2),
+      );
+      const saleDiscountAmount = Number(
+        (originalSaleLineTotal - saleLineTotal).toFixed(2),
+      );
+      const rentalSubtotal =
+        isRentalConfigured && rentalDays
+          ? Number(
+              (
+                item.quantity *
+                discountedUnitPrice *
+                rentalDays
+              ).toFixed(2),
+            )
+          : null;
+      const rentalDiscountAmount =
+        originalRentalSubtotal !== null && rentalSubtotal !== null
+          ? Number((originalRentalSubtotal - rentalSubtotal).toFixed(2))
+          : 0;
       const lineTotal =
         item.mode === CartItemMode.RENTA
           ? rentalSubtotal === null
@@ -605,13 +734,50 @@ export class CartService {
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString(),
         lineTotal,
+        ...(item.mode === CartItemMode.VENTA
+          ? {
+              originalLineTotal: originalSaleLineTotal,
+              discountAmount: saleDiscountAmount,
+              finalLineTotal: saleLineTotal,
+              promotion: activePromotion
+                ? {
+                    id: activePromotion.id,
+                    label:
+                      activePromotion.descripcion ||
+                      `${activePromotion.discountPercent}% de descuento`,
+                    percent: activePromotion.discountPercent,
+                  }
+                : null,
+            }
+          : {
+              ...(originalRentalSubtotal !== null && lineTotal !== null
+                ? {
+                    originalLineTotal:
+                      originalRentalSubtotal + rentalDeposit,
+                    discountAmount: rentalDiscountAmount,
+                    finalLineTotal: lineTotal,
+                  }
+                : {}),
+              promotion: activePromotion
+                ? {
+                    id: activePromotion.id,
+                    label:
+                      activePromotion.descripcion ||
+                      `${activePromotion.discountPercent}% de descuento`,
+                    percent: activePromotion.discountPercent,
+                  }
+                : null,
+            }),
         rentalSummary:
           item.mode === CartItemMode.RENTA
             ? {
-                dailyPrice: rentalDailyPrice,
+                dailyPrice: discountedUnitPrice,
+                originalDailyPrice: rentalDailyPrice,
                 minDays: item.product.rentalMinDays,
                 deposit: item.product.rentalDeposit,
                 subtotal: rentalSubtotal,
+                originalSubtotal: originalRentalSubtotal,
+                discountAmount: rentalDiscountAmount,
                 depositTotal: rentalDeposit,
                 total: lineTotal,
               }
@@ -664,13 +830,28 @@ export class CartService {
     const saleSubtotal = Number(
       items
         .filter((item) => item.mode === CartItemMode.VENTA)
-        .reduce((sum, item) => sum + (item.lineTotal ?? 0), 0)
+        .reduce(
+          (sum, item) => sum + (item.originalLineTotal ?? item.lineTotal ?? 0),
+          0,
+        )
+        .toFixed(2),
+    );
+    const promotionDiscountTotal = Number(
+      items
+        .reduce((sum, item) => sum + (item.discountAmount ?? 0), 0)
         .toFixed(2),
     );
     const rentalSubtotal = Number(
       items
         .filter((item) => item.mode === CartItemMode.RENTA)
-        .reduce((sum, item) => sum + (item.rentalSummary?.subtotal ?? 0), 0)
+        .reduce(
+          (sum, item) =>
+            sum +
+            (item.rentalSummary?.originalSubtotal ??
+              item.rentalSummary?.subtotal ??
+              0),
+          0,
+        )
         .toFixed(2),
     );
     const rentalDepositTotal = Number(
@@ -684,12 +865,44 @@ export class CartService {
         .toFixed(2),
     );
     const subtotal = Number((saleSubtotal + rentalSubtotal).toFixed(2));
-    const total = Number((subtotal + rentalDepositTotal).toFixed(2));
+    const salePromotionDiscountTotal = items
+      .filter((item) => item.mode === CartItemMode.VENTA)
+      .reduce((sum, item) => sum + (item.discountAmount ?? 0), 0);
+    const eligibleCouponSubtotal = Math.max(
+      0,
+      saleSubtotal - salePromotionDiscountTotal,
+    );
+    const couponValidation = cart.coupon
+      ? validateCouponForSubtotal(cart.coupon, eligibleCouponSubtotal)
+      : null;
+    const couponDiscountTotal = couponValidation?.valid
+      ? couponValidation.discountAmount
+      : 0;
+    const discountTotal = Number(
+      (promotionDiscountTotal + couponDiscountTotal).toFixed(2),
+    );
+    const total = Number(
+      (subtotal - discountTotal + rentalDepositTotal).toFixed(2),
+    );
 
     return {
       id: cart.id,
       createdAt: cart.createdAt.toISOString(),
       updatedAt: cart.updatedAt.toISOString(),
+      appliedCoupon: cart.coupon
+        ? {
+            id: cart.coupon.id,
+            code: cart.coupon.code,
+            description: cart.coupon.description,
+            discountType: cart.coupon.discountType,
+            discountValue: cart.coupon.discountValue,
+            minimumPurchase: cart.coupon.minimumPurchase,
+            maximumDiscount: cart.coupon.maximumDiscount,
+            discountAmount: couponDiscountTotal,
+            isValid: couponValidation?.valid ?? false,
+            reason: couponValidation?.reason ?? null,
+          }
+        : null,
       items,
       summary: {
         distinctItems: items.length,
@@ -698,6 +911,9 @@ export class CartService {
         saleSubtotal,
         rentalSubtotal,
         rentalDepositTotal,
+        promotionDiscountTotal,
+        couponDiscountTotal,
+        discountTotal,
         total,
         rentalItems: items.filter((item) => item.mode === CartItemMode.RENTA)
           .length,

@@ -15,6 +15,7 @@ import type { AuthUser } from '../auth/types/auth-user.interface';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalSessionJwtAuthGuard } from '../auth/guards/optional-session-jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
@@ -27,8 +28,12 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
-  getMe(@CurrentUser() user: AuthUser) {
+  @UseGuards(OptionalSessionJwtAuthGuard)
+  getMe(@CurrentUser() user?: AuthUser) {
+    if (!user) {
+      return { user: null };
+    }
+
     return this.usersService.getMe(user);
   }
 

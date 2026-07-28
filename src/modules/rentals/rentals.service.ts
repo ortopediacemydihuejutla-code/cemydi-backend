@@ -20,6 +20,10 @@ import {
 } from '../../common/dates/date-only.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../auth/types/auth-user.interface';
+import {
+  calculateDiscountedPrice,
+  getBestActivePromotion,
+} from '../promotions/promotion-pricing.util';
 import { CreateRentalFromCartDto } from './dto/create-rental-from-cart.dto';
 import { UpdateRentalDepositDto } from './dto/update-rental-deposit.dto';
 import {
@@ -282,6 +286,11 @@ export class RentalsService {
                   images: {
                     orderBy: { sortOrder: 'asc' },
                   },
+                  promotionLinks: {
+                    include: {
+                      promotion: true,
+                    },
+                  },
                 },
               },
             },
@@ -309,13 +318,24 @@ export class RentalsService {
           );
         }
 
+        const activePromotion = getBestActivePromotion(
+          item.product.promotionLinks.map((link) => link.promotion),
+        );
+        const rentalDailyPrice = item.product.rentalDailyPrice ?? 0;
+        const effectiveDailyPrice = activePromotion
+          ? calculateDiscountedPrice(
+              rentalDailyPrice,
+              activePromotion.discountPercent,
+            )
+          : rentalDailyPrice;
+
         return {
           item,
           ...this.calculateLine({
             quantity: item.quantity,
             startDate: dates.startDate,
             endDate: dates.endDate,
-            dailyPrice: item.product.rentalDailyPrice ?? 0,
+            dailyPrice: effectiveDailyPrice,
             deposit: item.product.rentalDeposit,
           }),
         };

@@ -11,6 +11,7 @@ export type AdminNotificationItem = {
   description: string;
   occurredAt: string;
   href: string;
+  readAt: string | null;
 };
 
 const DEFAULT_LIMIT = 40;
@@ -19,7 +20,10 @@ const DEFAULT_LIMIT = 40;
 export class AdminNotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listCurrent(limit = DEFAULT_LIMIT): Promise<{
+  async listCurrent(
+    userId: number,
+    limit = DEFAULT_LIMIT,
+  ): Promise<{
     items: AdminNotificationItem[];
     checkedAt: string;
   }> {
@@ -62,7 +66,7 @@ export class AdminNotificationsService {
       }),
     ]);
 
-    const items: AdminNotificationItem[] = [
+    const items = [
       ...rentals.map((rental) => ({
         id: `rental:${rental.id}`,
         category: 'rental' as const,
@@ -97,9 +101,53 @@ export class AdminNotificationsService {
         new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
     );
 
+    const visibleItems = items.slice(0, take);
+    const readRows =
+      visibleItems.length === 0
+        ? []
+        : await this.prisma.adminNotificationRead.findMany({
+            where: {
+              userId,
+              notificationId: { in: visibleItems.map((item) => item.id) },
+            },
+            select: {
+              notificationId: true,
+              readAt: true,
+            },
+          });
+    const readAtById = new Map(
+      readRows.map((row) => [row.notificationId, row.readAt.toISOString()]),
+    );
+
     return {
-      items: items.slice(0, take),
+      items: visibleItems.map((item) => ({
+        ...item,
+        readAt: readAtById.get(item.id) ?? null,
+      })),
       checkedAt: checkedAt.toISOString(),
+    };
+  }
+
+  async markAsRead(userId: number, ids: string[]) {
+    const notificationIds = [...new Set(ids.map((id) => id.trim()))].filter(
+      Boolean,
+    );
+    const readAt = new Date();
+
+    if (notificationIds.length > 0) {
+      await this.prisma.adminNotificationRead.createMany({
+        data: notificationIds.map((notificationId) => ({
+          userId,
+          notificationId,
+          readAt,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    return {
+      ids: notificationIds,
+      readAt: readAt.toISOString(),
     };
   }
 }

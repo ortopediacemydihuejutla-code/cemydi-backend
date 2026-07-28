@@ -2,33 +2,32 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
-  IsOptional,
   IsString,
+  Max,
   MaxLength,
   Min,
   MinLength,
-  ValidateIf,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export enum PromotionMode {
-  PRODUCT = 'PRODUCT',
-  CATEGORY = 'CATEGORY',
+export enum PromotionImageStrategyInput {
+  AUTO = 'AUTO',
+  CUSTOM = 'CUSTOM',
 }
 
 export class CreatePromotionDto {
-  @IsEnum(PromotionMode)
-  mode!: PromotionMode;
+  @IsString()
+  @MaxLength(4000)
+  productIds!: string;
 
-  @ValidateIf((dto: CreatePromotionDto) => dto.mode === PromotionMode.PRODUCT)
   @IsInt()
   @Min(1)
-  productId?: number;
+  @Max(90)
+  @Type(() => Number)
+  discountPercent!: number;
 
-  @ValidateIf((dto: CreatePromotionDto) => dto.mode === PromotionMode.CATEGORY)
-  @IsString()
-  @MinLength(2)
-  @MaxLength(80)
-  clasificacion?: string;
+  @IsEnum(PromotionImageStrategyInput)
+  imageStrategy!: PromotionImageStrategyInput;
 
   @IsDateString()
   startAt!: string;
@@ -40,9 +39,4 @@ export class CreatePromotionDto {
   @MinLength(5)
   @MaxLength(240)
   descripcion!: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  imageUrl?: string;
 }

@@ -28,6 +28,7 @@ function product(overrides: Record<string, unknown> = {}) {
     rentalTerms: null,
     activo: true,
     images: [],
+    promotionLinks: [],
     ...overrides,
   };
 }
@@ -146,16 +147,16 @@ describe('CartService rental phase 1', () => {
     tx.shoppingCart.findUnique.mockResolvedValue(
       cart([
         cartItem({
-          rentalStartDate: new Date('2026-07-20T00:00:00.000Z'),
-          rentalEndDate: new Date('2026-07-22T00:00:00.000Z'),
+          rentalStartDate: new Date('2099-07-20T00:00:00.000Z'),
+          rentalEndDate: new Date('2099-07-22T00:00:00.000Z'),
         }),
       ]),
     );
 
     const result = await service.updateItem(clientUser, 1, {
       quantity: 1,
-      rentalStartDate: '2026-07-20',
-      rentalEndDate: '2026-07-22',
+      rentalStartDate: '2099-07-20',
+      rentalEndDate: '2099-07-22',
     });
 
     expect(result.cart.items[0]).toEqual(
@@ -192,6 +193,113 @@ describe('CartService rental phase 1', () => {
     expect(
       result.cart.items.find((item) => item.id === 1)?.lineTotal,
     ).toBeNull();
+  });
+
+  it('applies the best active promotion to sale totals', async () => {
+    const { service, tx } = setup();
+    tx.shoppingCart.findUnique.mockResolvedValue(
+      cart([
+        cartItem({
+          mode: CartItemMode.VENTA,
+          quantity: 2,
+          product: product({
+            requiereReceta: false,
+            promotionLinks: [
+              {
+                promotion: {
+                  id: 7,
+                  descripcion: 'Oferta de temporada',
+                  discountPercent: 20,
+                  startAt: new Date('2020-01-01T00:00:00.000Z'),
+                  endAt: new Date('2099-01-01T00:00:00.000Z'),
+                },
+              },
+            ],
+          }),
+        }),
+      ]),
+    );
+
+    const result = await service.getCart(clientUser);
+
+    expect(result.cart.items[0]).toEqual(
+      expect.objectContaining({
+        originalLineTotal: 2000,
+        discountAmount: 400,
+        finalLineTotal: 1600,
+        lineTotal: 1600,
+      }),
+    );
+    expect(result.cart.items[0]?.promotion).toMatchObject({
+      id: 7,
+      percent: 20,
+    });
+    expect(result.cart.summary).toEqual(
+      expect.objectContaining({
+        subtotal: 2000,
+        discountTotal: 400,
+        total: 1600,
+      }),
+    );
+  });
+
+  it('applies active promotions to the rental daily rate and totals', async () => {
+    const { service, tx } = setup();
+    tx.shoppingCart.findUnique.mockResolvedValue(
+      cart([
+        cartItem({
+          rentalStartDate: new Date('2099-07-20T00:00:00.000Z'),
+          rentalEndDate: new Date('2099-07-22T00:00:00.000Z'),
+          product: product({
+            promotionLinks: [
+              {
+                promotion: {
+                  id: 8,
+                  descripcion: 'Renta especial',
+                  discountPercent: 20,
+                  startAt: new Date('2020-01-01T00:00:00.000Z'),
+                  endAt: new Date('2099-12-31T00:00:00.000Z'),
+                },
+              },
+            ],
+          }),
+        }),
+      ]),
+    );
+
+    const result = await service.getCart(clientUser);
+
+    expect(result.cart.items[0]).toEqual(
+      expect.objectContaining({
+        originalLineTotal: 660,
+        discountAmount: 72,
+        finalLineTotal: 588,
+        lineTotal: 588,
+      }),
+    );
+    expect(result.cart.items[0]?.promotion).toMatchObject({
+      id: 8,
+      percent: 20,
+    });
+    expect(result.cart.items[0]?.rentalSummary).toEqual(
+      expect.objectContaining({
+        dailyPrice: 96,
+        originalDailyPrice: 120,
+        originalSubtotal: 360,
+        subtotal: 288,
+        discountAmount: 72,
+        total: 588,
+      }),
+    );
+    expect(result.cart.summary).toEqual(
+      expect.objectContaining({
+        subtotal: 360,
+        rentalSubtotal: 360,
+        promotionDiscountTotal: 72,
+        discountTotal: 72,
+        total: 588,
+      }),
+    );
   });
 
   it('clears only rental items and preserves sale items', async () => {

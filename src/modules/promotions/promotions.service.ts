@@ -3,21 +3,63 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, PromotionImageStrategy } from '@prisma/client';
 import { assertAdmin } from '../../common/auth/assert-admin.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../auth/types/auth-user.interface';
-import { CreatePromotionDto, PromotionMode } from './dto/create-promotion.dto';
+import type { UploadedProductFile } from '../products/products-cloudinary.types';
+import { ProductsCloudinaryService } from '../products/products-cloudinary.service';
+import {
+  CreatePromotionDto,
+  PromotionImageStrategyInput,
+} from './dto/create-promotion.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
+import { calculateDiscountedPrice } from './promotion-pricing.util';
 
 type FindPromotionsParams = {
   includeExpired: boolean;
   user?: AuthUser;
 };
 
+const promotionProductSelect = {
+  id: true,
+  slug: true,
+  nombre: true,
+  marca: true,
+  modelo: true,
+  clasificacion: true,
+  precio: true,
+  stock: true,
+  activo: true,
+  tipoAdquisicion: true,
+  requiereReceta: true,
+  images: {
+    orderBy: { sortOrder: 'asc' as const },
+    take: 1,
+    select: { imageUrl: true },
+  },
+} satisfies Prisma.ProductSelect;
+
+const promotionInclude = {
+  products: {
+    include: {
+      product: {
+        select: promotionProductSelect,
+      },
+    },
+  },
+} satisfies Prisma.PromotionInclude;
+
+type PromotionCampaign = Prisma.PromotionGetPayload<{
+  include: typeof promotionInclude;
+}>;
+
 @Injectable()
 export class PromotionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: ProductsCloudinaryService,
+  ) {}
 
   async findAll(params: FindPromotionsParams) {
     const db = this.prisma.forUser(params.user);
@@ -29,264 +71,371 @@ export class PromotionsService {
       const now = new Date();
       where.startAt = { lte: now };
       where.endAt = { gte: now };
-      where.product = {
-        activo: true,
-        stock: { gt: 0 },
+      where.products = {
+        some: {
+          product: {
+            activo: true,
+            stock: { gt: 0 },
+          },
+        },
       };
     }
 
-    const promotions = await db.promotion.findMany({
+    const campaigns = await db.promotion.findMany({
       where,
-      include: {
-        product: {
-          select: {
-            id: true,
-            slug: true,
-            nombre: true,
-            clasificacion: true,
-            precio: true,
-            stock: true,
-            activo: true,
-          },
-        },
-      },
+      include: promotionInclude,
       orderBy: [{ startAt: 'asc' }, { createdAt: 'desc' }],
     });
 
-    return { promotions };
-  }
-
-  async create(dto: CreatePromotionDto) {
-    const startAt = new Date(dto.startAt);
-    const endAt = new Date(dto.endAt);
-
-    if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
-      throw new BadRequestException('Fechas de promocion invalidas');
-    }
-
-    if (startAt >= endAt) {
-      throw new BadRequestException(
-        'La fecha final debe ser posterior a la fecha de inicio',
-      );
-    }
-
-    const imageUrl = dto.imageUrl?.trim() || null;
-    const descripcion = dto.descripcion.trim();
-
-    if (dto.mode === PromotionMode.PRODUCT) {
-      if (!dto.productId) {
-        throw new BadRequestException('Selecciona un producto');
-      }
-
-      const product = await this.prisma.product.findUnique({
-        where: { id: dto.productId },
-        select: { id: true },
-      });
-
-      if (!product) {
-        throw new BadRequestException('Producto no encontrado');
-      }
-
-      const promotion = await this.prisma.promotion.create({
-        data: {
-          productId: dto.productId,
-          descripcion,
-          startAt,
-          endAt,
-          imageUrl,
-        },
-        include: {
-          product: {
-            select: {
-              id: true,
-              slug: true,
-              nombre: true,
-              clasificacion: true,
-              precio: true,
-              stock: true,
-              activo: true,
-            },
-          },
-        },
-      });
-
+    if (params.includeExpired) {
       return {
-        message: 'Promocion creada correctamente',
-        promotions: [promotion],
+        promotions: campaigns.map((campaign) =>
+          this.serializeCampaign(campaign),
+        ),
       };
     }
 
-    const clasificacion = dto.clasificacion?.trim();
-    if (!clasificacion) {
-      throw new BadRequestException('Selecciona una clasificacion');
-    }
-
-    const products = await this.prisma.product.findMany({
-      where: {
-        clasificacion: clasificacion,
-        activo: true,
-      },
-      select: { id: true },
-    });
-
-    if (products.length === 0) {
-      throw new BadRequestException(
-        'No hay productos activos en esa clasificacion',
-      );
-    }
-
-    const promotions = await this.prisma.$transaction(
-      products.map((product) =>
-        this.prisma.promotion.create({
-          data: {
-            productId: product.id,
-            descripcion,
-            startAt,
-            endAt,
-            imageUrl,
-          },
-          include: {
-            product: {
-              select: {
-                id: true,
-                slug: true,
-                nombre: true,
-                clasificacion: true,
-                precio: true,
-                stock: true,
-                activo: true,
-              },
-            },
-          },
-        }),
-      ),
-    );
-
     return {
-      message: `Se crearon ${promotions.length} promociones`,
-      promotions,
+      promotions: campaigns.flatMap((campaign) =>
+        this.serializePublicOffers(campaign),
+      ),
     };
   }
 
-  async update(id: number, dto: UpdatePromotionDto) {
-    const currentPromotion = await this.prisma.promotion.findUnique({
+  async create(dto: CreatePromotionDto, imageFile?: UploadedProductFile) {
+    const { startAt, endAt } = this.parseDates(dto.startAt, dto.endAt);
+    const productIds = this.parseProductIds(dto.productIds);
+    await this.assertProductsExist(productIds);
+
+    const imageStrategy = dto.imageStrategy as PromotionImageStrategy;
+    const uploadedImage = await this.resolveNewCustomImage(
+      imageStrategy,
+      imageFile,
+    );
+
+    try {
+      const campaign = await this.prisma.promotion.create({
+        data: {
+          discountPercent: dto.discountPercent,
+          descripcion: dto.descripcion.trim(),
+          startAt,
+          endAt,
+          imageStrategy,
+          imageUrl: uploadedImage?.imageUrl ?? null,
+          imageCloudinaryPublicId:
+            uploadedImage?.cloudinaryPublicId ?? null,
+          products: {
+            create: productIds.map((productId) => ({ productId })),
+          },
+        },
+        include: promotionInclude,
+      });
+
+      return {
+        message: `Promoción creada para ${productIds.length} producto${productIds.length === 1 ? '' : 's'}`,
+        promotion: this.serializeCampaign(campaign),
+      };
+    } catch (error) {
+      if (uploadedImage) {
+        await this.cloudinary.deleteUploadedImagesQuietly([uploadedImage]);
+      }
+      throw error;
+    }
+  }
+
+  async update(
+    id: number,
+    dto: UpdatePromotionDto,
+    imageFile?: UploadedProductFile,
+  ) {
+    const current = await this.prisma.promotion.findUnique({
       where: { id },
-      select: {
-        id: true,
-        startAt: true,
-        endAt: true,
-      },
+      include: promotionInclude,
     });
 
-    if (!currentPromotion) {
-      throw new NotFoundException('Promocion no encontrada');
+    if (!current) {
+      throw new NotFoundException('Promoción no encontrada');
     }
 
     const nextStartAt = dto.startAt
       ? new Date(dto.startAt)
-      : currentPromotion.startAt;
-    const nextEndAt = dto.endAt ? new Date(dto.endAt) : currentPromotion.endAt;
+      : current.startAt;
+    const nextEndAt = dto.endAt ? new Date(dto.endAt) : current.endAt;
+    this.assertValidDates(nextStartAt, nextEndAt);
 
-    if (
-      Number.isNaN(nextStartAt.getTime()) ||
-      Number.isNaN(nextEndAt.getTime())
-    ) {
-      throw new BadRequestException('Fechas de promocion invalidas');
+    const productIds =
+      dto.productIds !== undefined
+        ? this.parseProductIds(dto.productIds)
+        : null;
+    if (productIds) {
+      await this.assertProductsExist(productIds);
     }
 
-    if (nextStartAt >= nextEndAt) {
+    const nextStrategy =
+      (dto.imageStrategy as PromotionImageStrategy | undefined) ??
+      current.imageStrategy;
+    let uploadedImage: Awaited<
+      ReturnType<ProductsCloudinaryService['uploadPromotionImage']>
+    > | null = null;
+
+    if (nextStrategy === PromotionImageStrategy.CUSTOM && imageFile) {
+      uploadedImage = await this.cloudinary.uploadPromotionImage(imageFile);
+    } else if (
+      nextStrategy === PromotionImageStrategy.CUSTOM &&
+      !current.imageUrl
+    ) {
       throw new BadRequestException(
-        'La fecha final debe ser posterior a la fecha de inicio',
+        'Agrega una imagen personalizada para esta promoción',
+      );
+    } else if (
+      nextStrategy === PromotionImageStrategy.AUTO &&
+      imageFile
+    ) {
+      throw new BadRequestException(
+        'No adjuntes una imagen cuando el modo automático está activo',
       );
     }
 
-    const data: Prisma.PromotionUpdateInput = {};
-
-    if (dto.productId !== undefined) {
-      const product = await this.prisma.product.findUnique({
-        where: { id: dto.productId },
-        select: { id: true },
-      });
-
-      if (!product) {
-        throw new BadRequestException('Producto no encontrado');
-      }
-
-      data.product = {
-        connect: {
-          id: dto.productId,
-        },
-      };
-    }
-
-    if (dto.startAt !== undefined) {
-      data.startAt = nextStartAt;
-    }
-
-    if (dto.endAt !== undefined) {
-      data.endAt = nextEndAt;
-    }
-
-    if (dto.descripcion !== undefined) {
-      data.descripcion = dto.descripcion.trim();
-    }
-
-    if (dto.imageUrl !== undefined) {
-      data.imageUrl = dto.imageUrl.trim() || null;
-    }
-
-    if (Object.keys(data).length === 0) {
-      throw new BadRequestException('No hay cambios para actualizar');
-    }
+    const data: Prisma.PromotionUpdateInput = {
+      ...(dto.discountPercent !== undefined
+        ? { discountPercent: dto.discountPercent }
+        : {}),
+      ...(dto.descripcion !== undefined
+        ? { descripcion: dto.descripcion.trim() }
+        : {}),
+      ...(dto.startAt !== undefined ? { startAt: nextStartAt } : {}),
+      ...(dto.endAt !== undefined ? { endAt: nextEndAt } : {}),
+      imageStrategy: nextStrategy,
+      imageUrl:
+        nextStrategy === PromotionImageStrategy.AUTO
+          ? null
+          : uploadedImage?.imageUrl ?? current.imageUrl,
+      imageCloudinaryPublicId:
+        nextStrategy === PromotionImageStrategy.AUTO
+          ? null
+          : uploadedImage?.cloudinaryPublicId ??
+            current.imageCloudinaryPublicId,
+      ...(productIds
+        ? {
+            products: {
+              deleteMany: {},
+              create: productIds.map((productId) => ({ productId })),
+            },
+          }
+        : {}),
+    };
 
     try {
-      const promotion = await this.prisma.promotion.update({
+      const campaign = await this.prisma.promotion.update({
         where: { id },
         data,
-        include: {
-          product: {
-            select: {
-              id: true,
-              slug: true,
-              nombre: true,
-              clasificacion: true,
-              precio: true,
-              stock: true,
-              activo: true,
-            },
-          },
-        },
+        include: promotionInclude,
       });
 
+      const shouldDeletePreviousImage =
+        Boolean(current.imageCloudinaryPublicId) &&
+        (nextStrategy === PromotionImageStrategy.AUTO ||
+          Boolean(uploadedImage));
+      if (shouldDeletePreviousImage) {
+        await this.cloudinary.deleteUploadedImagesQuietly([
+          {
+            imageUrl: current.imageUrl ?? '',
+            cloudinaryPublicId: current.imageCloudinaryPublicId,
+          },
+        ]);
+      }
+
       return {
-        message: 'Promocion actualizada correctamente',
-        promotion,
+        message: 'Promoción actualizada correctamente',
+        promotion: this.serializeCampaign(campaign),
       };
     } catch (error) {
+      if (uploadedImage) {
+        await this.cloudinary.deleteUploadedImagesQuietly([uploadedImage]);
+      }
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException('Promocion no encontrada');
+        throw new NotFoundException('Promoción no encontrada');
       }
-
       throw error;
     }
   }
 
   async remove(id: number) {
-    try {
-      await this.prisma.promotion.delete({ where: { id } });
-      return { message: 'Promocion eliminada correctamente' };
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException('Promocion no encontrada');
-      }
+    const current = await this.prisma.promotion.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        imageUrl: true,
+        imageCloudinaryPublicId: true,
+      },
+    });
 
-      throw error;
+    if (!current) {
+      throw new NotFoundException('Promoción no encontrada');
     }
+
+    await this.prisma.promotion.delete({ where: { id } });
+
+    if (current.imageCloudinaryPublicId) {
+      await this.cloudinary.deleteUploadedImagesQuietly([
+        {
+          imageUrl: current.imageUrl ?? '',
+          cloudinaryPublicId: current.imageCloudinaryPublicId,
+        },
+      ]);
+    }
+
+    return { message: 'Promoción eliminada correctamente' };
+  }
+
+  private serializeCampaign(campaign: PromotionCampaign) {
+    const products = campaign.products
+      .map(({ product }) => this.serializeProduct(product))
+      .sort((a, b) =>
+        a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }),
+      );
+
+    return {
+      ...campaign,
+      products,
+      productCount: products.length,
+      displayImageUrl:
+        campaign.imageStrategy === PromotionImageStrategy.CUSTOM
+          ? campaign.imageUrl
+          : products[0]?.imageUrl ?? null,
+    };
+  }
+
+  private serializePublicOffers(campaign: PromotionCampaign) {
+    return campaign.products
+      .map(({ product }) => this.serializeProduct(product))
+      .filter((product) => product.activo && product.stock > 0)
+      .map((product) => ({
+        id: campaign.id,
+        productId: product.id,
+        discountPercent: campaign.discountPercent,
+        discountedPrice: calculateDiscountedPrice(
+          product.precio,
+          campaign.discountPercent,
+        ),
+        descripcion: campaign.descripcion,
+        startAt: campaign.startAt,
+        endAt: campaign.endAt,
+        imageStrategy: campaign.imageStrategy,
+        imageUrl:
+          campaign.imageStrategy === PromotionImageStrategy.CUSTOM
+            ? campaign.imageUrl
+            : product.imageUrl,
+        createdAt: campaign.createdAt,
+        product,
+      }));
+  }
+
+  private serializeProduct(
+    product: PromotionCampaign['products'][number]['product'],
+  ) {
+    const { images, ...data } = product;
+    return {
+      ...data,
+      imageUrl: images[0]?.imageUrl ?? null,
+    };
+  }
+
+  private parseDates(startValue: string, endValue: string) {
+    const startAt = new Date(startValue);
+    const endAt = new Date(endValue);
+    this.assertValidDates(startAt, endAt);
+    return { startAt, endAt };
+  }
+
+  private assertValidDates(startAt: Date, endAt: Date) {
+    if (
+      Number.isNaN(startAt.getTime()) ||
+      Number.isNaN(endAt.getTime())
+    ) {
+      throw new BadRequestException('Fechas de promoción inválidas');
+    }
+    if (startAt >= endAt) {
+      throw new BadRequestException(
+        'La fecha final debe ser posterior a la fecha de inicio',
+      );
+    }
+  }
+
+  private parseProductIds(raw: string) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new BadRequestException('La selección de productos es inválida');
+    }
+
+    if (!Array.isArray(parsed)) {
+      throw new BadRequestException('Selecciona al menos un producto');
+    }
+
+    const productIds = Array.from(
+      new Set(
+        parsed.map((value) =>
+          typeof value === 'number' ? value : Number(value),
+        ),
+      ),
+    );
+
+    if (
+      productIds.length === 0 ||
+      productIds.length > 100 ||
+      productIds.some(
+        (productId) =>
+          !Number.isInteger(productId) || productId <= 0,
+      )
+    ) {
+      throw new BadRequestException(
+        'Selecciona entre 1 y 100 productos válidos',
+      );
+    }
+
+    return productIds;
+  }
+
+  private async assertProductsExist(productIds: number[]) {
+    const count = await this.prisma.product.count({
+      where: { id: { in: productIds } },
+    });
+    if (count !== productIds.length) {
+      throw new BadRequestException(
+        'Uno o más productos seleccionados ya no existen',
+      );
+    }
+  }
+
+  private async resolveNewCustomImage(
+    imageStrategy: PromotionImageStrategy,
+    imageFile?: UploadedProductFile,
+  ) {
+    if (imageStrategy === PromotionImageStrategy.AUTO) {
+      if (imageFile) {
+        throw new BadRequestException(
+          'No adjuntes una imagen cuando el modo automático está activo',
+        );
+      }
+      return null;
+    }
+
+    if (
+      imageStrategy !==
+      (PromotionImageStrategyInput.CUSTOM as PromotionImageStrategy)
+    ) {
+      throw new BadRequestException('Modo de imagen inválido');
+    }
+    if (!imageFile) {
+      throw new BadRequestException(
+        'Agrega una imagen personalizada para esta promoción',
+      );
+    }
+    return this.cloudinary.uploadPromotionImage(imageFile);
   }
 }
