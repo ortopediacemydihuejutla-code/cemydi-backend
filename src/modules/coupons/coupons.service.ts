@@ -122,10 +122,7 @@ export class CouponsService {
   }
 
   private assertValidDates(startAt: Date, endAt: Date) {
-    if (
-      Number.isNaN(startAt.getTime()) ||
-      Number.isNaN(endAt.getTime())
-    ) {
+    if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
       throw new BadRequestException('Fechas del cupón inválidas');
     }
     if (startAt >= endAt) {
@@ -139,10 +136,7 @@ export class CouponsService {
     discountType: CouponDiscountType,
     discountValue: number,
   ) {
-    if (
-      discountType === CouponDiscountType.PERCENT &&
-      discountValue > 100
-    ) {
+    if (discountType === CouponDiscountType.PERCENT && discountValue > 100) {
       throw new BadRequestException(
         'El descuento porcentual no puede superar 100%',
       );

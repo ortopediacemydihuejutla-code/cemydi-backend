@@ -45,6 +45,84 @@ function standardize(vectors: number[][]) {
   );
 }
 
+function compareVectors(a: number[], b: number[]) {
+  for (let index = 0; index < a.length; index += 1) {
+    if (a[index] !== b[index]) return a[index] - b[index];
+  }
+  return 0;
+}
+
+function initializeCentroids(vectors: number[][], k: number) {
+  const first = [...vectors].sort((a, b) => {
+    const distanceDifference =
+      distanceSquared(a, Array<number>(a.length).fill(0)) -
+      distanceSquared(b, Array<number>(b.length).fill(0));
+    return distanceDifference || compareVectors(a, b);
+  })[0];
+  const centroids = [[...first]];
+
+  while (centroids.length < k) {
+    const candidate = [...vectors].sort((a, b) => {
+      const nearestA = Math.min(
+        ...centroids.map((centroid) => distanceSquared(a, centroid)),
+      );
+      const nearestB = Math.min(
+        ...centroids.map((centroid) => distanceSquared(b, centroid)),
+      );
+      return nearestB - nearestA || compareVectors(a, b);
+    })[0];
+    centroids.push([...candidate]);
+  }
+
+  return centroids;
+}
+
+function permutations(values: number[]): number[][] {
+  if (values.length <= 1) return [values];
+  return values.flatMap((value, index) =>
+    permutations(values.filter((_, candidate) => candidate !== index)).map(
+      (rest) => [value, ...rest],
+    ),
+  );
+}
+
+function mapClustersByCentroid(centroids: number[][]) {
+  const roleScores = centroids.map((centroid) => ({
+    buyer: centroid[0] + centroid[1],
+    renter: centroid[2] + centroid[3],
+    explorer: centroid[4] + centroid[5] - 0.25 * (centroid[0] + centroid[2]),
+    lowActivity:
+      centroid[6] -
+      centroid[4] -
+      centroid[5] -
+      0.25 * (centroid[0] + centroid[2]),
+  }));
+  const candidates = permutations([0, 1, 2, 3]);
+  const best = candidates.reduce(
+    (currentBest, candidate) => {
+      const score =
+        roleScores[candidate[0]].buyer +
+        roleScores[candidate[1]].renter +
+        roleScores[candidate[2]].explorer +
+        roleScores[candidate[3]].lowActivity;
+      return score > currentBest.score
+        ? { assignment: candidate, score }
+        : currentBest;
+    },
+    {
+      assignment: candidates[0],
+      score: Number.NEGATIVE_INFINITY,
+    },
+  );
+
+  return new Map<number, CustomerClusterCode>([
+    [best.assignment[0], 'C1'],
+    [best.assignment[1], 'C2'],
+    [best.assignment[2], 'C3'],
+    [best.assignment[3], 'C4'],
+  ]);
+}
+
 export function clusterCustomers(rows: CustomerMetricRow[]) {
   if (rows.length < 4) {
     return rows.map((_, index) => ({
@@ -54,21 +132,7 @@ export function clusterCustomers(rows: CustomerMetricRow[]) {
   }
 
   const vectors = standardize(rows.map(customerVector));
-  const centroids: number[][] = [vectors[0]];
-  while (centroids.length < 4) {
-    let farthestIndex = 0;
-    let farthestDistance = -1;
-    vectors.forEach((vector, index) => {
-      const nearest = Math.min(
-        ...centroids.map((centroid) => distanceSquared(vector, centroid)),
-      );
-      if (nearest > farthestDistance) {
-        farthestDistance = nearest;
-        farthestIndex = index;
-      }
-    });
-    centroids.push([...vectors[farthestIndex]]);
-  }
+  const centroids = initializeCentroids(vectors, 4);
 
   let assignments = Array(rows.length).fill(0) as number[];
   for (let iteration = 0; iteration < 60; iteration += 1) {
@@ -96,54 +160,7 @@ export function clusterCustomers(rows: CustomerMetricRow[]) {
     if (unchanged && iteration > 0) break;
   }
 
-  const averages = Array.from({ length: 4 }, (_, cluster) => {
-    const members = rows.filter((_, index) => assignments[index] === cluster);
-    const average = (selector: (row: CustomerMetricRow) => number) =>
-      members.reduce((sum, row) => sum + selector(row), 0) /
-      Math.max(1, members.length);
-    return {
-      cluster,
-      sales: average((row) => row.completedSales),
-      salesAmount: average((row) => row.amountSpentSales),
-      rentals: average((row) => row.validRentals),
-      rentalAmount: average((row) => row.amountSpentRentals),
-      interactions: average((row) => row.totalInteractions),
-      inactivity: average((row) => row.daysSinceLastActivity),
-    };
-  });
-
-  const remaining = new Set([0, 1, 2, 3]);
-  const buyers = [...remaining].sort(
-    (a, b) =>
-      averages[b].sales +
-      Math.log1p(averages[b].salesAmount) -
-      averages[a].sales -
-      Math.log1p(averages[a].salesAmount),
-  )[0];
-  remaining.delete(buyers);
-  const renters = [...remaining].sort(
-    (a, b) =>
-      averages[b].rentals +
-      Math.log1p(averages[b].rentalAmount) -
-      averages[a].rentals -
-      Math.log1p(averages[a].rentalAmount),
-  )[0];
-  remaining.delete(renters);
-  const lowActivity = [...remaining].sort(
-    (a, b) =>
-      averages[b].inactivity -
-      averages[b].interactions * 0.25 -
-      (averages[a].inactivity - averages[a].interactions * 0.25),
-  )[0];
-  remaining.delete(lowActivity);
-  const explorers = [...remaining][0];
-
-  const codeByCluster = new Map<number, CustomerClusterCode>([
-    [buyers, 'C1'],
-    [renters, 'C2'],
-    [explorers, 'C3'],
-    [lowActivity, 'C4'],
-  ]);
+  const codeByCluster = mapClustersByCentroid(centroids);
 
   return assignments.map((clusterIndex) => ({
     clusterIndex,
@@ -154,6 +171,12 @@ export function clusterCustomers(rows: CustomerMetricRow[]) {
 export type RegressionSample = {
   values: number[];
   target: number;
+};
+
+export type RegressionMetrics = {
+  r2: number;
+  mae: number;
+  rmse: number;
 };
 
 function solveLinearSystem(matrix: number[][], vector: number[]) {
@@ -186,6 +209,10 @@ function solveLinearSystem(matrix: number[][], vector: number[]) {
 }
 
 export function trainRidgeRegression(samples: RegressionSample[], ridge = 0.8) {
+  if (samples.length === 0) {
+    throw new Error('Ridge regression requires at least one training sample.');
+  }
+
   const featureCount = samples[0]?.values.length ?? 0;
   const means = Array.from(
     { length: featureCount },
@@ -230,22 +257,39 @@ export function trainRidgeRegression(samples: RegressionSample[], ridge = 0.8) {
           ((value - means[column]) / deviations[column]),
       0,
     );
-  const predictions = samples.map((sample) => predict(sample.values));
+  return { predict };
+}
+
+/** Calcula métricas exclusivamente sobre observaciones fuera del ajuste. */
+export function calculateRegressionMetrics(
+  actual: number[],
+  predicted: number[],
+): RegressionMetrics {
+  if (actual.length === 0 || actual.length !== predicted.length) {
+    throw new Error('Regression metrics require paired validation values.');
+  }
+
   const targetMean =
-    samples.reduce((sum, sample) => sum + sample.target, 0) / samples.length;
-  const residual = samples.reduce(
-    (sum, sample, index) => sum + (sample.target - predictions[index]) ** 2,
+    actual.reduce((sum, value) => sum + value, 0) / actual.length;
+  const residual = actual.reduce(
+    (sum, value, index) => sum + (value - predicted[index]) ** 2,
     0,
   );
-  const total = samples.reduce(
-    (sum, sample) => sum + (sample.target - targetMean) ** 2,
+  const total = actual.reduce(
+    (sum, value) => sum + (value - targetMean) ** 2,
     0,
   );
   const mae =
-    samples.reduce(
-      (sum, sample, index) =>
-        sum + Math.abs(sample.target - predictions[index]),
+    actual.reduce(
+      (sum, value, index) => sum + Math.abs(value - predicted[index]),
       0,
-    ) / samples.length;
-  return { predict, r2: total === 0 ? 0 : 1 - residual / total, mae };
+    ) / actual.length;
+  const rmse = Math.sqrt(residual / actual.length);
+  const r2 = total === 0 ? 0 : 1 - residual / total;
+
+  if (![r2, mae, rmse].every(Number.isFinite)) {
+    throw new Error('Regression metrics must be finite values.');
+  }
+
+  return { r2, mae, rmse };
 }

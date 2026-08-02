@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { ReviewStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import {
+  calculateRegressionMetrics,
   clusterCustomers,
   trainRidgeRegression,
   type CustomerClusterCode,
@@ -26,6 +27,7 @@ type CustomerDatasetRow = {
   units_rented: number;
   amount_spent_rentals: number;
   average_rental_days: number;
+  last_activity: Date | null;
   days_since_last_activity: number;
   average_monthly_activity: number;
   interests: string[];
@@ -43,7 +45,7 @@ type DemandDatasetRow = {
   units_rented: number;
   views: number;
   unit_price: number;
-  stock_available: number;
+  stock_at_month_start: number;
   active_promotion: boolean;
   requires_prescription: boolean;
   previous_month_sales: number;
@@ -70,7 +72,7 @@ const clusterDefinitions: Record<
   C3: {
     name: 'Exploradores',
     description:
-      'Clientes con muchas consultas e interés, aún con baja conversión.',
+      'Clientes con muchas interacciones e interés, aún con baja conversión.',
     action:
       'Enviar orientación por categoría y recordatorios de productos vistos.',
     color: '#10b981',
@@ -321,7 +323,7 @@ export class AnalyticsService {
             FROM analytics.customer_product_interactions i
             JOIN catalog.products p ON p.id = i."productId"
             WHERE i."userId" = v.customer_id
-              AND i."batchName" = 'CEMYDI_DEMO_VARIANCE_V2'
+              AND i."batchName" = 'CEMYDI_DEMO_2024_2026_V1'
             GROUP BY p.clasificacion
             ORDER BY count(*) DESC
             LIMIT 2
@@ -358,7 +360,7 @@ export class AnalyticsService {
       cluster: assignments[index].code,
       views: row.views,
       searches: row.searches,
-      consultations: row.total_interactions,
+      totalInteractions: row.total_interactions,
       distinctProducts: row.distinct_products_interacted,
       completedSales: row.completed_sales,
       unitsPurchased: row.units_purchased,
@@ -368,9 +370,11 @@ export class AnalyticsService {
       rentalSpend: row.amount_spent_rentals,
       totalSpend: row.amount_spent_sales + row.amount_spent_rentals,
       averageRentalDays: row.average_rental_days,
+      lastActivity: row.last_activity?.toISOString() ?? null,
       daysSinceLastActivity: row.days_since_last_activity,
       averageMonthlyActivity: row.average_monthly_activity,
-      interests: row.interests,
+      interests:
+        row.total_interactions >= 5 ? row.interests : ['Sin señal suficiente'],
       engagementScore: Math.round(
         (row.total_interactions / maxInteractions) * 100,
       ),
@@ -393,7 +397,10 @@ export class AnalyticsService {
         ...clusterDefinitions[code],
         count: members.length,
         percentage: Number(
-          ((members.length / customers.length) * 100).toFixed(1),
+          (customers.length === 0
+            ? 0
+            : (members.length / customers.length) * 100
+          ).toFixed(1),
         ),
         averages: {
           sales: Number(
@@ -402,17 +409,27 @@ export class AnalyticsService {
           rentals: Number(
             average((customer) => customer.validRentals).toFixed(1),
           ),
-          consultations: Number(
-            average((customer) => customer.consultations).toFixed(1),
+          interactions: Number(
+            average((customer) => customer.totalInteractions).toFixed(1),
           ),
           spend: Number(average((customer) => customer.totalSpend).toFixed(2)),
+          rentalDays: Number(
+            average((customer) => customer.averageRentalDays).toFixed(1),
+          ),
+          distinctProducts: Number(
+            average((customer) => customer.distinctProducts).toFixed(1),
+          ),
+          inactivityDays: Number(
+            average((customer) => customer.daysSinceLastActivity).toFixed(1),
+          ),
         },
       };
     });
 
     return {
       generatedAt: new Date().toISOString(),
-      method: 'K-means (k=4) con variables estandarizadas',
+      method:
+        'Configuración actual: K-means (k=4), transformación log1p y estandarización de variables.',
       sourceRows: rows.length,
       clusters,
       customers,
@@ -423,17 +440,42 @@ export class AnalyticsService {
     const rows = await this.prisma.$queryRaw<DemandDatasetRow[]>`
       SELECT product_id, product_name, classification, acquisition_type, month,
         month_number, monthly_demand, units_sold, units_rented, views, unit_price,
-        stock_available, active_promotion, requires_prescription,
+        stock_at_month_start, active_promotion, requires_prescription,
         previous_month_sales, previous_month_rentals, previous_month_views
       FROM analytics.v_dataset_monthly_demand
       ORDER BY product_id, month
     `;
+
+    if (rows.length === 0) {
+      return {
+        generatedAt: new Date().toISOString(),
+        model: {
+          name: 'Regresión lineal múltiple Ridge',
+          historicalRows: 0,
+          trainingRows: 0,
+          validationRows: 0,
+          finalTrainingRows: 0,
+          validationMonths: 0,
+          products: 0,
+          historicalMonths: 0,
+          r2: 0,
+          mae: 0,
+          rmse: 0,
+          forecastMonth: null,
+          historicalThrough: null,
+          validationFrom: null,
+          validationTo: null,
+        },
+        forecasts: [],
+      };
+    }
+
     const featureValues = (
       row: DemandDatasetRow,
       forecastMonth = row.month_number,
     ) => [
       Math.log1p(row.unit_price),
-      row.stock_available,
+      row.stock_at_month_start,
       row.previous_month_sales,
       row.previous_month_rentals,
       row.previous_month_views,
@@ -444,10 +486,47 @@ export class AnalyticsService {
       row.acquisition_type === 'RENTA' ? 1 : 0,
       row.acquisition_type === 'MIXTO' ? 1 : 0,
     ];
-    const model = trainRidgeRegression(
-      rows.map((row) => ({
-        values: featureValues(row),
-        target: row.monthly_demand,
+
+    const samples = rows.map((row) => ({
+      month: row.month.getTime(),
+      values: featureValues(row),
+      target: row.monthly_demand,
+    }));
+    const historicalMonthValues = [
+      ...new Set(samples.map((sample) => sample.month)),
+    ].sort((left, right) => left - right);
+    if (historicalMonthValues.length < 3) {
+      throw new UnprocessableEntityException(
+        'Se requieren al menos tres meses históricos para validar el pronóstico.',
+      );
+    }
+    const validationMonthCount = Math.min(
+      historicalMonthValues.length - 1,
+      Math.max(2, Math.min(6, Math.ceil(historicalMonthValues.length * 0.2))),
+    );
+    const validationMonthValues = new Set(
+      historicalMonthValues.slice(-validationMonthCount),
+    );
+    const trainingSamples = samples.filter(
+      (sample) => !validationMonthValues.has(sample.month),
+    );
+    const validationSamples = samples.filter((sample) =>
+      validationMonthValues.has(sample.month),
+    );
+    const evaluationModel = trainRidgeRegression(trainingSamples);
+    const validationMetrics = calculateRegressionMetrics(
+      validationSamples.map((sample) => sample.target),
+      validationSamples.map((sample) =>
+        Math.max(0, Math.min(200, evaluationModel.predict(sample.values))),
+      ),
+    );
+
+    // Las métricas anteriores permanecen fuera de muestra. Este segundo ajuste
+    // aprovecha todo el historial únicamente para generar el pronóstico final.
+    const forecastModel = trainRidgeRegression(
+      samples.map(({ values, target }) => ({
+        values,
+        target,
       })),
     );
     const latestMonth = rows.reduce(
@@ -461,49 +540,78 @@ export class AnalyticsService {
     const latestRows = rows.filter(
       (row) => row.month.getTime() === latestMonth.getTime(),
     );
-    const promotionRows = await this.prisma.promotion.findMany({
-      where: {
-        startAt: {
-          lte: new Date(
-            Date.UTC(
-              forecastDate.getUTCFullYear(),
-              forecastMonth,
-              0,
-              23,
-              59,
-              59,
-            ),
-          ),
+    const nextForecastMonth = new Date(
+      Date.UTC(
+        forecastDate.getUTCFullYear(),
+        forecastDate.getUTCMonth() + 1,
+        1,
+      ),
+    );
+    const productIds = latestRows.map((row) => row.product_id);
+    const [catalogProducts, promotionRows] = await Promise.all([
+      this.prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: {
+          id: true,
+          nombre: true,
+          clasificacion: true,
+          tipoAdquisicion: true,
+          precio: true,
+          stock: true,
+          activo: true,
+          requiereReceta: true,
         },
-        endAt: { gte: forecastDate },
-      },
-      select: {
-        products: {
-          select: { productId: true },
+      }),
+      this.prisma.promotion.findMany({
+        where: {
+          startAt: { lt: nextForecastMonth },
+          endAt: { gte: forecastDate },
         },
-      },
-    });
+        select: {
+          products: {
+            select: { productId: true },
+          },
+        },
+      }),
+    ]);
+    const catalogById = new Map(
+      catalogProducts.map((product) => [product.id, product]),
+    );
     const promoted = new Set(
       promotionRows.flatMap((promotion) =>
         promotion.products.map((product) => product.productId),
       ),
     );
-    const forecasts = latestRows.map((row) => {
+    const forecasts = latestRows.flatMap((row) => {
+      const catalogProduct = catalogById.get(row.product_id);
+      if (!catalogProduct?.activo) return [];
+
       const input: DemandDatasetRow = {
         ...row,
+        product_name: catalogProduct.nombre,
+        classification: catalogProduct.clasificacion,
+        acquisition_type: catalogProduct.tipoAdquisicion,
+        unit_price: catalogProduct.precio,
+        stock_at_month_start: catalogProduct.stock,
+        requires_prescription: catalogProduct.requiereReceta,
         previous_month_sales: row.units_sold,
         previous_month_rentals: row.units_rented,
         previous_month_views: row.views,
         active_promotion: promoted.has(row.product_id),
       };
+      // Para el pronóstico futuro, las ventas, rentas y vistas del último mes
+      // histórico se convierten en las variables del mes anterior respecto del
+      // mes que se desea pronosticar.
       const predictedDemand = Math.max(
         0,
         Math.min(
           200,
-          Math.round(model.predict(featureValues(input, forecastMonth))),
+          Math.round(
+            forecastModel.predict(featureValues(input, forecastMonth)),
+          ),
         ),
       );
-      const shortage = predictedDemand - row.stock_available;
+      const shortage = predictedDemand - catalogProduct.stock;
       const recommendation =
         shortage >= 10
           ? `Priorizar la reposición de ${shortage} unidades.`
@@ -512,39 +620,57 @@ export class AnalyticsService {
             : shortage === 0
               ? 'Monitorear la rotación antes de reponer.'
               : 'Mantener el inventario y revisar la rotación mensual.';
-      return {
-        id: row.product_id,
-        productName: row.product_name,
-        shortName:
-          row.product_name.length > 24
-            ? `${row.product_name.slice(0, 23).trim()}…`
-            : row.product_name,
-        classification: row.classification,
-        acquisitionType: row.acquisition_type,
-        price: row.unit_price,
-        currentStock: row.stock_available,
-        month: forecastMonth,
-        previousMonthSales: row.units_sold,
-        previousMonthRentals: row.units_rented,
-        previousMonthViews: row.views,
-        activePromotion: input.active_promotion,
-        predictedDemand,
-        recommendation,
-      };
+      return [
+        {
+          id: row.product_id,
+          productName: catalogProduct.nombre,
+          shortName:
+            catalogProduct.nombre.length > 24
+              ? `${catalogProduct.nombre.slice(0, 23).trim()}…`
+              : catalogProduct.nombre,
+          classification: catalogProduct.clasificacion,
+          acquisitionType: catalogProduct.tipoAdquisicion,
+          active: catalogProduct.activo,
+          price: catalogProduct.precio,
+          currentStock: catalogProduct.stock,
+          month: forecastMonth,
+          previousMonthSales: row.units_sold,
+          previousMonthRentals: row.units_rented,
+          previousMonthViews: row.views,
+          activePromotion: input.active_promotion,
+          predictedDemand,
+          shortage,
+          recommendation,
+        },
+      ];
     });
 
     return {
       generatedAt: new Date().toISOString(),
       model: {
         name: 'Regresión lineal múltiple Ridge',
-        trainingRows: rows.length,
+        historicalRows: samples.length,
+        trainingRows: trainingSamples.length,
+        validationRows: validationSamples.length,
+        finalTrainingRows: samples.length,
+        validationMonths: validationMonthCount,
         products: forecasts.length,
-        historicalMonths: new Set(
-          rows.map((row) => row.month.toISOString().slice(0, 7)),
-        ).size,
-        r2: Number(model.r2.toFixed(3)),
-        mae: Number(model.mae.toFixed(2)),
+        historicalMonths: historicalMonthValues.length,
+        r2: Number(validationMetrics.r2.toFixed(3)),
+        mae: Number(validationMetrics.mae.toFixed(2)),
+        rmse: Number(validationMetrics.rmse.toFixed(2)),
         forecastMonth: forecastDate.toISOString().slice(0, 7),
+        historicalThrough: new Date(historicalMonthValues.at(-1) ?? 0)
+          .toISOString()
+          .slice(0, 7),
+        validationFrom: new Date(
+          historicalMonthValues.at(-validationMonthCount) ?? 0,
+        )
+          .toISOString()
+          .slice(0, 7),
+        validationTo: new Date(historicalMonthValues.at(-1) ?? 0)
+          .toISOString()
+          .slice(0, 7),
       },
       forecasts: forecasts.sort(
         (a, b) => b.predictedDemand - a.predictedDemand,

@@ -169,6 +169,45 @@ export class ReviewsService {
     };
   }
 
+  async listMine(currentUser: AuthUser) {
+    const reviews = await this.prisma.forUser(currentUser).review.findMany({
+      where: {
+        userId: currentUser.sub,
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            slug: true,
+            nombre: true,
+            marca: true,
+            modelo: true,
+            images: {
+              select: { imageUrl: true },
+              orderBy: { sortOrder: 'asc' },
+              take: 1,
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return {
+      reviews: reviews.map((review) => ({
+        ...this.toClientReview(review),
+        product: {
+          id: review.product.id,
+          slug: review.product.slug,
+          nombre: review.product.nombre,
+          marca: review.product.marca,
+          modelo: review.product.modelo,
+          imageUrl: review.product.images[0]?.imageUrl ?? null,
+        },
+      })),
+    };
+  }
+
   async listForAdmin(params: { status?: string; userId?: number }) {
     const where: Prisma.ReviewWhereInput = {};
 

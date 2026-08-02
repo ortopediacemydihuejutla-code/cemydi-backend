@@ -176,10 +176,7 @@ export class CartService {
       (mappedCart.summary.saleSubtotal ?? 0) -
         (mappedCart.summary.promotionDiscountTotal ?? 0),
     );
-    const validation = validateCouponForSubtotal(
-      coupon,
-      eligibleSubtotal,
-    );
+    const validation = validateCouponForSubtotal(coupon, eligibleSubtotal);
     if (!validation.valid) {
       throw new BadRequestException(validation.reason);
     }
@@ -701,11 +698,7 @@ export class CartService {
       const rentalSubtotal =
         isRentalConfigured && rentalDays
           ? Number(
-              (
-                item.quantity *
-                discountedUnitPrice *
-                rentalDays
-              ).toFixed(2),
+              (item.quantity * discountedUnitPrice * rentalDays).toFixed(2),
             )
           : null;
       const rentalDiscountAmount =
@@ -752,8 +745,7 @@ export class CartService {
           : {
               ...(originalRentalSubtotal !== null && lineTotal !== null
                 ? {
-                    originalLineTotal:
-                      originalRentalSubtotal + rentalDeposit,
+                    originalLineTotal: originalRentalSubtotal + rentalDeposit,
                     discountAmount: rentalDiscountAmount,
                     finalLineTotal: lineTotal,
                   }

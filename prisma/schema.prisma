@@ -308,6 +308,7 @@ model LoginAttempt {
   id          Int      @id @default(autoincrement())
   userId      Int?     @map("userId")
   correo      String
+  ipAddress   String?  @map("ipAddress")
   success     Boolean
   reason      String?
   attemptedAt DateTime @default(now()) @map("attemptedAt")
@@ -315,6 +316,7 @@ model LoginAttempt {
 
   @@index([attemptedAt])
   @@index([success, attemptedAt])
+  @@index([ipAddress, attemptedAt])
   @@map("login_attempts")
   @@schema("accounts")
 }

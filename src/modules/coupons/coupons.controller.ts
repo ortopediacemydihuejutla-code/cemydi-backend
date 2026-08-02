@@ -34,10 +34,7 @@ export class CouponsController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateCouponDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCouponDto) {
     return this.couponsService.update(id, dto);
   }
 

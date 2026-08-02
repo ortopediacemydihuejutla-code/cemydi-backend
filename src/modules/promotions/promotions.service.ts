@@ -122,8 +122,7 @@ export class PromotionsService {
           endAt,
           imageStrategy,
           imageUrl: uploadedImage?.imageUrl ?? null,
-          imageCloudinaryPublicId:
-            uploadedImage?.cloudinaryPublicId ?? null,
+          imageCloudinaryPublicId: uploadedImage?.cloudinaryPublicId ?? null,
           products: {
             create: productIds.map((productId) => ({ productId })),
           },
@@ -157,9 +156,7 @@ export class PromotionsService {
       throw new NotFoundException('Promoción no encontrada');
     }
 
-    const nextStartAt = dto.startAt
-      ? new Date(dto.startAt)
-      : current.startAt;
+    const nextStartAt = dto.startAt ? new Date(dto.startAt) : current.startAt;
     const nextEndAt = dto.endAt ? new Date(dto.endAt) : current.endAt;
     this.assertValidDates(nextStartAt, nextEndAt);
 
@@ -187,10 +184,7 @@ export class PromotionsService {
       throw new BadRequestException(
         'Agrega una imagen personalizada para esta promoción',
       );
-    } else if (
-      nextStrategy === PromotionImageStrategy.AUTO &&
-      imageFile
-    ) {
+    } else if (nextStrategy === PromotionImageStrategy.AUTO && imageFile) {
       throw new BadRequestException(
         'No adjuntes una imagen cuando el modo automático está activo',
       );
@@ -209,12 +203,12 @@ export class PromotionsService {
       imageUrl:
         nextStrategy === PromotionImageStrategy.AUTO
           ? null
-          : uploadedImage?.imageUrl ?? current.imageUrl,
+          : (uploadedImage?.imageUrl ?? current.imageUrl),
       imageCloudinaryPublicId:
         nextStrategy === PromotionImageStrategy.AUTO
           ? null
-          : uploadedImage?.cloudinaryPublicId ??
-            current.imageCloudinaryPublicId,
+          : (uploadedImage?.cloudinaryPublicId ??
+            current.imageCloudinaryPublicId),
       ...(productIds
         ? {
             products: {
@@ -305,7 +299,7 @@ export class PromotionsService {
       displayImageUrl:
         campaign.imageStrategy === PromotionImageStrategy.CUSTOM
           ? campaign.imageUrl
-          : products[0]?.imageUrl ?? null,
+          : (products[0]?.imageUrl ?? null),
     };
   }
 
@@ -352,10 +346,7 @@ export class PromotionsService {
   }
 
   private assertValidDates(startAt: Date, endAt: Date) {
-    if (
-      Number.isNaN(startAt.getTime()) ||
-      Number.isNaN(endAt.getTime())
-    ) {
+    if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
       throw new BadRequestException('Fechas de promoción inválidas');
     }
     if (startAt >= endAt) {
@@ -389,8 +380,7 @@ export class PromotionsService {
       productIds.length === 0 ||
       productIds.length > 100 ||
       productIds.some(
-        (productId) =>
-          !Number.isInteger(productId) || productId <= 0,
+        (productId) => !Number.isInteger(productId) || productId <= 0,
       )
     ) {
       throw new BadRequestException(

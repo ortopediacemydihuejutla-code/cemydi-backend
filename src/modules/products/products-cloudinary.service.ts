@@ -66,7 +66,10 @@ export class ProductsCloudinaryService {
 
   async uploadPromotionImage(file: UploadedProductFile) {
     this.validateImageOperation([], [file]);
-    return this.uploadFileToCloudinary(file, this.getCloudinaryPromotionFolder());
+    return this.uploadFileToCloudinary(
+      file,
+      this.getCloudinaryPromotionFolder(),
+    );
   }
 
   async deleteUploadedImagesQuietly(images: UploadedProductImage[]) {

@@ -32,8 +32,8 @@ export class AuthService {
     return this.authLoginService.register(dto);
   }
 
-  login(dto: LoginDto) {
-    return this.authLoginService.login(dto);
+  login(dto: LoginDto, ipAddress?: string) {
+    return this.authLoginService.login(dto, ipAddress);
   }
 
   buildGoogleAuthorizationUrl(state: string) {

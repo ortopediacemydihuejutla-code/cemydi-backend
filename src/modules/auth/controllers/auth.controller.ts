@@ -143,6 +143,17 @@ export class AuthController {
     );
   }
 
+  private extractClientIp(req: Request): string {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (typeof forwarded === 'string' && forwarded.trim()) {
+      return forwarded.split(',')[0].trim();
+    }
+    if (Array.isArray(forwarded) && forwarded[0]) {
+      return forwarded[0].trim();
+    }
+    return req.ip || req.socket?.remoteAddress || 'unknown';
+  }
+
   private getGoogleLoginErrorReason(error: unknown) {
     if (!(error instanceof UnauthorizedException)) {
       return 'google';
@@ -168,7 +179,8 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.login(dto);
+    const clientIp = this.extractClientIp(req);
+    const result = await this.authService.login(dto, clientIp);
     this.setAuthCookies(req, res, result);
     return { user: result.user };
   }
