@@ -1,0 +1,9 @@
+PAQUETE DE CLUSTERING CEMYDI
+
+1. Abre 01_Clustering_Clientes_CEMYDI_CRISP_DM.ipynb.
+2. Mantén dataset_segmentacion_clientes.csv en la misma carpeta.
+3. Ejecuta las celdas en orden.
+4. Los artefactos se guardan en 07_Modelos/clustering/.
+5. Ejecuta `python exportar_clustering_json.py` para generar la representación JSON consumida por NestJS.
+
+La libreta ya contiene las salidas de una ejecución completa con 400 clientes.

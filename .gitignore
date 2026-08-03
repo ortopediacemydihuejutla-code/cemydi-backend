@@ -49,6 +49,9 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
 # dotenv environment variable files
 .env
 .env.development.local

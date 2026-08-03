@@ -1,0 +1,14 @@
+PAQUETE CORREGIDO DE RECOMENDACIÓN CEMYDI
+
+Archivo principal:
+03_Recomendacion_Productos_CEMYDI_CRISP_DM.ipynb
+
+La libreta:
+- conserva la recomendación por contenido y similitud de coseno;
+- selecciona pesos con abril, mayo y junio;
+- reserva julio como prueba final;
+- evalúa líneas base y umbral de similitud;
+- permite inferencia de productos nuevos;
+- valida JSON estrictos y artefactos.
+
+La libreta ya fue ejecutada completamente.

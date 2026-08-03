@@ -1,0 +1,186 @@
+{
+  "selection_windows": [
+    {
+      "Ventana": "2026-04",
+      "Configuración": "Balanceada con comportamiento",
+      "Peso categórico": 1.0,
+      "Peso numérico": 1.0,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.1715210355987055,
+      "MRR@5": 0.08829557713052857,
+      "NDCG@5": 0.10896074207094308,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4576037511707055,
+      "Casos": 309
+    },
+    {
+      "Ventana": "2026-04",
+      "Configuración": "Énfasis en contenido",
+      "Peso categórico": 3.0,
+      "Peso numérico": 0.3,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.22653721682847897,
+      "MRR@5": 0.11165048543689321,
+      "NDCG@5": 0.14000793715191234,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4711389424203511,
+      "Casos": 309
+    },
+    {
+      "Ventana": "2026-04",
+      "Configuración": "Solo atributos de catálogo",
+      "Peso categórico": 3.0,
+      "Peso numérico": 0.3,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.21359223300970873,
+      "MRR@5": 0.10571736785329018,
+      "NDCG@5": 0.1321014939027921,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4674081074584027,
+      "Casos": 309
+    },
+    {
+      "Ventana": "2026-05",
+      "Configuración": "Balanceada con comportamiento",
+      "Peso categórico": 1.0,
+      "Peso numérico": 1.0,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.15960912052117263,
+      "MRR@5": 0.0993485342019544,
+      "NDCG@5": 0.11429798184843831,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4554088645037172,
+      "Casos": 307
+    },
+    {
+      "Ventana": "2026-05",
+      "Configuración": "Énfasis en contenido",
+      "Peso categórico": 3.0,
+      "Peso numérico": 0.3,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.2182410423452769,
+      "MRR@5": 0.11221498371335503,
+      "NDCG@5": 0.1383571168750988,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4714689927402517,
+      "Casos": 307
+    },
+    {
+      "Ventana": "2026-05",
+      "Configuración": "Solo atributos de catálogo",
+      "Peso categórico": 3.0,
+      "Peso numérico": 0.3,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.21498371335504887,
+      "MRR@5": 0.11156351791530944,
+      "NDCG@5": 0.13707187277895452,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4674081074584027,
+      "Casos": 307
+    },
+    {
+      "Ventana": "2026-06",
+      "Configuración": "Balanceada con comportamiento",
+      "Peso categórico": 1.0,
+      "Peso numérico": 1.0,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.14233576642335766,
+      "MRR@5": 0.07682481751824817,
+      "NDCG@5": 0.09284489830511962,
+      "Cobertura": 1.0,
+      "Diversidad": 0.44984169069809016,
+      "Casos": 274
+    },
+    {
+      "Ventana": "2026-06",
+      "Configuración": "Énfasis en contenido",
+      "Peso categórico": 3.0,
+      "Peso numérico": 0.3,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.1897810218978102,
+      "MRR@5": 0.09847931873479318,
+      "NDCG@5": 0.1209762722112338,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4701030196672057,
+      "Casos": 274
+    },
+    {
+      "Ventana": "2026-06",
+      "Configuración": "Solo atributos de catálogo",
+      "Peso categórico": 3.0,
+      "Peso numérico": 0.3,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.19343065693430658,
+      "MRR@5": 0.09963503649635036,
+      "NDCG@5": 0.12273421359900351,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4674081074584027,
+      "Casos": 274
+    }
+  ],
+  "selection_average": [
+    {
+      "Configuración": "Énfasis en contenido",
+      "Peso categórico": 3.0,
+      "Peso numérico": 0.3,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.2115197603571887,
+      "MRR@5": 0.10744826262834713,
+      "NDCG@5": 0.1331137754127483,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4709036516092695,
+      "Casos": 890
+    },
+    {
+      "Configuración": "Solo atributos de catálogo",
+      "Peso categórico": 3.0,
+      "Peso numérico": 0.3,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.2073355344330214,
+      "MRR@5": 0.10563864075498332,
+      "NDCG@5": 0.13063586009358338,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4674081074584027,
+      "Casos": 890
+    },
+    {
+      "Configuración": "Balanceada con comportamiento",
+      "Peso categórico": 1.0,
+      "Peso numérico": 1.0,
+      "Peso receta": 1.0,
+      "HitRate@5": 0.1578219741810786,
+      "MRR@5": 0.08815630961691039,
+      "NDCG@5": 0.10536787407483367,
+      "Cobertura": 1.0,
+      "Diversidad": 0.4542847687908376,
+      "Casos": 890
+    }
+  ],
+  "selected_configuration": "Énfasis en contenido",
+  "final_test_month": "2026-07",
+  "final_test_cases": 116,
+  "content_model": {
+    "HitRate@5": 0.27586206896551724,
+    "MRR@5": 0.14741379310344827,
+    "NDCG@5": 0.17937491430413066,
+    "Cobertura": 1.0,
+    "Diversidad": 0.47143182078561213,
+    "Casos": 116
+  },
+  "global_popularity_baseline": {
+    "HitRate@5": 0.20689655172413793,
+    "MRR@5": 0.09353448275862068,
+    "NDCG@5": 0.12154758390947704,
+    "Cobertura": 0.15,
+    "Diversidad": 0.782143281142894,
+    "Casos": 116
+  },
+  "classification_popularity_baseline": {
+    "HitRate@5": 0.33620689655172414,
+    "MRR@5": 0.18376436781609196,
+    "NDCG@5": 0.2210277054496185,
+    "Cobertura": 0.95,
+    "Diversidad": 0.49074002726492216,
+    "Casos": 116
+  }
+}

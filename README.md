@@ -90,6 +90,32 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Modelos analíticos CEMYDI
+
+El backend carga y ejecuta los artefactos producidos por las libretas de
+`modelos_propuestos/`; las respuestas no están escritas directamente en el
+código ni se generan al azar.
+
+- Segmentación: carga el escalador y los centroides exportados del pipeline
+  KMeans. Se consulta en `GET /analytics/customer-segmentation` y se muestra en
+  `/admin/analytics/product-segmentation`.
+- Demanda: carga `ridge_demanda_modelo.json`, prepara las once variables del
+  artefacto y ejecuta la fórmula Ridge. Se consulta en
+  `GET /analytics/demand-forecast` y se muestra en
+  `/admin/analytics/demand-forecast`.
+- Recomendación: carga `recomendador_contenido.json` y calcula similitud de
+  coseno con los vectores entrenados. Para productos nuevos construye el vector
+  a partir del catálogo y las interacciones disponibles. Se consulta en
+  `GET /products/:id/recommendations` y se muestra en producto y carrito.
+
+Por omisión, la carpeta se resuelve como `modelos_propuestos` dentro del
+backend. En despliegues donde los artefactos estén en otra ubicación, configure
+`CEMYDI_MODEL_DIR` con una ruta absoluta. Para actualizar un modelo, vuelva a
+ejecutar su libreta y reemplace los archivos correspondientes de `07_Modelos/`.
+En clustering ejecute además `python exportar_clustering_json.py` para exportar
+el pipeline a la representación que consume Node. Finalmente, reinicie el
+backend para vaciar la caché de artefactos.
+
 ## Run tests
 
 ```bash

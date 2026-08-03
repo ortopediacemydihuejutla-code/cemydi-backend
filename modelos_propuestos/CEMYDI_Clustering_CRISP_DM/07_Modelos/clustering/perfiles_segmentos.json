@@ -1,0 +1,58 @@
+{
+  "0": {
+    "segmento": "Baja actividad",
+    "interpretacion": "Pocas interacciones y mayor tiempo desde la última actividad.",
+    "accion_sugerida": "Aplicar campañas de reactivación y seguimiento.",
+    "perfil_promedio": {
+      "completed_sales": 2.21,
+      "valid_rentals": 0.08,
+      "amount_spent_sales": 10763.44,
+      "amount_spent_rentals": 197.44,
+      "total_interactions": 9.68,
+      "distinct_products_interacted": 7.47,
+      "days_since_last_activity": 196.21
+    }
+  },
+  "1": {
+    "segmento": "Compradores frecuentes",
+    "interpretacion": "Compras recurrentes y mayor gasto acumulado en ventas.",
+    "accion_sugerida": "Ofrecer beneficios de fidelización y recompra.",
+    "perfil_promedio": {
+      "completed_sales": 11.11,
+      "valid_rentals": 0.0,
+      "amount_spent_sales": 105523.28,
+      "amount_spent_rentals": 0.0,
+      "total_interactions": 52.35,
+      "distinct_products_interacted": 21.75,
+      "days_since_last_activity": 41.59
+    }
+  },
+  "2": {
+    "segmento": "Arrendatarios recurrentes",
+    "interpretacion": "Mayor uso y gasto acumulado en el servicio de renta.",
+    "accion_sugerida": "Ofrecer renovaciones, mantenimiento y renta extendida.",
+    "perfil_promedio": {
+      "completed_sales": 9.92,
+      "valid_rentals": 3.15,
+      "amount_spent_sales": 85229.84,
+      "amount_spent_rentals": 4476.93,
+      "total_interactions": 48.66,
+      "distinct_products_interacted": 21.18,
+      "days_since_last_activity": 41.85
+    }
+  },
+  "3": {
+    "segmento": "Exploradores",
+    "interpretacion": "Interacción con productos, pero poca conversión en compras.",
+    "accion_sugerida": "Enviar recordatorios y ofrecer asesoría de compra.",
+    "perfil_promedio": {
+      "completed_sales": 0.0,
+      "valid_rentals": 0.96,
+      "amount_spent_sales": 0.0,
+      "amount_spent_rentals": 1315.01,
+      "total_interactions": 47.93,
+      "distinct_products_interacted": 19.11,
+      "days_since_last_activity": 94.36
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Predicción mensual de demanda CEMYDI",
+  "version": "1.0",
+  "algorithm": "Ridge",
+  "alpha": 0.8,
+  "target": "monthly_demand",
+  "target_definition": "units_sold + units_rented",
+  "features": [
+    "log_unit_price",
+    "stock_at_month_start",
+    "previous_month_sales",
+    "previous_month_rentals",
+    "previous_month_views",
+    "active_promotion",
+    "month_sin",
+    "month_cos",
+    "requires_prescription",
+    "acquisition_renta",
+    "acquisition_mixto"
+  ],
+  "historical_from": "2024-01",
+  "historical_through": "2026-07",
+  "historical_months": 31,
+  "products": 40,
+  "historical_rows": 1240,
+  "forecast_month": "2026-08",
+  "prediction_rule": "maximum(raw_prediction, 0)",
+  "data_type": "100 % sintético"
+}

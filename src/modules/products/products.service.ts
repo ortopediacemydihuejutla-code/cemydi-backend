@@ -15,6 +15,11 @@ import {
 } from './products-classification.util';
 import { ProductsCloudinaryService } from './products-cloudinary.service';
 import type { UploadedProductFile } from './products-cloudinary.types';
+import {
+  cosineSimilarity as artifactCosineSimilarity,
+  loadModelArtifacts,
+  recommendationVector,
+} from '../analytics/model-artifacts.util';
 
 type FindProductsQuery = {
   search?: string;
@@ -113,61 +118,6 @@ const productInclude = {
 type ProductWithImages = Prisma.ProductGetPayload<{
   include: typeof productInclude;
 }>;
-
-function normalizeRecommendationText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
-function productTokens(product: ProductWithImages) {
-  const weightedFields: Array<[string, number]> = [
-    [product.clasificacion, 5],
-    [product.tipoAdquisicion, 4],
-    [product.marca, 3],
-    [product.material ?? '', 3],
-    [product.nombre, 2],
-    [product.descripcion, 1],
-    [product.indicacionesUso ?? '', 1],
-    [product.medidas ?? '', 1],
-  ];
-  const tokens: string[] = [];
-  for (const [value, weight] of weightedFields) {
-    const words = normalizeRecommendationText(value)
-      .split(/\s+/)
-      .filter(Boolean);
-    for (let repeat = 0; repeat < weight; repeat += 1) tokens.push(...words);
-  }
-  tokens.push(
-    `price-${Math.floor(Math.log10(Math.max(product.precio, 1)) * 2)}`,
-  );
-  if (product.requiereReceta) tokens.push('requiere-receta');
-  return tokens;
-}
-
-function cosineSimilarity(left: string[], right: string[]) {
-  const leftCounts = new Map<string, number>();
-  const rightCounts = new Map<string, number>();
-  left.forEach((token) =>
-    leftCounts.set(token, (leftCounts.get(token) ?? 0) + 1),
-  );
-  right.forEach((token) =>
-    rightCounts.set(token, (rightCounts.get(token) ?? 0) + 1),
-  );
-  let dot = 0;
-  for (const [token, count] of leftCounts)
-    dot += count * (rightCounts.get(token) ?? 0);
-  const leftNorm = Math.sqrt(
-    [...leftCounts.values()].reduce((sum, count) => sum + count ** 2, 0),
-  );
-  const rightNorm = Math.sqrt(
-    [...rightCounts.values()].reduce((sum, count) => sum + count ** 2, 0),
-  );
-  return leftNorm && rightNorm ? dot / (leftNorm * rightNorm) : 0;
-}
 
 @Injectable()
 export class ProductsService {
@@ -407,17 +357,46 @@ export class ProductsService {
   }
 
   async getRecommendations(id: number, limitRaw?: string) {
+    const { recommendation, recommendationMetadata } = loadModelArtifacts();
     const parsedLimit = Number(limitRaw);
     const limit = Number.isInteger(parsedLimit)
-      ? Math.max(1, Math.min(parsedLimit, 16))
-      : 8;
-    const products = await this.prisma.product.findMany({
-      where: { activo: true },
-      include: productInclude,
-    });
+      ? Math.max(1, Math.min(parsedLimit, recommendation.top_k))
+      : recommendation.top_k;
+    const [products, interactionRows] = await Promise.all([
+      this.prisma.product.findMany({
+        where: { activo: true },
+        include: productInclude,
+      }),
+      this.prisma.$queryRaw<
+        Array<{ product_id: number; views: number; searches: number }>
+      >`
+        SELECT i."productId" AS product_id,
+          count(*) FILTER (WHERE i."interactionType" = 'VIEW')::integer AS views,
+          count(*) FILTER (WHERE i."interactionType" = 'SEARCH')::integer AS searches
+        FROM analytics.customer_product_interactions i
+        WHERE i."batchName" = 'CEMYDI_DEMO_2024_2026_V1'
+        GROUP BY i."productId"
+      `,
+    ]);
     const target = products.find((product) => product.id === id);
     if (!target) throw new NotFoundException('Producto no encontrado');
-    const targetTokens = productTokens(target);
+    const interactionsByProduct = new Map(
+      interactionRows.map((row) => [row.product_id, row]),
+    );
+    const vectorFor = (product: ProductWithImages) => {
+      const interactions = interactionsByProduct.get(product.id);
+      return recommendationVector({
+        id: product.id,
+        classification: product.clasificacion,
+        acquisitionType: product.tipoAdquisicion,
+        price: product.precio,
+        stock: product.stock,
+        views: interactions?.views ?? 0,
+        searches: interactions?.searches ?? 0,
+        requiresPrescription: product.requiereReceta,
+      });
+    };
+    const targetVector = vectorFor(target);
     const recommendations = products
       .filter((product) => product.id !== id)
       .map((product) => {
@@ -445,7 +424,7 @@ export class ProductsService {
         }
         return {
           product,
-          score: cosineSimilarity(targetTokens, productTokens(product)),
+          score: artifactCosineSimilarity(targetVector, vectorFor(product)),
           reasons: reasons.slice(0, 2),
         };
       })
@@ -460,7 +439,14 @@ export class ProductsService {
       }));
 
     return {
-      method: 'Similitud de contenido (coseno)',
+      method: `${recommendationMetadata.name}: similitud de coseno (artefacto v${recommendationMetadata.version})`,
+      model: {
+        version: recommendationMetadata.version,
+        technique: recommendationMetadata.technique,
+        batchName: recommendationMetadata.batch_name,
+        topK: recommendationMetadata.top_k,
+        finalMetrics: recommendationMetadata.final_metrics,
+      },
       sourceProductId: id,
       recommendations,
     };

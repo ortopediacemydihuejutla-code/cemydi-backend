@@ -2,12 +2,12 @@ import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { ReviewStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AnalyticsQueryDto } from './dto/analytics-query.dto';
+import { type CustomerClusterCode } from './analytics-ml.util';
 import {
-  calculateRegressionMetrics,
-  clusterCustomers,
-  trainRidgeRegression,
-  type CustomerClusterCode,
-} from './analytics-ml.util';
+  assignCustomerClusters,
+  loadModelArtifacts,
+  predictDemandFromArtifact,
+} from './model-artifacts.util';
 
 type CustomerDatasetRow = {
   customer_id: number;
@@ -53,37 +53,18 @@ type DemandDatasetRow = {
   previous_month_views: number;
 };
 
-const clusterDefinitions: Record<
-  CustomerClusterCode,
-  { name: string; description: string; action: string; color: string }
-> = {
-  C1: {
-    name: 'Compradores frecuentes',
-    description: 'Clientes con compras recurrentes y alto valor acumulado.',
-    action: 'Ofrecer recompensas, preventas y paquetes de recompra.',
-    color: '#0ea5e9',
-  },
-  C2: {
-    name: 'Arrendatarios recurrentes',
-    description: 'Clientes que utilizan la renta como solución habitual.',
-    action: 'Proponer renovaciones, mantenimiento y planes de renta extendida.',
-    color: '#8b5cf6',
-  },
-  C3: {
-    name: 'Exploradores',
-    description:
-      'Clientes con muchas interacciones e interés, aún con baja conversión.',
-    action:
-      'Enviar orientación por categoría y recordatorios de productos vistos.',
-    color: '#10b981',
-  },
-  C4: {
-    name: 'Baja actividad',
-    description: 'Clientes con poca interacción o una ausencia prolongada.',
-    action: 'Activar campañas de reencuentro con un incentivo sencillo.',
-    color: '#f59e0b',
-  },
+const clusterColors: Record<CustomerClusterCode, string> = {
+  C1: '#0ea5e9',
+  C2: '#8b5cf6',
+  C3: '#10b981',
+  C4: '#f59e0b',
 };
+
+function inclusiveMonthCount(from: string, to: string) {
+  const [fromYear, fromMonth] = from.split('-').map(Number);
+  const [toYear, toMonth] = to.split('-').map(Number);
+  return (toYear - fromYear) * 12 + toMonth - fromMonth + 1;
+}
 
 function utcDateKey(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -314,6 +295,8 @@ export class AnalyticsService {
   }
 
   async getCustomerSegmentation() {
+    const { clustering, clusteringMetadata, clusteringProfiles } =
+      loadModelArtifacts();
     const rows = await this.prisma.$queryRaw<CustomerDatasetRow[]>`
       SELECT v.*,
         COALESCE((
@@ -333,7 +316,7 @@ export class AnalyticsService {
       ORDER BY v.customer_id
     `;
 
-    const assignments = clusterCustomers(
+    const assignments = assignCustomerClusters(
       rows.map((row) => ({
         completedSales: row.completed_sales,
         amountSpentSales: row.amount_spent_sales,
@@ -383,53 +366,75 @@ export class AnalyticsService {
       ),
     }));
 
-    const clusters = (
-      Object.keys(clusterDefinitions) as CustomerClusterCode[]
-    ).map((code) => {
-      const members = customers.filter((customer) => customer.cluster === code);
-      const average = (
-        selector: (customer: (typeof customers)[number]) => number,
-      ) =>
-        members.reduce((sum, customer) => sum + selector(customer), 0) /
-        Math.max(1, members.length);
-      return {
+    const profileByCode = new Map(
+      clustering.cluster_codes.map((code, clusterIndex) => [
         code,
-        ...clusterDefinitions[code],
-        count: members.length,
-        percentage: Number(
-          (customers.length === 0
-            ? 0
-            : (members.length / customers.length) * 100
-          ).toFixed(1),
-        ),
-        averages: {
-          sales: Number(
-            average((customer) => customer.completedSales).toFixed(1),
+        clusteringProfiles[String(clusterIndex)],
+      ]),
+    );
+    const clusters = (Object.keys(clusterColors) as CustomerClusterCode[]).map(
+      (code) => {
+        const members = customers.filter(
+          (customer) => customer.cluster === code,
+        );
+        const profile = profileByCode.get(code);
+        const average = (
+          selector: (customer: (typeof customers)[number]) => number,
+        ) =>
+          members.reduce((sum, customer) => sum + selector(customer), 0) /
+          Math.max(1, members.length);
+        return {
+          code,
+          name: profile?.segmento ?? code,
+          description: profile?.interpretacion ?? '',
+          action: profile?.accion_sugerida ?? '',
+          color: clusterColors[code],
+          count: members.length,
+          percentage: Number(
+            (customers.length === 0
+              ? 0
+              : (members.length / customers.length) * 100
+            ).toFixed(1),
           ),
-          rentals: Number(
-            average((customer) => customer.validRentals).toFixed(1),
-          ),
-          interactions: Number(
-            average((customer) => customer.totalInteractions).toFixed(1),
-          ),
-          spend: Number(average((customer) => customer.totalSpend).toFixed(2)),
-          rentalDays: Number(
-            average((customer) => customer.averageRentalDays).toFixed(1),
-          ),
-          distinctProducts: Number(
-            average((customer) => customer.distinctProducts).toFixed(1),
-          ),
-          inactivityDays: Number(
-            average((customer) => customer.daysSinceLastActivity).toFixed(1),
-          ),
-        },
-      };
-    });
+          averages: {
+            sales: Number(
+              average((customer) => customer.completedSales).toFixed(1),
+            ),
+            rentals: Number(
+              average((customer) => customer.validRentals).toFixed(1),
+            ),
+            interactions: Number(
+              average((customer) => customer.totalInteractions).toFixed(1),
+            ),
+            spend: Number(
+              average((customer) => customer.totalSpend).toFixed(2),
+            ),
+            rentalDays: Number(
+              average((customer) => customer.averageRentalDays).toFixed(1),
+            ),
+            distinctProducts: Number(
+              average((customer) => customer.distinctProducts).toFixed(1),
+            ),
+            inactivityDays: Number(
+              average((customer) => customer.daysSinceLastActivity).toFixed(1),
+            ),
+          },
+        };
+      },
+    );
 
     return {
       generatedAt: new Date().toISOString(),
-      method:
-        'Configuración actual: K-means (k=4), transformación log1p y estandarización de variables.',
+      method: `${clusteringMetadata.solucion}: ${clusteringMetadata.algoritmo} (k=${clusteringMetadata.parametros.k}), ${clusteringMetadata.transformaciones.join(' + ')}.`,
+      model: {
+        version: clustering.version,
+        trainingRows: clusteringMetadata.registros,
+        trainedAt: clusteringMetadata.fecha_entrenamiento,
+        cutoffDate: clusteringMetadata.fecha_corte,
+        batchName: clusteringMetadata.batch_name,
+        silhouette: clusteringMetadata.metricas.silhouette,
+        daviesBouldin: clusteringMetadata.metricas.davies_bouldin,
+      },
       sourceRows: rows.length,
       clusters,
       customers,
@@ -437,6 +442,7 @@ export class AnalyticsService {
   }
 
   async getDemandForecast() {
+    const { regressionMetadata, regressionMetrics } = loadModelArtifacts();
     const rows = await this.prisma.$queryRaw<DemandDatasetRow[]>`
       SELECT product_id, product_name, classification, acquisition_type, month,
         month_number, monthly_demand, units_sold, units_rented, views, unit_price,
@@ -450,7 +456,9 @@ export class AnalyticsService {
       return {
         generatedAt: new Date().toISOString(),
         model: {
-          name: 'Regresión lineal múltiple Ridge',
+          name: regressionMetadata.name,
+          version: regressionMetadata.version,
+          artifact: 'ridge_demanda_modelo.json',
           historicalRows: 0,
           trainingRows: 0,
           validationRows: 0,
@@ -487,48 +495,14 @@ export class AnalyticsService {
       row.acquisition_type === 'MIXTO' ? 1 : 0,
     ];
 
-    const samples = rows.map((row) => ({
-      month: row.month.getTime(),
-      values: featureValues(row),
-      target: row.monthly_demand,
-    }));
     const historicalMonthValues = [
-      ...new Set(samples.map((sample) => sample.month)),
+      ...new Set(rows.map((row) => row.month.getTime())),
     ].sort((left, right) => left - right);
-    if (historicalMonthValues.length < 3) {
+    if (historicalMonthValues.length === 0) {
       throw new UnprocessableEntityException(
-        'Se requieren al menos tres meses históricos para validar el pronóstico.',
+        'No existe historial para construir las entradas del pronóstico.',
       );
     }
-    const validationMonthCount = Math.min(
-      historicalMonthValues.length - 1,
-      Math.max(2, Math.min(6, Math.ceil(historicalMonthValues.length * 0.2))),
-    );
-    const validationMonthValues = new Set(
-      historicalMonthValues.slice(-validationMonthCount),
-    );
-    const trainingSamples = samples.filter(
-      (sample) => !validationMonthValues.has(sample.month),
-    );
-    const validationSamples = samples.filter((sample) =>
-      validationMonthValues.has(sample.month),
-    );
-    const evaluationModel = trainRidgeRegression(trainingSamples);
-    const validationMetrics = calculateRegressionMetrics(
-      validationSamples.map((sample) => sample.target),
-      validationSamples.map((sample) =>
-        Math.max(0, Math.min(200, evaluationModel.predict(sample.values))),
-      ),
-    );
-
-    // Las métricas anteriores permanecen fuera de muestra. Este segundo ajuste
-    // aprovecha todo el historial únicamente para generar el pronóstico final.
-    const forecastModel = trainRidgeRegression(
-      samples.map(({ values, target }) => ({
-        values,
-        target,
-      })),
-    );
     const latestMonth = rows.reduce(
       (latest, row) => (row.month > latest ? row.month : latest),
       rows[0]?.month ?? new Date(),
@@ -602,15 +576,10 @@ export class AnalyticsService {
       // Para el pronóstico futuro, las ventas, rentas y vistas del último mes
       // histórico se convierten en las variables del mes anterior respecto del
       // mes que se desea pronosticar.
-      const predictedDemand = Math.max(
-        0,
-        Math.min(
-          200,
-          Math.round(
-            forecastModel.predict(featureValues(input, forecastMonth)),
-          ),
-        ),
+      const predictedDemandDecimal = predictDemandFromArtifact(
+        featureValues(input, forecastMonth),
       );
+      const predictedDemand = Math.round(predictedDemandDecimal);
       const shortage = predictedDemand - catalogProduct.stock;
       const recommendation =
         shortage >= 10
@@ -638,6 +607,7 @@ export class AnalyticsService {
           previousMonthRentals: row.units_rented,
           previousMonthViews: row.views,
           activePromotion: input.active_promotion,
+          predictedDemandDecimal,
           predictedDemand,
           shortage,
           recommendation,
@@ -648,29 +618,26 @@ export class AnalyticsService {
     return {
       generatedAt: new Date().toISOString(),
       model: {
-        name: 'Regresión lineal múltiple Ridge',
-        historicalRows: samples.length,
-        trainingRows: trainingSamples.length,
-        validationRows: validationSamples.length,
-        finalTrainingRows: samples.length,
-        validationMonths: validationMonthCount,
+        name: regressionMetadata.name,
+        version: regressionMetadata.version,
+        artifact: 'ridge_demanda_modelo.json',
+        historicalRows: regressionMetadata.historical_rows,
+        trainingRows: regressionMetrics.training_period.rows,
+        validationRows: regressionMetrics.validation_period.rows,
+        finalTrainingRows: regressionMetadata.historical_rows,
+        validationMonths: inclusiveMonthCount(
+          regressionMetrics.validation_period.from,
+          regressionMetrics.validation_period.to,
+        ),
         products: forecasts.length,
-        historicalMonths: historicalMonthValues.length,
-        r2: Number(validationMetrics.r2.toFixed(3)),
-        mae: Number(validationMetrics.mae.toFixed(2)),
-        rmse: Number(validationMetrics.rmse.toFixed(2)),
+        historicalMonths: regressionMetadata.historical_months,
+        r2: Number(regressionMetrics.ridge.r2.toFixed(3)),
+        mae: Number(regressionMetrics.ridge.mae.toFixed(2)),
+        rmse: Number(regressionMetrics.ridge.rmse.toFixed(2)),
         forecastMonth: forecastDate.toISOString().slice(0, 7),
-        historicalThrough: new Date(historicalMonthValues.at(-1) ?? 0)
-          .toISOString()
-          .slice(0, 7),
-        validationFrom: new Date(
-          historicalMonthValues.at(-validationMonthCount) ?? 0,
-        )
-          .toISOString()
-          .slice(0, 7),
-        validationTo: new Date(historicalMonthValues.at(-1) ?? 0)
-          .toISOString()
-          .slice(0, 7),
+        historicalThrough: regressionMetadata.historical_through,
+        validationFrom: regressionMetrics.validation_period.from,
+        validationTo: regressionMetrics.validation_period.to,
       },
       forecasts: forecasts.sort(
         (a, b) => b.predictedDemand - a.predictedDemand,

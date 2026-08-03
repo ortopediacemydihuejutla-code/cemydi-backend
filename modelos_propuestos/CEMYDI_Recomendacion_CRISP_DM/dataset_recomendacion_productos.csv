@@ -1,0 +1,41 @@
+﻿product_id,product_name,classification,acquisition_type,price,stock,requires_prescription,views,searches
+179,Silla de ruedas estándar,Movilidad,MIXTO,6164.07,29,False,218,53
+180,Silla de ruedas reclinable,Movilidad,MIXTO,10622.63,61,False,336,106
+181,Silla de ruedas bariátrica,Movilidad,RENTA,18396.5,13,False,337,99
+182,Andadera plegable aluminio,Apoyo para caminar,MIXTO,2781.54,20,False,205,57
+183,Bastón de cuatro apoyos,Apoyo para caminar,VENTA,1318.19,53,False,336,98
+184,Muletas axilares ajustables,Apoyo para caminar,MIXTO,1719.87,57,False,380,99
+185,Concentrador de oxígeno 5 L,Oxigenoterapia,RENTA,23063.19,28,True,242,74
+186,Concentrador de oxígeno portátil,Oxigenoterapia,MIXTO,41387.48,36,True,278,90
+187,Tanque de oxígeno 682 L,Oxigenoterapia,MIXTO,8609.49,49,True,327,103
+188,Nebulizador compresor,Oxigenoterapia,VENTA,1807.25,42,False,241,61
+189,Cama hospitalaria manual,Cuidado en cama,RENTA,21858.46,20,False,281,83
+190,Cama hospitalaria eléctrica,Cuidado en cama,RENTA,47085.29,14,False,228,80
+191,Colchón antiescaras,Cuidado en cama,MIXTO,8071.84,46,False,166,46
+192,Grúa para traslado de pacientes,Cuidado en casa,RENTA,33519.04,47,False,274,75
+193,Baño portátil con ruedas,Baño y seguridad,MIXTO,5203.97,20,False,386,104
+194,Banco para regadera,Baño y seguridad,VENTA,1950.51,13,False,406,113
+195,Faja lumbar ortopédica,Ortesis,VENTA,1558.46,39,False,318,85
+196,Rodillera estabilizadora,Ortesis,VENTA,2104.75,19,False,244,87
+197,Silla de transporte ultraligera,Movilidad,MIXTO,7835.04,46,False,294,97
+198,Silla de ruedas infantil,Movilidad,MIXTO,12763.5,28,False,344,111
+199,Scooter de movilidad compacto,Movilidad,RENTA,52279.92,39,False,386,89
+200,Andadera con asiento y ruedas,Apoyo para caminar,MIXTO,4934.6,47,False,189,46
+201,Andadera pediátrica ajustable,Apoyo para caminar,VENTA,3354.61,51,False,375,121
+202,Bastón plegable de aluminio,Apoyo para caminar,VENTA,954.52,12,False,377,120
+203,Oxímetro de pulso digital,Oxigenoterapia,VENTA,1369.82,20,False,388,93
+204,Regulador para tanque de oxígeno,Oxigenoterapia,VENTA,2443.55,35,True,220,65
+205,Cilindro de oxígeno 9500 L,Oxigenoterapia,RENTA,15641.79,20,True,255,65
+206,Aspirador de secreciones portátil,Terapia respiratoria,MIXTO,9746.36,23,True,178,55
+207,CPAP automático con humidificador,Terapia respiratoria,MIXTO,28741.3,21,True,479,127
+208,BiPAP domiciliario,Terapia respiratoria,RENTA,47731.3,24,True,261,84
+209,Mesa puente para cama hospitalaria,Cuidado en cama,MIXTO,4485.13,38,False,445,130
+210,Barandal abatible para cama,Cuidado en cama,VENTA,3821.69,34,False,397,104
+211,Cojín antiescaras de gel,Cuidado en casa,VENTA,4180.33,30,False,256,80
+212,Elevador hidráulico de paciente,Cuidado en casa,RENTA,39285.84,32,False,238,84
+213,Silla cómoda sanitaria,Baño y seguridad,MIXTO,3697.51,30,False,317,83
+214,Barra de apoyo para baño,Baño y seguridad,VENTA,1029.99,55,False,151,39
+215,Collarín cervical semirrígido,Ortesis,VENTA,1268.4,30,False,191,61
+216,Tobillera estabilizadora,Ortesis,VENTA,1372.27,57,False,207,54
+217,Muñequera con férula palmar,Ortesis,VENTA,1122.68,36,False,413,101
+218,Compresero eléctrico terapéutico,Rehabilitación,VENTA,2993.12,39,False,337,85

@@ -1,0 +1,43 @@
+{
+  "name": "Recomendador de productos ortopédicos CEMYDI",
+  "version": "1.0",
+  "batch_name": "CEMYDI_DEMO_2024_2026_V1",
+  "trained_at": "2026-08-02T22:43:34",
+  "cutoff_date": "2026-07-31 15:02:00",
+  "technique": "Content-based recommendation with cosine similarity",
+  "products": 40,
+  "top_k": 5,
+  "features": {
+    "categorical": [
+      "classification",
+      "acquisition_type"
+    ],
+    "numeric": [
+      "price",
+      "stock",
+      "views",
+      "searches"
+    ],
+    "binary": "requires_prescription"
+  },
+  "transformations": {
+    "categorical": "OneHotEncoder",
+    "numeric": "log1p + StandardScaler",
+    "binary": "0/1"
+  },
+  "weights": {
+    "categoricas": 3.0,
+    "numericas": 0.3,
+    "receta": 1.0
+  },
+  "selected_configuration": "Énfasis en contenido",
+  "final_metrics": {
+    "HitRate@5": 0.27586206896551724,
+    "MRR@5": 0.14741379310344827,
+    "NDCG@5": 0.17937491430413066,
+    "Cobertura": 1.0,
+    "Diversidad": 0.47143182078561213,
+    "Casos": 116
+  },
+  "temporal_limitation": "Price and stock are current catalog values, not historical snapshots."
+}

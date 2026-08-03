@@ -1,0 +1,13 @@
+PAQUETE CORREGIDO DE REGRESIÓN CEMYDI
+
+Archivo principal:
+02_Regresion_Demanda_CEMYDI_CRISP_DM.ipynb
+
+La libreta:
+- conserva Ridge y la división cronológica;
+- compara varios valores de alpha;
+- elimina el límite máximo no justificado;
+- verifica pipeline y JSON;
+- genera los artefactos en 07_Modelos/regresion/.
+
+La libreta ya fue ejecutada completamente y contiene sus salidas.

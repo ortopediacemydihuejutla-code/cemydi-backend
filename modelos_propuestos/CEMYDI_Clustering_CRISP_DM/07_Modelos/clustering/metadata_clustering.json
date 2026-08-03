@@ -1,0 +1,79 @@
+{
+  "solucion": "Segmentación de clientes de CEMYDI",
+  "batch_name": "CEMYDI_DEMO_2024_2026_V1",
+  "fecha_corte": "2026-08-01",
+  "fecha_entrenamiento": "2026-08-02T22:42:30",
+  "dataset": "dataset_segmentacion_clientes.csv",
+  "datos": "100 % sintéticos",
+  "unidad_analisis": "Un cliente",
+  "registros": 400,
+  "variables": [
+    "completed_sales",
+    "valid_rentals",
+    "amount_spent_sales",
+    "amount_spent_rentals",
+    "total_interactions",
+    "distinct_products_interacted",
+    "days_since_last_activity"
+  ],
+  "transformaciones": [
+    "log1p",
+    "StandardScaler"
+  ],
+  "algoritmo": "KMeans",
+  "parametros": {
+    "k": 4,
+    "n_init": 20,
+    "random_state": 42
+  },
+  "metricas": {
+    "inercia": 979.1358373315518,
+    "silhouette": 0.44960099187026387,
+    "davies_bouldin": 0.879263430008332,
+    "calinski_harabasz": 245.47571471520683
+  },
+  "centroides_escalados": [
+    [
+      -0.9908351339814048,
+      -0.5368991014257235,
+      -0.34534622314117236,
+      -0.5530331947509142,
+      -2.36716687943602,
+      -2.306907661600783,
+      1.608345080742809
+    ],
+    [
+      0.38593492831023335,
+      -0.6189562105058236,
+      0.36522004073582276,
+      -0.7109086621546704,
+      0.32716087717757664,
+      0.29998709260523276,
+      -0.23056944176611244
+    ],
+    [
+      0.1531378649109454,
+      1.239439081552147,
+      0.26240584610519596,
+      1.3991136296475688,
+      0.18525149246547004,
+      0.23109494321176663,
+      -0.24544110759916107
+    ],
+    [
+      -2.2279891108147436,
+      -0.11812414471663535,
+      -3.4325491782929465,
+      -0.11371462940295801,
+      -0.06152242337287454,
+      -0.14252040230457969,
+      0.6334702516054601
+    ]
+  ],
+  "segmentos": {
+    "0": "Baja actividad",
+    "1": "Compradores frecuentes",
+    "2": "Arrendatarios recurrentes",
+    "3": "Exploradores"
+  }
+}

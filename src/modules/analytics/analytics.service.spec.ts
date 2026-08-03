@@ -108,21 +108,23 @@ describe('AnalyticsService demand forecast', () => {
     promotionFindMany.mockResolvedValue([]);
   });
 
-  it('reports the chronological evaluation split and final fit', async () => {
+  it('reports the evaluation metadata stored with the deployed artifact', async () => {
     queryRaw.mockResolvedValue(demandRows);
 
     const result = await service.getDemandForecast();
 
-    expect(result.model.historicalRows).toBe(demandRows.length);
-    expect(result.model.trainingRows).toBe(2);
-    expect(result.model.validationRows).toBe(2);
-    expect(result.model.finalTrainingRows).toBe(demandRows.length);
+    expect(result.model.artifact).toBe('ridge_demanda_modelo.json');
+    expect(result.model.version).toBe('1.0');
+    expect(result.model.historicalRows).toBe(1240);
+    expect(result.model.trainingRows).toBe(1000);
+    expect(result.model.validationRows).toBe(240);
+    expect(result.model.finalTrainingRows).toBe(1240);
     expect(result.model.trainingRows + result.model.validationRows).toBe(
       result.model.historicalRows,
     );
-    expect(result.model.historicalThrough).toBe('2026-04');
-    expect(result.model.validationFrom).toBe('2026-03');
-    expect(result.model.validationTo).toBe('2026-04');
+    expect(result.model.historicalThrough).toBe('2026-07');
+    expect(result.model.validationFrom).toBe('2026-02');
+    expect(result.model.validationTo).toBe('2026-07');
     expect(Number.isFinite(result.model.r2)).toBe(true);
     expect(Number.isFinite(result.model.mae)).toBe(true);
     expect(Number.isFinite(result.model.rmse)).toBe(true);
@@ -148,7 +150,9 @@ describe('AnalyticsService demand forecast', () => {
     const result = await service.getDemandForecast();
 
     expect(result.model).toEqual({
-      name: 'Regresión lineal múltiple Ridge',
+      name: 'Predicción mensual de demanda CEMYDI',
+      version: '1.0',
+      artifact: 'ridge_demanda_modelo.json',
       historicalRows: 0,
       trainingRows: 0,
       validationRows: 0,

@@ -1,0 +1,41 @@
+product_id,product_name,classification,acquisition_type,unit_price,stock_at_month_start,previous_month_sales,previous_month_rentals,previous_month_views,active_promotion,forecast_month,predicted_demand_decimal,predicted_demand_interface,shortage,suggested_action
+195,Faja lumbar ortopédica,Ortesis,VENTA,1558.46,30,22,0,7,False,2026-08,15.019721854423782,15,-15,Mantener el inventario y revisar la rotación mensual.
+194,Banco para regadera,Baño y seguridad,VENTA,1950.51,10,20,0,9,False,2026-08,15.229495736561836,15,5,Programar una compra preventiva de 5 unidades.
+188,Nebulizador compresor,Oxigenoterapia,VENTA,1807.25,68,26,0,4,False,2026-08,14.457724292053442,14,-54,Mantener el inventario y revisar la rotación mensual.
+182,Andadera plegable aluminio,Apoyo para caminar,MIXTO,2781.54,39,19,1,1,False,2026-08,12.421474494513813,12,-27,Mantener el inventario y revisar la rotación mensual.
+193,Baño portátil con ruedas,Baño y seguridad,MIXTO,5203.97,28,9,3,8,False,2026-08,11.613382126493232,12,-16,Mantener el inventario y revisar la rotación mensual.
+184,Muletas axilares ajustables,Apoyo para caminar,MIXTO,1719.87,71,11,3,11,False,2026-08,11.900537776943132,12,-59,Mantener el inventario y revisar la rotación mensual.
+218,Compresero eléctrico terapéutico,Rehabilitación,VENTA,2993.12,51,17,0,12,False,2026-08,11.755564367976556,12,-39,Mantener el inventario y revisar la rotación mensual.
+213,Silla cómoda sanitaria,Baño y seguridad,MIXTO,3697.51,41,8,3,15,False,2026-08,12.09555534682869,12,-29,Mantener el inventario y revisar la rotación mensual.
+211,Cojín antiescaras de gel,Cuidado en casa,VENTA,4180.33,16,14,0,8,False,2026-08,10.89067577257585,11,-5,Mantener el inventario y revisar la rotación mensual.
+203,Oxímetro de pulso digital,Oxigenoterapia,VENTA,1369.82,33,13,0,11,False,2026-08,10.926506338467583,11,-22,Mantener el inventario y revisar la rotación mensual.
+204,Regulador para tanque de oxígeno,Oxigenoterapia,VENTA,2443.55,24,16,0,5,False,2026-08,10.79341461528573,11,-13,Mantener el inventario y revisar la rotación mensual.
+202,Bastón plegable de aluminio,Apoyo para caminar,VENTA,954.52,22,9,0,12,False,2026-08,9.823695536753908,10,-12,Mantener el inventario y revisar la rotación mensual.
+201,Andadera pediátrica ajustable,Apoyo para caminar,VENTA,3354.61,58,14,0,10,False,2026-08,9.27031162998029,9,-49,Mantener el inventario y revisar la rotación mensual.
+179,Silla de ruedas estándar,Movilidad,MIXTO,6164.07,42,7,3,7,False,2026-08,9.465492684062097,9,-33,Mantener el inventario y revisar la rotación mensual.
+200,Andadera con asiento y ruedas,Apoyo para caminar,MIXTO,4934.6,63,17,0,4,False,2026-08,8.744064422559273,9,-54,Mantener el inventario y revisar la rotación mensual.
+209,Mesa puente para cama hospitalaria,Cuidado en cama,MIXTO,4485.13,50,7,2,8,False,2026-08,7.970717398425882,8,-42,Mantener el inventario y revisar la rotación mensual.
+210,Barandal abatible para cama,Cuidado en cama,VENTA,3821.69,44,12,0,6,False,2026-08,8.000108770374153,8,-36,Mantener el inventario y revisar la rotación mensual.
+215,Collarín cervical semirrígido,Ortesis,VENTA,1268.4,18,7,0,3,False,2026-08,6.881948970437688,7,-11,Mantener el inventario y revisar la rotación mensual.
+214,Barra de apoyo para baño,Baño y seguridad,VENTA,1029.99,70,11,0,4,False,2026-08,6.681976824172597,7,-63,Mantener el inventario y revisar la rotación mensual.
+196,Rodillera estabilizadora,Ortesis,VENTA,2104.75,31,10,0,2,False,2026-08,7.2297642509347835,7,-24,Mantener el inventario y revisar la rotación mensual.
+197,Silla de transporte ultraligera,Movilidad,MIXTO,7835.04,52,9,0,10,False,2026-08,5.887073558296134,6,-46,Mantener el inventario y revisar la rotación mensual.
+198,Silla de ruedas infantil,Movilidad,MIXTO,12763.5,12,6,0,11,False,2026-08,6.197988181873309,6,-6,Mantener el inventario y revisar la rotación mensual.
+187,Tanque de oxígeno 682 L,Oxigenoterapia,MIXTO,8609.49,63,13,0,7,False,2026-08,6.232819210077352,6,-57,Mantener el inventario y revisar la rotación mensual.
+183,Bastón de cuatro apoyos,Apoyo para caminar,VENTA,1318.19,56,6,0,8,False,2026-08,5.353341847916813,5,-51,Mantener el inventario y revisar la rotación mensual.
+206,Aspirador de secreciones portátil,Terapia respiratoria,MIXTO,9746.36,16,9,0,1,False,2026-08,5.203827589590457,5,-11,Mantener el inventario y revisar la rotación mensual.
+217,Muñequera con férula palmar,Ortesis,VENTA,1122.68,43,4,0,2,False,2026-08,3.8393552458325,4,-39,Mantener el inventario y revisar la rotación mensual.
+216,Tobillera estabilizadora,Ortesis,VENTA,1372.27,61,2,0,2,False,2026-08,1.6643426663757594,2,-59,Mantener el inventario y revisar la rotación mensual.
+180,Silla de ruedas reclinable,Movilidad,MIXTO,10622.63,62,1,0,11,False,2026-08,1.01921701827834,1,-61,Mantener el inventario y revisar la rotación mensual.
+207,CPAP automático con humidificador,Terapia respiratoria,MIXTO,28741.3,22,1,0,8,False,2026-08,1.192027870646001,1,-21,Mantener el inventario y revisar la rotación mensual.
+189,Cama hospitalaria manual,Cuidado en cama,RENTA,21858.46,18,0,1,10,False,2026-08,1.0527646681862404,1,-17,Mantener el inventario y revisar la rotación mensual.
+191,Colchón antiescaras,Cuidado en cama,MIXTO,8071.84,47,1,0,6,False,2026-08,0.982675577664434,1,-46,Mantener el inventario y revisar la rotación mensual.
+181,Silla de ruedas bariátrica,Movilidad,RENTA,18396.5,12,0,0,4,False,2026-08,0.0,0,-12,Mantener el inventario y revisar la rotación mensual.
+186,Concentrador de oxígeno portátil,Oxigenoterapia,MIXTO,41387.48,36,0,0,6,False,2026-08,0.0,0,-36,Mantener el inventario y revisar la rotación mensual.
+185,Concentrador de oxígeno 5 L,Oxigenoterapia,RENTA,23063.19,18,0,0,4,False,2026-08,0.0,0,-18,Mantener el inventario y revisar la rotación mensual.
+190,Cama hospitalaria eléctrica,Cuidado en cama,RENTA,47085.29,14,0,0,6,False,2026-08,0.0,0,-14,Mantener el inventario y revisar la rotación mensual.
+192,Grúa para traslado de pacientes,Cuidado en casa,RENTA,33519.04,48,0,0,3,False,2026-08,0.0,0,-48,Mantener el inventario y revisar la rotación mensual.
+199,Scooter de movilidad compacto,Movilidad,RENTA,52279.92,37,0,0,9,False,2026-08,0.0,0,-37,Mantener el inventario y revisar la rotación mensual.
+205,Cilindro de oxígeno 9500 L,Oxigenoterapia,RENTA,15641.79,23,0,1,7,False,2026-08,0.0,0,-23,Mantener el inventario y revisar la rotación mensual.
+208,BiPAP domiciliario,Terapia respiratoria,RENTA,47731.3,23,0,0,4,False,2026-08,0.0,0,-23,Mantener el inventario y revisar la rotación mensual.
+212,Elevador hidráulico de paciente,Cuidado en casa,RENTA,39285.84,31,0,0,6,False,2026-08,0.0,0,-31,Mantener el inventario y revisar la rotación mensual.

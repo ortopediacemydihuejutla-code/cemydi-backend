@@ -1,0 +1,401 @@
+﻿customer_id,customer_name,email,views,searches,add_to_cart,favorites,shares,distinct_products_interacted,total_interactions,completed_sales,units_purchased,amount_spent_sales,valid_rentals,units_rented,amount_spent_rentals,average_rental_days,last_activity,days_since_last_activity,average_monthly_activity
+1257,Alberto Hernán Guevara,demo.usuario001@cemydi.local,3,0,0,1,0,4,4,3,6,15888.9,1,1,2204.72,8.0,2025-11-23 13:21:00,251,0.25
+1258,Angélica Nelly Lozada,demo.usuario002@cemydi.local,44,15,6,5,3,26,73,6,15,79178.37,0,0,0.0,0.0,2026-06-10 13:11:00,52,2.92
+1259,Dolores Sanabria,demo.usuario003@cemydi.local,45,11,6,2,4,27,68,0,0,0.0,0,0,0.0,0.0,2026-04-17 10:51:00,106,22.67
+1260,Celia María Acosta,demo.usuario004@cemydi.local,20,8,3,2,0,19,33,6,11,15662.89,0,0,0.0,0.0,2026-07-02 15:01:00,30,3.0
+1261,Dolores Tirado,demo.usuario005@cemydi.local,23,7,3,2,2,20,37,3,5,18390.4,0,0,0.0,0.0,2026-06-23 11:42:00,39,1.85
+1262,Cynthia Ariadna Calderón,demo.usuario006@cemydi.local,33,11,4,1,0,22,49,5,8,15209.22,0,0,0.0,0.0,2026-04-22 10:50:00,101,1.81
+1263,Emilio Ojeda Acevedo,demo.usuario007@cemydi.local,44,14,7,3,1,25,69,5,15,256472.58,2,2,1722.17,4.5,2026-06-11 17:06:00,51,8.63
+1264,Rosa Bonilla,demo.usuario008@cemydi.local,35,6,5,1,2,23,49,18,52,119191.45,0,0,0.0,0.0,2026-06-05 12:09:00,57,8.17
+1265,Daniel Guillermo Carrillo,demo.usuario009@cemydi.local,39,9,5,3,2,26,58,10,32,202949.32,0,0,0.0,0.0,2026-07-20 09:54:00,12,3.41
+1266,Alfredo Iván Nava Arenas,demo.usuario010@cemydi.local,34,7,11,3,2,26,57,18,45,103264.04,0,0,0.0,0.0,2026-07-10 11:48:00,22,3.35
+1267,Claudio Ibarra Domínguez,demo.usuario011@cemydi.local,49,9,8,6,5,26,77,0,0,0.0,0,0,0.0,0.0,2026-05-18 11:11:00,75,3.5
+1268,Roberto Abrego,demo.usuario012@cemydi.local,26,4,5,2,1,17,38,16,41,144036.81,0,0,0.0,0.0,2026-06-20 18:38:00,42,3.17
+1269,María del Carmen Arteaga,demo.usuario013@cemydi.local,35,9,9,5,2,24,60,13,39,140817.74,0,0,0.0,0.0,2026-06-24 15:45:00,38,3.16
+1270,Luis Manuel Lucas Menéndez,demo.usuario014@cemydi.local,13,0,3,0,2,14,18,3,3,4595.47,0,0,0.0,0.0,2026-01-09 15:24:00,204,0.82
+1271,Jerónimo Galarza,demo.usuario015@cemydi.local,43,13,6,5,1,25,68,20,46,119800.65,0,0,0.0,0.0,2026-07-22 18:18:00,10,9.71
+1272,Leonardo Farías,demo.usuario016@cemydi.local,34,11,8,1,1,20,55,8,17,135959.02,0,0,0.0,0.0,2026-06-21 15:00:00,41,2.12
+1273,Alicia Saldaña Meléndez,demo.usuario017@cemydi.local,29,12,5,5,1,29,52,16,47,82536.76,2,2,5915.32,11.0,2026-06-09 14:57:00,53,3.71
+1274,Jacobo Casares,demo.usuario018@cemydi.local,51,9,6,2,4,29,72,15,41,187658.05,0,0,0.0,0.0,2026-06-21 09:13:00,41,2.57
+1275,Marisela Anel Velázquez,demo.usuario019@cemydi.local,15,5,3,0,2,14,25,17,48,187632.2,0,0,0.0,0.0,2026-06-24 16:27:00,38,1.25
+1276,Gabriel Lomeli,demo.usuario020@cemydi.local,22,7,6,1,3,21,39,21,57,190269.05,2,2,6538.21,5.5,2026-06-26 14:16:00,36,7.8
+1277,Eric Rodrígez,demo.usuario021@cemydi.local,41,12,5,1,6,22,65,14,34,145410.09,0,0,0.0,0.0,2026-06-11 13:46:00,51,3.25
+1278,Hugo Quezada,demo.usuario022@cemydi.local,21,10,4,2,0,13,37,14,43,195948.56,0,0,0.0,0.0,2026-06-15 09:10:00,47,5.29
+1279,Indira Mayte Jaramillo,demo.usuario023@cemydi.local,39,10,6,3,3,29,61,22,36,54898.24,0,0,0.0,0.0,2026-07-26 09:04:00,6,3.81
+1280,Lucas Elias Benavídez Rodarte,demo.usuario024@cemydi.local,35,18,9,2,0,23,64,7,16,59088.73,0,0,0.0,0.0,2026-07-18 17:45:00,14,4.92
+1281,Vicente Juan Guajardo,demo.usuario025@cemydi.local,21,3,4,0,1,16,29,6,20,214180.13,0,0,0.0,0.0,2026-07-01 16:38:00,31,1.16
+1282,Fabiola Godínez,demo.usuario026@cemydi.local,20,7,3,3,0,14,33,7,23,175492.78,0,0,0.0,0.0,2026-07-27 17:16:00,5,1.83
+1283,Adriana Estefanía Terán,demo.usuario027@cemydi.local,24,5,1,0,0,18,30,22,42,83393.38,0,0,0.0,0.0,2026-06-28 10:29:00,34,1.3
+1284,José Luis Gamboa,demo.usuario028@cemydi.local,3,2,4,1,2,10,12,1,4,17233.16,0,0,0.0,0.0,2026-05-04 15:41:00,89,0.52
+1285,César Alberto Ceja Alejandro,demo.usuario029@cemydi.local,52,10,5,2,3,27,72,14,38,89790.74,0,0,0.0,0.0,2026-06-19 11:46:00,43,2.77
+1286,Srita. Anabel Castro,demo.usuario030@cemydi.local,29,19,5,1,3,28,57,22,45,66912.0,1,1,1937.16,12.0,2026-06-12 18:50:00,50,3.56
+1287,Ariadna Jaqueline Cedillo,demo.usuario031@cemydi.local,5,2,4,0,0,9,11,4,9,10052.73,0,0,0.0,0.0,2026-04-30 09:13:00,93,0.85
+1288,Andrea Collado,demo.usuario032@cemydi.local,10,3,0,1,0,8,14,4,5,13300.85,0,0,0.0,0.0,2026-02-16 09:25:00,166,1.27
+1289,Mitzy Sonia Manzanares Armenta,demo.usuario033@cemydi.local,26,11,2,2,4,25,45,13,33,75651.87,0,0,0.0,0.0,2026-07-18 16:01:00,14,9.0
+1290,Araceli Quesada Caraballo,demo.usuario034@cemydi.local,47,9,5,3,2,25,66,4,6,10624.84,0,0,0.0,0.0,2026-06-18 11:50:00,44,5.08
+1291,Modesto Martín Madrigal,demo.usuario035@cemydi.local,6,4,1,0,0,8,11,1,4,14588.56,1,1,2123.65,5.0,2026-01-28 17:16:00,185,0.5
+1292,Srita. Itzel Nieves,demo.usuario036@cemydi.local,25,4,4,1,1,19,35,18,47,124526.77,0,0,0.0,0.0,2026-06-20 17:36:00,42,1.46
+1293,Fidel Mondragón,demo.usuario037@cemydi.local,47,13,4,4,1,25,69,17,42,204804.07,0,0,0.0,0.0,2026-06-29 13:21:00,33,13.8
+1294,Linda Cuellar,demo.usuario038@cemydi.local,49,13,3,4,1,24,70,15,31,55574.87,0,0,0.0,0.0,2026-07-08 15:08:00,24,2.26
+1295,Victoria Carlota Rodarte Rangel,demo.usuario039@cemydi.local,29,8,6,1,4,21,48,20,42,101115.2,3,3,3165.7,7.0,2026-07-28 14:53:00,4,2.82
+1296,Benito Ramón Muro Barreto,demo.usuario040@cemydi.local,45,8,8,5,3,26,69,3,10,37681.08,2,2,2773.74,5.5,2026-06-12 13:05:00,50,11.5
+1297,Natividad María José Hernandes,demo.usuario041@cemydi.local,52,11,3,3,4,28,73,6,10,11014.98,1,1,1600.83,11.0,2026-07-15 12:12:00,17,3.48
+1298,Esther Báez,demo.usuario042@cemydi.local,31,4,4,1,3,20,43,18,51,88749.0,1,1,3759.36,12.0,2026-07-19 16:01:00,13,10.75
+1299,Noemí Bianca Iglesias,demo.usuario043@cemydi.local,29,8,5,2,0,19,44,22,52,201551.94,1,1,4446.6,15.0,2026-06-12 13:55:00,50,4.89
+1300,Antonio Jacinto Otero,demo.usuario044@cemydi.local,42,9,2,6,2,27,61,21,49,143225.53,0,0,0.0,0.0,2026-06-02 11:20:00,60,4.69
+1301,Silvano Santiago Corrales de la Torre,demo.usuario045@cemydi.local,46,11,3,1,1,29,62,22,53,160159.65,0,0,0.0,0.0,2026-07-14 16:07:00,18,2.21
+1302,Miguel Ángel Casillas,demo.usuario046@cemydi.local,32,11,2,5,0,23,50,21,53,158988.11,0,0,0.0,0.0,2026-07-07 09:32:00,25,25.0
+1303,Carlos Prado,demo.usuario047@cemydi.local,15,5,6,3,0,15,29,17,34,66880.11,2,2,1870.97,4.5,2026-07-29 15:50:00,3,1.61
+1304,María Córdova,demo.usuario048@cemydi.local,34,8,7,2,0,20,51,6,13,15733.06,0,0,0.0,0.0,2026-06-20 14:56:00,42,3.0
+1305,Salvador Carmona Espino,demo.usuario049@cemydi.local,46,10,5,2,3,29,66,12,35,199264.45,0,0,0.0,0.0,2026-06-03 18:32:00,59,9.43
+1306,Cornelio Vela,demo.usuario050@cemydi.local,35,11,4,2,1,23,53,2,5,31145.9,5,5,9786.37,7.0,2026-07-22 13:28:00,10,10.6
+1307,María Luisa Silvia Feliciano Loera,demo.usuario051@cemydi.local,2,0,1,0,0,2,3,2,3,4644.95,0,0,0.0,0.0,2025-08-08 13:19:00,358,0.38
+1308,Vicente Lorenzo Ponce Serrato,demo.usuario052@cemydi.local,20,7,2,1,3,16,33,22,48,81120.68,1,1,2433.1,10.0,2026-07-14 17:32:00,18,1.94
+1309,Octavio Elias Rentería Zelaya,demo.usuario053@cemydi.local,38,8,9,1,1,27,57,2,7,15086.46,0,0,0.0,0.0,2026-04-25 18:08:00,98,11.4
+1310,Noemí Ríos,demo.usuario054@cemydi.local,28,12,3,2,1,22,46,18,51,169742.55,0,0,0.0,0.0,2026-07-11 18:45:00,21,5.11
+1311,Ricardo Pineda,demo.usuario055@cemydi.local,25,7,3,0,2,20,37,19,52,205632.79,0,0,0.0,0.0,2026-06-15 17:52:00,47,6.17
+1312,Dulce María Pedraza,demo.usuario056@cemydi.local,20,7,1,1,1,13,30,13,39,194916.98,0,0,0.0,0.0,2026-07-21 14:01:00,11,10.0
+1313,Ivonne Arcelia Tello Espino,demo.usuario057@cemydi.local,39,9,6,6,0,23,60,1,2,9291.46,0,0,0.0,0.0,2026-04-10 14:25:00,113,2.4
+1314,José Luis Marroquín,demo.usuario058@cemydi.local,4,2,0,0,0,5,6,1,3,14037.78,0,0,0.0,0.0,2025-11-04 09:44:00,270,0.86
+1315,Armando Corona,demo.usuario059@cemydi.local,20,9,4,2,2,17,37,12,26,79320.62,0,0,0.0,0.0,2026-06-08 09:49:00,54,6.17
+1316,Alejandro Cabán,demo.usuario060@cemydi.local,46,15,6,4,2,30,73,20,40,114466.47,0,0,0.0,0.0,2026-07-22 18:18:00,10,6.64
+1317,Rufino Ordóñez,demo.usuario061@cemydi.local,46,19,9,1,3,24,78,3,8,13152.49,0,0,0.0,0.0,2026-05-20 16:22:00,73,7.09
+1318,Julio Jaime Muro Carbajal,demo.usuario062@cemydi.local,35,12,10,2,0,18,59,20,46,123685.37,0,0,0.0,0.0,2026-06-30 16:13:00,32,29.5
+1319,Esther Linda Luna,demo.usuario063@cemydi.local,44,19,6,4,4,29,77,2,7,41840.86,1,1,4893.6,15.0,2026-05-02 11:47:00,91,2.85
+1320,Rubén Felipe Villarreal,demo.usuario064@cemydi.local,51,14,5,2,5,25,77,0,0,0.0,1,1,2607.75,15.0,2026-07-24 11:22:00,8,15.4
+1321,Hermelinda Posada,demo.usuario065@cemydi.local,32,14,4,7,0,24,57,0,0,0.0,0,0,0.0,0.0,2026-04-09 16:16:00,114,2.71
+1322,Agustín Jorge Cardona,demo.usuario066@cemydi.local,8,0,2,2,0,7,12,2,6,10977.86,1,1,3174.48,8.0,2026-05-20 17:39:00,73,0.57
+1323,Raúl Marroquín,demo.usuario067@cemydi.local,21,8,2,0,1,14,32,22,59,165969.55,1,1,6820.66,11.0,2026-07-03 10:22:00,29,2.46
+1324,Rosa Ana Muñoz Aguirre,demo.usuario068@cemydi.local,59,12,9,4,1,25,85,6,15,32969.46,0,0,0.0,0.0,2026-06-19 17:37:00,43,3.86
+1325,Isaac Apodaca,demo.usuario069@cemydi.local,20,4,6,3,0,15,33,1,4,37556.16,1,1,2517.3,5.0,2026-07-14 17:52:00,18,1.43
+1326,Gerónimo Diego Medina Gutiérrez,demo.usuario070@cemydi.local,37,10,8,2,3,25,60,12,38,170330.49,0,0,0.0,0.0,2026-06-11 13:35:00,51,2.5
+1327,Aida Blanca Cotto Quintana,demo.usuario071@cemydi.local,27,9,7,5,0,22,48,12,34,124150.24,0,0,0.0,0.0,2026-06-07 16:53:00,55,8.0
+1328,Araceli Aurora Candelaria,demo.usuario072@cemydi.local,46,10,5,3,1,28,65,22,44,66695.64,1,1,2286.48,8.0,2026-07-15 10:08:00,17,3.25
+1329,Rafaél Zepeda,demo.usuario073@cemydi.local,11,1,0,0,0,10,12,0,0,0.0,0,0,0.0,0.0,2026-04-22 17:38:00,101,2.0
+1330,Lorena Violeta Padilla,demo.usuario074@cemydi.local,54,20,12,3,1,29,90,5,14,42196.74,0,0,0.0,0.0,2026-07-14 16:18:00,18,6.0
+1331,Miriam Sierra Huerta,demo.usuario075@cemydi.local,32,7,7,7,0,17,53,2,6,33921.3,0,0,0.0,0.0,2026-04-28 18:40:00,95,4.08
+1332,Rodolfo Perea Garrido,demo.usuario076@cemydi.local,33,3,4,1,1,21,42,20,53,134267.56,1,1,1285.2,8.0,2026-06-09 15:08:00,53,2.8
+1333,Elvira Corona,demo.usuario077@cemydi.local,18,6,4,3,1,16,32,0,0,0.0,0,0,0.0,0.0,2026-04-18 10:58:00,105,1.23
+1334,Karina Mena Matías,demo.usuario078@cemydi.local,48,13,9,1,2,27,73,16,41,137604.05,0,0,0.0,0.0,2026-06-07 15:43:00,55,7.3
+1335,Eric Angulo,demo.usuario079@cemydi.local,25,5,2,2,0,19,34,18,42,166861.39,1,1,4702.2,15.0,2026-06-17 18:43:00,45,1.62
+1336,Juan Polanco de León,demo.usuario080@cemydi.local,27,6,4,1,1,15,39,12,37,197846.73,2,2,2320.93,6.0,2026-06-13 13:43:00,49,3.25
+1337,Jaime Zambrano Gaona,demo.usuario081@cemydi.local,26,12,4,1,5,19,48,3,7,14322.46,8,8,8374.03,6.63,2026-06-11 11:44:00,51,2.53
+1338,Srita. Alejandra Soto,demo.usuario082@cemydi.local,38,10,5,2,3,25,58,9,23,93123.7,1,1,6183.1,14.0,2026-07-23 09:56:00,9,2.23
+1339,Tomás Jaime García Valles,demo.usuario083@cemydi.local,28,5,6,4,0,19,43,17,48,141641.86,0,0,0.0,0.0,2026-06-06 16:10:00,56,2.53
+1340,Jaime Ibarra Cantú,demo.usuario084@cemydi.local,44,15,7,7,2,27,75,7,19,120204.77,0,0,0.0,0.0,2026-06-16 18:42:00,46,5.36
+1341,José Eduardo Acosta Ponce,demo.usuario085@cemydi.local,21,5,4,2,1,19,33,13,29,74640.06,0,0,0.0,0.0,2026-06-15 15:48:00,47,4.71
+1342,Patricia Elisa Uribe,demo.usuario086@cemydi.local,18,3,7,0,3,15,31,14,37,133399.17,0,0,0.0,0.0,2026-07-29 11:37:00,3,2.82
+1343,Adalberto Villagómez,demo.usuario087@cemydi.local,17,9,5,3,1,18,35,17,35,59452.2,0,0,0.0,0.0,2026-06-06 11:58:00,56,1.94
+1344,Gabriela Márquez León,demo.usuario088@cemydi.local,28,5,3,2,0,22,38,16,38,89017.27,0,0,0.0,0.0,2026-07-27 18:17:00,5,2.11
+1345,Hernán Negrete,demo.usuario089@cemydi.local,55,14,8,5,4,29,86,4,13,43486.97,0,0,0.0,0.0,2026-05-29 11:55:00,64,4.1
+1346,Francisco Javier Hernádez Zúñiga,demo.usuario090@cemydi.local,18,5,4,0,1,13,28,1,2,14565.9,11,11,5617.74,3.73,2026-06-01 17:12:00,61,1.65
+1347,Soledad Guadalupe Cintrón,demo.usuario091@cemydi.local,24,2,2,2,0,9,30,9,23,115630.46,0,0,0.0,0.0,2026-06-19 18:56:00,43,2.73
+1348,Modesto Amador Vergara,demo.usuario092@cemydi.local,17,9,1,5,1,19,33,19,53,204517.1,0,0,0.0,0.0,2026-06-23 10:31:00,39,3.0
+1349,Salma Portillo,demo.usuario093@cemydi.local,28,7,6,3,2,22,46,4,10,21820.55,2,2,4626.61,13.0,2026-04-08 11:47:00,115,5.11
+1350,Emilio Páez,demo.usuario094@cemydi.local,30,4,3,1,2,20,40,5,12,112232.03,0,0,0.0,0.0,2026-07-02 13:28:00,30,1.74
+1351,Luis Miguel Cantú,demo.usuario095@cemydi.local,13,5,5,2,0,17,25,9,21,123153.49,2,2,1318.5,3.5,2026-07-15 18:53:00,17,8.33
+1352,Amelia Asunción Delgado Arenas,demo.usuario096@cemydi.local,31,5,4,2,1,21,43,13,38,176246.63,0,0,0.0,0.0,2026-06-27 12:11:00,35,3.58
+1353,Ofelia Teresa Quezada Durán,demo.usuario097@cemydi.local,35,10,9,4,1,25,59,7,22,187809.19,2,2,1705.73,4.5,2026-06-07 12:31:00,55,6.56
+1354,Elena Urbina,demo.usuario098@cemydi.local,44,21,6,2,1,27,74,10,23,108744.56,1,1,6049.3,10.0,2026-07-04 13:46:00,28,18.5
+1355,Abel Mondragón,demo.usuario099@cemydi.local,7,1,0,0,0,6,8,0,0,0.0,1,1,1882.1,11.0,2026-05-19 10:34:00,74,0.89
+1356,Srita. Camila Cano,demo.usuario100@cemydi.local,25,15,4,3,0,26,47,6,7,13387.09,0,0,0.0,0.0,2026-06-10 17:16:00,52,4.7
+1357,Adriana Miriam Carbajal,demo.usuario101@cemydi.local,39,9,7,3,0,22,58,10,32,195336.27,0,0,0.0,0.0,2026-07-02 15:16:00,30,2.9
+1358,Patricia Treviño Zavala,demo.usuario102@cemydi.local,23,7,2,2,0,21,34,11,38,201702.62,0,0,0.0,0.0,2026-06-09 13:01:00,53,1.36
+1359,Patricio Eloy Pelayo,demo.usuario103@cemydi.local,19,9,3,1,3,18,35,17,47,201311.42,0,0,0.0,0.0,2026-06-16 14:31:00,46,1.3
+1360,Nadia Aguilar,demo.usuario104@cemydi.local,26,13,1,8,3,18,51,19,39,62011.29,2,2,3829.55,10.0,2026-07-17 14:21:00,15,2.55
+1361,Martha Caraballo Longoria,demo.usuario105@cemydi.local,20,6,5,3,1,20,35,20,50,169290.39,0,0,0.0,0.0,2026-06-21 09:12:00,41,3.5
+1362,Dalia Carrero,demo.usuario106@cemydi.local,9,1,0,1,0,8,11,2,5,5935.09,0,0,0.0,0.0,2026-02-17 15:43:00,165,0.69
+1363,Abelardo Jacobo Gurule García,demo.usuario107@cemydi.local,30,4,2,1,1,19,38,6,15,23074.45,0,0,0.0,0.0,2026-06-24 17:49:00,38,3.8
+1364,Miguel Pascual Segovia Bustamante,demo.usuario108@cemydi.local,20,4,2,2,1,12,29,9,25,114721.64,1,1,1962.2,5.0,2026-07-21 12:15:00,11,2.9
+1365,Srita. Josefina Ochoa,demo.usuario109@cemydi.local,24,11,4,6,1,20,46,5,16,221253.66,1,1,5762.35,11.0,2026-07-21 10:53:00,11,6.57
+1366,Salvador Silvano Cruz Cervantes,demo.usuario110@cemydi.local,21,7,3,4,1,17,36,21,52,162113.48,2,2,2703.17,10.5,2026-06-17 16:28:00,45,6.0
+1367,Ramiro Santana,demo.usuario111@cemydi.local,45,14,12,6,1,28,78,4,14,38753.73,0,0,0.0,0.0,2026-04-21 16:40:00,102,15.6
+1368,Samuel Solorzano Carvajal,demo.usuario112@cemydi.local,41,7,7,3,5,23,63,20,38,94343.24,0,0,0.0,0.0,2026-07-25 09:29:00,7,2.52
+1369,Laura Mireles,demo.usuario113@cemydi.local,16,4,3,2,0,15,25,14,39,102506.81,0,0,0.0,0.0,2026-06-02 16:49:00,60,5.0
+1370,Hernán Leonel Morales,demo.usuario114@cemydi.local,28,7,5,8,0,20,48,15,41,80229.36,0,0,0.0,0.0,2026-06-28 12:05:00,34,24.0
+1371,Óliver Carrión Holguín,demo.usuario115@cemydi.local,41,8,8,7,1,26,65,6,21,155737.59,0,0,0.0,0.0,2026-07-06 16:35:00,26,4.64
+1372,Wilfrido Moya,demo.usuario116@cemydi.local,20,2,7,4,1,16,34,6,10,14478.64,0,0,0.0,0.0,2026-05-25 14:59:00,68,17.0
+1373,Pamela Asunción Melgar,demo.usuario117@cemydi.local,1,1,1,0,0,3,3,1,3,8418.9,0,0,0.0,0.0,2026-05-06 10:34:00,87,0.17
+1374,Nadia Mata,demo.usuario118@cemydi.local,23,10,2,0,1,21,36,5,15,55289.28,0,0,0.0,0.0,2026-07-21 18:02:00,11,1.29
+1375,Ruby Reina Vázquez,demo.usuario119@cemydi.local,25,14,2,0,2,21,43,8,21,49072.46,0,0,0.0,0.0,2026-07-24 09:56:00,8,2.87
+1376,Benito Orellana,demo.usuario120@cemydi.local,26,13,5,2,1,18,47,4,13,26324.78,1,1,3920.98,14.0,2026-04-04 16:43:00,119,5.88
+1377,Renato Aguilera,demo.usuario121@cemydi.local,52,18,4,4,3,31,81,4,7,18543.66,0,0,0.0,0.0,2026-05-14 13:19:00,79,8.1
+1378,Eugenio Mayorga,demo.usuario122@cemydi.local,47,17,5,1,1,26,71,12,33,194654.75,0,0,0.0,0.0,2026-07-20 18:19:00,12,5.92
+1379,Adriana Blanca Guzmán,demo.usuario123@cemydi.local,42,19,3,3,1,26,68,8,22,134396.56,0,0,0.0,0.0,2026-07-12 15:44:00,20,2.72
+1380,Vanesa Perla Correa Nieto,demo.usuario124@cemydi.local,27,10,7,6,3,19,53,12,30,148626.66,0,0,0.0,0.0,2026-06-15 14:46:00,47,4.08
+1381,Armando Tamez,demo.usuario125@cemydi.local,21,5,3,1,2,20,32,6,14,58784.64,3,3,2206.18,6.0,2026-07-24 16:48:00,8,2.29
+1382,Alejandro Felipe Carbajal Ruelas,demo.usuario126@cemydi.local,42,11,7,3,5,30,68,13,35,182902.72,0,0,0.0,0.0,2026-07-06 10:49:00,26,2.43
+1383,Gabriel Renato Olmos,demo.usuario127@cemydi.local,49,12,9,1,1,27,72,20,39,57548.47,0,0,0.0,0.0,2026-06-24 12:37:00,38,3.79
+1384,Marcela Karla Abrego Aragón,demo.usuario128@cemydi.local,27,5,3,2,0,18,37,20,40,176525.2,0,0,0.0,0.0,2026-07-11 09:11:00,21,12.33
+1385,Perla Macías,demo.usuario129@cemydi.local,8,3,2,0,0,9,13,3,8,9771.3,0,0,0.0,0.0,2026-02-21 18:10:00,161,1.08
+1386,Leonel Sánchez,demo.usuario130@cemydi.local,14,7,5,2,1,17,29,18,51,138350.58,1,1,2068.43,13.0,2026-06-14 10:05:00,48,3.63
+1387,José Manuél Cortés,demo.usuario131@cemydi.local,42,8,3,1,1,19,55,6,11,22227.38,0,0,0.0,0.0,2026-04-30 14:45:00,93,2.29
+1388,Barbara Almaraz Loya,demo.usuario132@cemydi.local,41,6,3,3,2,22,55,12,35,123266.45,0,0,0.0,0.0,2026-07-11 14:18:00,21,18.33
+1389,Sofía Carlota Brito,demo.usuario133@cemydi.local,37,9,7,3,5,21,61,18,47,202068.8,0,0,0.0,0.0,2026-06-27 16:15:00,35,6.78
+1390,Gabriela Magdalena Lara,demo.usuario134@cemydi.local,36,12,6,3,1,20,58,8,25,125088.33,0,0,0.0,0.0,2026-07-25 18:38:00,7,14.5
+1391,Felipe Flores,demo.usuario135@cemydi.local,35,14,10,2,3,20,64,17,49,180420.36,3,3,5203.11,5.67,2026-07-28 14:06:00,4,3.76
+1392,Clara Lorena Lozano Ayala,demo.usuario136@cemydi.local,19,7,1,0,1,16,28,19,33,63384.69,0,0,0.0,0.0,2026-07-11 14:27:00,21,0.9
+1393,Srita. Citlali Colunga,demo.usuario137@cemydi.local,37,8,5,2,0,27,52,2,5,12949.24,0,0,0.0,0.0,2026-05-07 09:25:00,86,2.0
+1394,Esteban Cordero Baca,demo.usuario138@cemydi.local,47,15,8,10,1,24,81,1,4,17003.44,2,2,1819.42,4.0,2026-07-07 12:09:00,25,6.75
+1395,Fernando Baeza,demo.usuario139@cemydi.local,29,8,5,5,2,19,49,10,31,85259.66,0,0,0.0,0.0,2026-07-15 14:47:00,17,6.13
+1396,Noemí Galindo Alba,demo.usuario140@cemydi.local,39,12,3,3,3,26,60,3,9,24116.84,0,0,0.0,0.0,2026-05-30 17:01:00,63,2.4
+1397,Eduardo Homero Angulo,demo.usuario141@cemydi.local,4,2,0,0,0,6,6,2,4,9740.49,0,0,0.0,0.0,2025-08-27 11:03:00,339,3.0
+1398,Mitzy Gloria Menchaca Collazo,demo.usuario142@cemydi.local,57,16,5,0,3,26,81,3,5,15959.68,0,0,0.0,0.0,2026-07-23 17:07:00,9,4.26
+1399,Zacarías Valencia Serrano,demo.usuario143@cemydi.local,49,15,11,5,5,27,85,5,12,17955.74,1,1,3978.72,9.0,2026-06-12 13:07:00,50,3.04
+1400,Ariadna María Marín Rivero,demo.usuario144@cemydi.local,30,6,9,2,1,23,48,6,13,165015.83,0,0,0.0,0.0,2026-07-09 10:37:00,23,9.6
+1401,Srita. Nayeli Covarrubias,demo.usuario145@cemydi.local,33,13,5,5,2,22,58,15,38,89728.9,0,0,0.0,0.0,2026-07-19 17:54:00,13,8.29
+1402,Mauricio Renato Lovato Orellana,demo.usuario146@cemydi.local,22,7,3,1,4,17,37,8,21,141649.26,0,0,0.0,0.0,2026-07-12 11:15:00,20,2.18
+1403,Isabela Liliana Corrales,demo.usuario147@cemydi.local,42,9,6,4,4,22,65,8,20,94179.27,3,3,1731.73,5.0,2026-07-24 15:31:00,8,4.64
+1404,Santiago Óliver Bétancourt,demo.usuario148@cemydi.local,20,13,1,0,3,14,37,9,28,142836.98,0,0,0.0,0.0,2026-06-12 10:40:00,50,3.08
+1405,Pamela Claudia Vega Ávalos,demo.usuario149@cemydi.local,15,6,0,1,0,14,22,5,12,33721.84,7,7,12801.89,9.14,2026-05-23 10:54:00,70,1.83
+1406,Fernando Samuel Montaño Ayala,demo.usuario150@cemydi.local,3,0,0,0,0,3,3,4,8,10577.9,0,0,0.0,0.0,2025-12-19 10:44:00,225,0.75
+1407,Ramiro Miranda,demo.usuario151@cemydi.local,12,2,1,1,0,13,16,1,2,12836.12,0,0,0.0,0.0,2026-03-29 10:34:00,125,1.6
+1408,Esther Lourdes Mejía Hinojosa,demo.usuario152@cemydi.local,42,6,9,3,1,28,61,8,24,168489.98,0,0,0.0,0.0,2026-06-26 09:45:00,36,6.78
+1409,Catalina Socorro Abrego Archuleta,demo.usuario153@cemydi.local,17,8,2,3,0,17,30,4,11,32668.77,6,6,6477.37,7.67,2026-07-22 13:33:00,10,3.33
+1410,Barbara Ruby Muñoz,demo.usuario154@cemydi.local,19,5,1,2,0,17,27,18,45,162493.8,3,3,6356.0,9.0,2026-07-01 12:17:00,31,1.59
+1411,Elvira Cedillo,demo.usuario155@cemydi.local,51,12,3,1,2,25,69,18,56,163134.82,0,0,0.0,0.0,2026-06-28 18:24:00,34,5.75
+1412,Daniel Camarillo Ocampo,demo.usuario156@cemydi.local,1,1,1,0,0,3,3,4,4,4727.94,0,0,0.0,0.0,2026-03-15 09:03:00,139,0.33
+1413,Rosario Sofía Frías Lebrón,demo.usuario157@cemydi.local,8,1,1,1,0,10,11,3,6,5836.6,0,0,0.0,0.0,2025-10-15 10:36:00,290,1.83
+1414,Débora Josefina Garay,demo.usuario158@cemydi.local,50,7,5,4,2,22,68,17,40,98832.53,0,0,0.0,0.0,2026-06-25 14:04:00,37,6.18
+1415,Srita. Olivia Uribe,demo.usuario159@cemydi.local,47,13,6,4,5,27,75,0,0,0.0,1,1,1402.02,9.0,2026-05-29 16:38:00,64,12.5
+1416,Bernabé Alemán,demo.usuario160@cemydi.local,29,4,6,2,2,14,43,5,15,23809.82,0,0,0.0,0.0,2026-04-04 13:51:00,119,2.69
+1417,José Emilio Navarro del Río,demo.usuario161@cemydi.local,34,11,8,7,0,26,60,12,37,108638.62,0,0,0.0,0.0,2026-06-27 17:28:00,35,2.31
+1418,Carlos de Anda,demo.usuario162@cemydi.local,32,12,4,3,4,22,55,0,0,0.0,11,11,11073.35,5.73,2026-06-02 16:20:00,60,2.29
+1419,Gregorio Gabino Roybal Nieto,demo.usuario163@cemydi.local,52,12,8,2,4,27,78,1,2,16195.1,0,0,0.0,0.0,2026-06-11 11:04:00,51,3.25
+1420,Carolina María Cristina Maya Cortés,demo.usuario164@cemydi.local,42,9,5,5,3,19,64,21,48,121800.92,0,0,0.0,0.0,2026-06-17 11:23:00,45,7.11
+1421,Guadalupe Raquel Zedillo Segura,demo.usuario165@cemydi.local,44,19,10,4,4,24,81,5,12,14590.51,1,1,3239.25,15.0,2026-07-18 18:37:00,14,5.4
+1422,María del Carmen Vanegas,demo.usuario166@cemydi.local,37,8,3,1,2,21,51,6,14,38756.67,0,0,0.0,0.0,2026-05-08 10:02:00,85,2.32
+1423,José Manuél Porfirio Velásquez,demo.usuario167@cemydi.local,18,6,4,1,0,15,29,9,26,119335.68,0,0,0.0,0.0,2026-06-12 18:20:00,50,5.8
+1424,Rafaél Horacio Nieves Rubio,demo.usuario168@cemydi.local,18,6,5,3,3,17,35,10,31,218783.84,0,0,0.0,0.0,2026-06-30 10:10:00,32,2.06
+1425,Fernando Cedillo,demo.usuario169@cemydi.local,28,6,6,2,2,17,44,12,38,193985.37,0,0,0.0,0.0,2026-06-04 17:49:00,58,2.32
+1426,Citlali Sanches Guardado,demo.usuario170@cemydi.local,12,1,1,0,0,11,14,0,0,0.0,1,1,2882.9,5.0,2026-02-01 15:38:00,181,1.0
+1427,Virginia Lomeli Valdés,demo.usuario171@cemydi.local,39,10,9,5,3,28,66,8,21,95977.85,0,0,0.0,0.0,2026-06-22 15:22:00,40,4.71
+1428,Teodoro Páez,demo.usuario172@cemydi.local,31,10,5,2,2,22,50,4,12,27867.24,8,8,8227.38,8.13,2026-05-09 10:28:00,84,3.33
+1429,Ariadna Bermúdez,demo.usuario173@cemydi.local,16,5,3,1,0,13,25,1,3,11527.47,6,6,6805.21,9.5,2026-06-04 11:53:00,58,1.32
+1430,Noemí Celia Santillán Badillo,demo.usuario174@cemydi.local,50,15,6,3,1,23,75,14,36,76534.96,1,1,2983.4,7.0,2026-06-20 18:15:00,42,4.69
+1431,Alta  Gracia Rincón Pichardo,demo.usuario175@cemydi.local,27,6,3,0,0,17,36,12,32,54224.39,0,0,0.0,0.0,2026-06-28 17:09:00,34,2.25
+1432,Santiago Bernardo Villarreal,demo.usuario176@cemydi.local,23,9,4,2,0,17,38,16,37,95685.28,0,0,0.0,0.0,2026-06-26 14:41:00,36,19.0
+1433,Gerardo Eduardo Macías Puga,demo.usuario177@cemydi.local,22,6,2,0,1,16,31,21,49,165551.09,0,0,0.0,0.0,2026-06-25 18:03:00,37,1.15
+1434,Anabel Palomo,demo.usuario178@cemydi.local,33,15,9,1,4,27,62,16,42,123139.9,3,3,3455.4,7.0,2026-06-08 16:38:00,54,20.67
+1435,José Eduardo Nicolás Nazario Manzanares,demo.usuario179@cemydi.local,3,0,0,1,0,4,4,1,2,5724.28,0,0,0.0,0.0,2026-05-30 11:23:00,63,0.8
+1436,Raquel Nayeli Mena,demo.usuario180@cemydi.local,38,9,10,3,2,28,62,6,16,24490.59,2,2,4426.18,8.0,2026-07-07 11:48:00,25,2.48
+1437,Srita. Araceli Ríos,demo.usuario181@cemydi.local,29,10,4,2,0,21,45,7,16,52451.17,0,0,0.0,0.0,2026-06-26 11:47:00,36,1.96
+1438,Emilia Negrón,demo.usuario182@cemydi.local,24,5,8,2,1,16,40,15,36,147542.18,0,0,0.0,0.0,2026-07-04 17:59:00,28,1.74
+1439,Pascual Oswaldo Mojica Rocha,demo.usuario183@cemydi.local,40,12,2,5,0,22,59,9,27,136800.78,3,3,2340.7,6.33,2026-06-15 15:08:00,47,2.36
+1440,Berta Marisol Arevalo,demo.usuario184@cemydi.local,28,6,7,5,2,22,48,13,32,166296.52,0,0,0.0,0.0,2026-07-02 14:44:00,30,2.0
+1441,María Rosario Jiménez Villegas,demo.usuario185@cemydi.local,42,8,14,3,5,24,72,15,39,95900.79,0,0,0.0,0.0,2026-07-27 12:05:00,5,2.67
+1442,José Carlos Bernardo Nazario Sepúlveda,demo.usuario186@cemydi.local,31,6,4,3,1,26,45,14,31,137026.13,1,1,1154.76,12.0,2026-06-18 17:30:00,44,4.09
+1443,Ramiro Ponce,demo.usuario187@cemydi.local,32,4,3,0,0,16,39,15,39,138341.51,0,0,0.0,0.0,2026-06-07 16:09:00,55,3.25
+1444,Mariano Renato Almanza,demo.usuario188@cemydi.local,34,6,3,3,1,25,47,1,2,23406.72,7,7,8338.05,7.43,2026-06-04 12:17:00,58,5.88
+1445,Emilio Elias Rael,demo.usuario189@cemydi.local,29,15,5,3,2,21,54,0,0,0.0,0,0,0.0,0.0,2026-05-05 16:10:00,88,2.08
+1446,Marcela Pulido,demo.usuario190@cemydi.local,23,5,5,4,0,18,37,11,33,175762.49,0,0,0.0,0.0,2026-06-05 13:57:00,57,2.06
+1447,Amelia Almanza,demo.usuario191@cemydi.local,42,9,3,4,1,22,59,21,43,78597.88,0,0,0.0,0.0,2026-07-20 17:40:00,12,3.69
+1448,Aurora de la Fuente,demo.usuario192@cemydi.local,63,15,6,0,1,27,85,0,0,0.0,0,0,0.0,0.0,2026-07-02 10:27:00,30,9.44
+1449,Leticia María Cristina Sevilla,demo.usuario193@cemydi.local,37,10,2,2,1,23,52,1,3,19030.8,2,2,1194.78,5.0,2026-05-22 18:20:00,71,7.43
+1450,Alfonso Terrazas,demo.usuario194@cemydi.local,2,4,2,0,0,7,8,1,3,4265.13,0,0,0.0,0.0,2025-12-18 14:11:00,226,0.53
+1451,Perla González,demo.usuario195@cemydi.local,21,5,3,4,1,16,34,14,37,70107.04,0,0,0.0,0.0,2026-06-30 15:20:00,32,1.55
+1452,Camila Rubio,demo.usuario196@cemydi.local,48,16,4,2,4,23,74,19,50,134859.95,0,0,0.0,0.0,2026-07-10 12:27:00,22,3.22
+1453,Flavio Elizondo,demo.usuario197@cemydi.local,44,13,9,4,1,23,71,11,37,181315.18,0,0,0.0,0.0,2026-07-29 16:43:00,3,14.2
+1454,Noemí Castañeda,demo.usuario198@cemydi.local,5,7,2,1,0,12,15,2,3,12695.49,0,0,0.0,0.0,2025-11-18 11:10:00,256,1.25
+1455,Claudio Camacho,demo.usuario199@cemydi.local,42,13,2,2,4,25,63,13,38,126625.19,0,0,0.0,0.0,2026-06-15 16:17:00,47,10.5
+1456,Anabel María Teresa Anaya,demo.usuario200@cemydi.local,48,13,5,5,4,28,75,7,23,150924.73,3,3,4135.5,6.0,2026-06-22 14:32:00,40,3.95
+1457,Jos Galindo,demo.usuario201@cemydi.local,45,6,5,3,3,33,62,13,30,156662.42,0,0,0.0,0.0,2026-07-02 14:45:00,30,2.58
+1458,René Aldo Rael,demo.usuario202@cemydi.local,36,7,6,3,1,27,53,7,19,79276.72,2,2,1321.21,4.0,2026-07-19 10:03:00,13,2.12
+1459,Marisol de la Rosa,demo.usuario203@cemydi.local,40,16,3,4,1,24,64,15,41,109467.58,1,1,3354.24,8.0,2026-07-06 13:34:00,26,5.82
+1460,Graciela Abril Orosco Esquivel,demo.usuario204@cemydi.local,27,6,1,2,2,17,38,6,13,154168.82,1,1,1224.24,8.0,2026-07-21 10:46:00,11,1.31
+1461,José María Marroquín Barragán,demo.usuario205@cemydi.local,8,3,0,1,0,9,12,0,0,0.0,0,0,0.0,0.0,2025-08-30 16:25:00,336,1.71
+1462,Srita. Olga Castro,demo.usuario206@cemydi.local,20,9,5,0,2,17,36,5,13,117679.87,0,0,0.0,0.0,2026-06-05 15:47:00,57,4.0
+1463,Jorge Eugenio Rolón,demo.usuario207@cemydi.local,56,12,13,5,0,26,86,0,0,0.0,0,0,0.0,0.0,2026-07-10 10:01:00,22,3.31
+1464,Humberto Mario Esquivel Vigil,demo.usuario208@cemydi.local,23,9,7,5,5,27,49,7,23,126821.47,0,0,0.0,0.0,2026-06-04 17:46:00,58,2.72
+1465,Cristobal Eugenio Espinosa Tejada,demo.usuario209@cemydi.local,36,6,5,4,2,29,53,22,47,62903.23,2,2,2670.68,10.5,2026-07-20 09:38:00,12,2.79
+1466,Serafín Arce,demo.usuario210@cemydi.local,40,18,6,5,0,24,69,4,12,36256.35,2,2,4760.57,6.5,2026-06-10 14:13:00,52,3.29
+1467,José Carlos Benito Lozano,demo.usuario211@cemydi.local,27,10,1,1,0,18,39,5,14,29375.65,11,11,6629.23,4.18,2026-07-05 16:23:00,27,4.88
+1468,Indira Antonia Marroquín Escobedo,demo.usuario212@cemydi.local,16,6,6,3,0,16,31,8,23,190193.35,0,0,0.0,0.0,2026-06-17 15:13:00,45,1.15
+1469,Sandra Maestas,demo.usuario213@cemydi.local,3,0,0,0,0,3,3,3,6,10361.12,0,0,0.0,0.0,2025-12-21 16:16:00,223,0.33
+1470,Cristobal Flórez,demo.usuario214@cemydi.local,44,15,6,5,4,21,74,10,28,179887.91,0,0,0.0,0.0,2026-07-28 12:27:00,4,3.89
+1471,Judith Sofía Elizondo Varela,demo.usuario215@cemydi.local,38,14,7,3,0,29,62,16,38,73649.47,0,0,0.0,0.0,2026-07-03 09:47:00,29,5.17
+1472,Susana Rivera Rubio,demo.usuario216@cemydi.local,36,13,4,1,1,23,55,20,47,105165.25,0,0,0.0,0.0,2026-07-12 13:02:00,20,7.86
+1473,Amador Zamora,demo.usuario217@cemydi.local,25,2,6,0,1,16,34,15,39,180951.84,0,0,0.0,0.0,2026-06-30 09:07:00,32,2.83
+1474,Carlos Munguía,demo.usuario218@cemydi.local,27,5,3,4,0,19,39,10,27,125286.52,0,0,0.0,0.0,2026-06-11 14:19:00,51,2.79
+1475,Pascual Villagómez,demo.usuario219@cemydi.local,6,2,1,0,3,10,12,3,6,8190.92,0,0,0.0,0.0,2026-03-28 14:43:00,126,0.86
+1476,Francisco Zúñiga,demo.usuario220@cemydi.local,24,10,6,3,2,21,45,15,36,182005.55,2,2,4843.64,10.0,2026-07-07 10:16:00,25,2.81
+1477,Clara María Eugenia Quintana,demo.usuario221@cemydi.local,38,3,2,4,0,25,47,22,57,149507.49,0,0,0.0,0.0,2026-06-27 16:13:00,35,7.83
+1478,Liliana Karla Niño,demo.usuario222@cemydi.local,28,17,11,2,6,21,64,19,49,66293.47,0,0,0.0,0.0,2026-06-19 12:59:00,43,10.67
+1479,Claudio Caballero Olivo,demo.usuario223@cemydi.local,14,6,5,5,1,17,31,5,5,5756.18,12,12,12437.26,6.08,2026-05-03 13:48:00,90,1.48
+1480,Ernesto José Manuél Escamilla Cervantes,demo.usuario224@cemydi.local,26,15,7,5,2,22,55,5,14,41465.92,0,0,0.0,0.0,2026-07-15 11:10:00,17,4.23
+1481,Ramiro Aguilar,demo.usuario225@cemydi.local,4,1,2,0,1,7,8,1,3,13666.71,0,0,0.0,0.0,2026-02-14 09:44:00,168,0.67
+1482,Amanda Melgar Quiroz,demo.usuario226@cemydi.local,6,0,1,0,0,7,7,3,7,9189.76,0,0,0.0,0.0,2026-01-08 10:03:00,205,3.5
+1483,Eugenia Dulce María Hinojosa,demo.usuario227@cemydi.local,14,5,1,2,0,16,22,3,9,31612.96,10,10,8272.01,5.0,2026-05-15 18:50:00,78,2.2
+1484,Itzel Castro Solís,demo.usuario228@cemydi.local,26,9,7,1,2,19,45,4,11,32641.63,0,0,0.0,0.0,2026-07-16 10:50:00,16,2.37
+1485,Omar Julio César Luna Crespo,demo.usuario229@cemydi.local,11,3,2,2,1,14,19,3,7,11788.61,12,12,5475.28,3.33,2026-06-22 11:15:00,40,1.0
+1486,Teresa Claudia Badillo,demo.usuario230@cemydi.local,40,20,7,6,1,29,74,15,38,145253.45,0,0,0.0,0.0,2026-06-13 17:22:00,49,10.57
+1487,Olga Rosado,demo.usuario231@cemydi.local,28,9,2,1,0,21,40,15,41,181620.92,0,0,0.0,0.0,2026-07-02 10:31:00,30,2.5
+1488,Benito Castellanos Santillán,demo.usuario232@cemydi.local,22,10,5,2,2,26,41,5,16,33631.3,0,0,0.0,0.0,2026-05-30 14:35:00,63,20.5
+1489,David Tello,demo.usuario233@cemydi.local,9,3,1,0,1,9,14,1,4,15713.48,0,0,0.0,0.0,2025-11-22 12:18:00,252,1.27
+1490,Ramón Iván Villalobos Saiz,demo.usuario234@cemydi.local,15,10,3,2,1,17,31,13,28,143374.59,3,3,2368.64,4.33,2026-06-13 09:37:00,49,1.55
+1491,María Elena Sandoval Llamas,demo.usuario235@cemydi.local,32,12,4,3,2,24,53,8,27,105541.18,3,3,5976.77,8.67,2026-06-13 10:04:00,49,2.3
+1492,Rebeca Rangel,demo.usuario236@cemydi.local,22,13,6,3,3,24,47,6,19,109738.24,0,0,0.0,0.0,2026-06-11 10:05:00,51,1.88
+1493,Barbara Adame Montez,demo.usuario237@cemydi.local,4,1,0,0,0,5,5,1,2,7898.18,0,0,0.0,0.0,2026-04-29 15:05:00,94,0.5
+1494,César Espinal,demo.usuario238@cemydi.local,25,4,5,0,2,20,36,19,49,93071.22,3,3,3619.2,9.33,2026-06-17 14:03:00,45,2.0
+1495,Wilfrido Corral,demo.usuario239@cemydi.local,30,5,5,3,2,18,45,2,3,14932.9,7,7,5021.93,4.71,2026-07-27 18:33:00,5,2.65
+1496,Sara Ana Maestas,demo.usuario240@cemydi.local,3,1,0,0,0,4,4,1,4,15268.64,0,0,0.0,0.0,2026-03-03 16:34:00,151,0.4
+1497,Araceli Caraballo,demo.usuario241@cemydi.local,18,1,3,0,1,19,23,5,10,10525.18,10,10,6805.6,4.0,2026-05-05 17:23:00,88,1.0
+1498,Humberto Alonso Valles Ballesteros,demo.usuario242@cemydi.local,41,11,8,5,1,25,66,0,0,0.0,0,0,0.0,0.0,2026-05-23 13:33:00,70,2.87
+1499,Diego Ledesma,demo.usuario243@cemydi.local,30,7,5,1,1,24,44,2,6,23000.64,0,0,0.0,0.0,2026-05-06 16:19:00,87,2.44
+1500,Cecilia Marcela Gómez,demo.usuario244@cemydi.local,43,13,9,3,1,28,69,16,43,103190.05,0,0,0.0,0.0,2026-06-10 14:54:00,52,3.29
+1501,Judith Alejandra Carmona,demo.usuario245@cemydi.local,25,7,10,6,1,25,49,3,5,8320.0,6,6,10039.51,8.33,2026-05-10 11:52:00,83,3.06
+1502,Liliana Collado,demo.usuario246@cemydi.local,31,8,5,3,2,25,49,6,15,32420.53,0,0,0.0,0.0,2026-06-08 17:07:00,54,2.13
+1503,Aurora Juárez Sanabria,demo.usuario247@cemydi.local,17,6,4,2,1,19,30,1,3,22620.3,11,11,6855.54,4.91,2026-06-01 13:12:00,61,2.14
+1504,Nadia Salcedo,demo.usuario248@cemydi.local,9,7,0,1,0,11,17,3,6,6416.52,0,0,0.0,0.0,2026-01-28 13:15:00,185,0.85
+1505,Jaqueline Ana Caraballo,demo.usuario249@cemydi.local,30,11,4,1,3,19,49,15,30,65304.44,1,1,4593.0,12.0,2026-06-12 16:25:00,50,2.04
+1506,Gabino Piña,demo.usuario250@cemydi.local,30,7,4,5,1,21,47,5,15,81201.75,0,0,0.0,0.0,2026-06-22 16:04:00,40,3.13
+1507,Fidel Teodoro Alba,demo.usuario251@cemydi.local,14,9,6,2,1,18,32,18,45,171742.3,2,2,1339.06,3.5,2026-06-28 12:29:00,34,3.56
+1508,Florencia Cuellar,demo.usuario252@cemydi.local,28,11,3,1,1,20,44,2,5,9596.61,0,0,0.0,0.0,2026-05-21 16:16:00,72,5.5
+1509,Graciela Claudia Lucero Cuellar,demo.usuario253@cemydi.local,25,17,5,0,2,19,49,9,31,183877.82,0,0,0.0,0.0,2026-06-15 10:38:00,47,2.04
+1510,Eloy Vargas,demo.usuario254@cemydi.local,52,10,6,3,1,24,72,0,0,0.0,0,0,0.0,0.0,2026-06-17 09:16:00,45,4.8
+1511,Timoteo Olivares Bañuelos,demo.usuario255@cemydi.local,7,2,0,1,0,8,10,0,0,0.0,0,0,0.0,0.0,2025-12-02 15:31:00,242,3.33
+1512,Mariano José Vásquez Ordóñez,demo.usuario256@cemydi.local,27,5,1,0,0,13,33,19,46,150455.24,2,2,4302.77,13.5,2026-07-04 12:52:00,28,1.5
+1513,Itzel Alemán Madrid,demo.usuario257@cemydi.local,31,9,6,6,2,28,54,19,49,161651.95,2,2,3722.72,8.0,2026-06-07 10:17:00,55,3.18
+1514,Fidel Garica,demo.usuario258@cemydi.local,24,4,0,2,2,17,32,0,0,0.0,0,0,0.0,0.0,2026-04-24 18:17:00,99,8.0
+1515,Samuel Portillo Cazares,demo.usuario259@cemydi.local,60,8,10,3,4,27,85,6,11,15260.66,1,1,2777.4,10.0,2026-05-23 17:00:00,70,14.17
+1516,Hernán Borrego,demo.usuario260@cemydi.local,22,8,2,3,2,24,37,0,0,0.0,1,1,2247.6,8.0,2026-05-17 16:11:00,76,1.76
+1517,Inés Roybal Zapata,demo.usuario261@cemydi.local,33,8,5,3,2,26,51,10,24,65422.59,0,0,0.0,0.0,2026-06-15 15:20:00,47,3.0
+1518,Aurora Paola Villagómez,demo.usuario262@cemydi.local,26,9,4,2,1,23,42,1,4,39524.64,2,2,987.65,4.0,2026-04-23 17:20:00,100,2.47
+1519,José Manuél Nieto,demo.usuario263@cemydi.local,17,5,3,3,2,16,30,19,44,137968.97,2,2,4881.92,8.0,2026-06-27 17:59:00,35,1.58
+1520,Bianca Blanca Regalado,demo.usuario264@cemydi.local,48,21,7,5,6,26,87,6,19,33130.85,0,0,0.0,0.0,2026-06-18 14:55:00,44,7.25
+1521,Sara Blanca Niño Candelaria,demo.usuario265@cemydi.local,46,8,12,3,2,25,71,20,51,137253.49,0,0,0.0,0.0,2026-06-26 10:02:00,36,23.67
+1522,Susana Blanca Solorio Suárez,demo.usuario266@cemydi.local,49,9,6,3,3,27,70,21,45,62636.11,1,1,4316.26,13.0,2026-06-02 11:12:00,60,17.5
+1523,Rosa Micaela Fierro Pabón,demo.usuario267@cemydi.local,41,11,3,6,3,26,64,9,27,154156.61,0,0,0.0,0.0,2026-07-07 11:46:00,25,2.67
+1524,Lorenzo del Valle,demo.usuario268@cemydi.local,21,6,4,0,0,15,31,3,11,39376.46,10,10,5995.74,5.0,2026-05-26 12:54:00,67,2.58
+1525,Bernardo Escalante Santacruz,demo.usuario269@cemydi.local,40,11,9,3,5,27,68,5,15,144006.5,0,0,0.0,0.0,2026-07-02 17:33:00,30,22.67
+1526,Clara Contreras,demo.usuario270@cemydi.local,34,16,9,2,2,17,63,12,32,95844.86,1,1,6229.2,10.0,2026-06-05 13:35:00,57,2.86
+1527,José María Cardenas,demo.usuario271@cemydi.local,19,8,1,2,2,15,32,7,23,128646.67,0,0,0.0,0.0,2026-06-06 16:44:00,56,4.0
+1528,Ana Sáenz,demo.usuario272@cemydi.local,39,8,7,5,2,22,61,20,44,98601.78,3,3,2466.4,4.67,2026-07-17 15:43:00,15,3.05
+1529,Gilberto Cervántez,demo.usuario273@cemydi.local,60,16,9,4,1,33,90,1,4,36628.04,0,0,0.0,0.0,2026-04-09 15:41:00,114,9.0
+1530,Camila Tórrez Valles,demo.usuario274@cemydi.local,28,11,5,4,1,23,49,2,7,29395.84,2,2,1413.89,6.5,2026-05-19 09:48:00,74,2.88
+1531,Miriam Calderón,demo.usuario275@cemydi.local,20,6,4,1,0,18,31,20,52,105322.96,0,0,0.0,0.0,2026-07-06 09:49:00,26,1.94
+1532,Lorena Carolina Amaya,demo.usuario276@cemydi.local,7,2,2,3,1,9,15,1,4,5868.84,0,0,0.0,0.0,2026-05-19 18:20:00,74,1.36
+1533,María Eugenia Rebeca Dueñas,demo.usuario277@cemydi.local,34,13,5,5,0,28,57,5,16,156466.96,0,0,0.0,0.0,2026-07-29 14:28:00,3,6.33
+1534,Débora Estévez,demo.usuario278@cemydi.local,29,8,5,0,1,16,43,5,15,21074.75,0,0,0.0,0.0,2026-04-22 14:40:00,101,2.69
+1535,Camila Sierra,demo.usuario279@cemydi.local,39,5,3,5,1,24,53,15,32,55679.47,0,0,0.0,0.0,2026-06-08 10:25:00,54,1.96
+1536,Darío Flores Trujillo,demo.usuario280@cemydi.local,50,16,12,6,2,26,86,2,6,35307.14,0,0,0.0,0.0,2026-04-11 16:29:00,112,3.58
+1537,María Teresa Ávila,demo.usuario281@cemydi.local,24,9,4,3,5,23,45,20,52,200357.93,0,0,0.0,0.0,2026-07-10 14:43:00,22,4.5
+1538,Jacobo Montez,demo.usuario282@cemydi.local,44,14,7,4,2,26,71,18,52,161987.32,0,0,0.0,0.0,2026-07-30 15:07:00,2,2.84
+1539,Diana Casillas,demo.usuario283@cemydi.local,36,13,3,5,2,18,59,20,51,77769.2,0,0,0.0,0.0,2026-06-26 17:53:00,36,6.56
+1540,Estefanía Villareal,demo.usuario284@cemydi.local,18,4,7,2,0,15,31,21,60,136825.66,0,0,0.0,0.0,2026-07-12 12:52:00,20,1.11
+1541,Martín Ríos,demo.usuario285@cemydi.local,28,16,1,0,1,23,46,3,8,23281.74,11,11,6060.43,4.0,2026-05-09 12:00:00,84,2.88
+1542,Yolanda Gil,demo.usuario286@cemydi.local,43,9,4,3,3,22,62,15,42,120875.81,0,0,0.0,0.0,2026-06-21 13:57:00,41,2.38
+1543,Carlos Galarza Marroquín,demo.usuario287@cemydi.local,31,7,2,0,0,18,40,20,39,69402.92,1,1,3020.01,7.0,2026-07-20 18:50:00,12,1.82
+1544,Ángela Nájera,demo.usuario288@cemydi.local,22,11,2,5,2,20,42,16,42,131723.26,0,0,0.0,0.0,2026-07-03 16:40:00,29,5.25
+1545,Cristian Alejandro Prado,demo.usuario289@cemydi.local,20,6,3,2,2,16,33,5,13,121119.14,0,0,0.0,0.0,2026-06-27 13:00:00,35,1.94
+1546,Guillermina Luz del Valle,demo.usuario290@cemydi.local,43,15,9,2,2,27,71,12,28,157029.34,0,0,0.0,0.0,2026-06-20 12:02:00,42,8.88
+1547,Enrique Lomeli,demo.usuario291@cemydi.local,43,10,8,3,1,25,65,22,48,102123.25,0,0,0.0,0.0,2026-06-09 17:56:00,53,4.64
+1548,Augusto Mena,demo.usuario292@cemydi.local,42,12,4,3,2,25,63,10,22,142286.04,2,2,2861.19,8.5,2026-07-12 11:50:00,20,4.2
+1549,Óscar Rodrigo Frías,demo.usuario293@cemydi.local,24,8,7,0,3,22,42,0,0,0.0,0,0,0.0,0.0,2026-07-13 15:57:00,19,1.56
+1550,Jorge Luis Leonardo Cazares,demo.usuario294@cemydi.local,47,21,9,2,0,29,79,6,6,11837.95,1,1,1913.22,9.0,2026-06-09 14:35:00,53,4.16
+1551,Hermelinda Ceballos,demo.usuario295@cemydi.local,36,12,10,2,3,27,63,14,37,193585.69,0,0,0.0,0.0,2026-07-01 18:09:00,31,7.0
+1552,José María Pacheco,demo.usuario296@cemydi.local,39,7,3,1,2,23,52,11,34,139038.91,0,0,0.0,0.0,2026-07-15 12:47:00,17,1.73
+1553,Mayte Guevara,demo.usuario297@cemydi.local,30,7,4,2,2,20,45,19,48,80701.1,0,0,0.0,0.0,2026-06-21 16:01:00,41,5.63
+1554,Ángel Salcido,demo.usuario298@cemydi.local,24,6,2,1,0,17,33,4,11,32194.07,11,11,11105.25,6.09,2026-05-10 10:58:00,83,6.6
+1555,Berta Alta  Gracia Pineda Saldivar,demo.usuario299@cemydi.local,46,12,6,7,4,22,75,2,7,18025.02,0,0,0.0,0.0,2026-04-05 15:00:00,118,3.13
+1556,Abelardo Jacinto Escobedo,demo.usuario300@cemydi.local,45,7,8,4,3,26,67,3,8,24229.08,0,0,0.0,0.0,2026-06-13 12:34:00,49,3.53
+1557,Guillermo Rubén Canales Castro,demo.usuario301@cemydi.local,23,4,1,1,2,19,31,15,34,149129.21,1,1,5665.1,10.0,2026-06-13 16:18:00,49,1.24
+1558,Gloria Solorio Mateo,demo.usuario302@cemydi.local,18,5,2,1,4,18,30,6,21,163294.12,0,0,0.0,0.0,2026-07-13 18:24:00,19,2.73
+1559,Esmeralda Sandoval Alcántar,demo.usuario303@cemydi.local,12,5,0,1,0,13,18,4,4,6130.43,1,1,2041.3,5.0,2026-05-27 16:54:00,66,1.8
+1560,Hilda Mateo,demo.usuario304@cemydi.local,38,4,5,2,2,21,51,12,24,88896.31,0,0,0.0,0.0,2026-06-13 13:10:00,49,7.29
+1561,Abraham Flavio Noriega Rincón,demo.usuario305@cemydi.local,55,9,9,2,1,22,76,0,0,0.0,2,2,4428.84,14.5,2026-05-28 09:49:00,65,19.0
+1562,Sessa Lomeli Franco,demo.usuario306@cemydi.local,15,1,4,1,0,11,21,1,3,29076.63,5,5,10922.31,9.4,2026-07-17 12:53:00,15,1.0
+1563,Cristina Alonzo,demo.usuario307@cemydi.local,0,1,2,0,0,3,3,3,6,9900.52,0,0,0.0,0.0,2025-08-27 10:09:00,339,1.0
+1564,Jorge Luis Reynoso,demo.usuario308@cemydi.local,50,13,6,2,0,26,71,18,29,56736.47,3,3,4087.63,8.67,2026-07-14 18:19:00,18,2.73
+1565,Perla Karina Tejeda,demo.usuario309@cemydi.local,23,5,1,1,2,17,32,4,12,35105.99,5,5,7619.57,7.6,2026-05-11 10:59:00,82,3.56
+1566,Ernesto Dávila,demo.usuario310@cemydi.local,8,3,2,0,2,11,15,0,0,0.0,0,0,0.0,0.0,2026-05-14 17:53:00,79,0.6
+1567,Jonás Villanueva Holguín,demo.usuario311@cemydi.local,45,13,4,4,1,20,67,7,22,188357.82,0,0,0.0,0.0,2026-07-26 18:08:00,6,3.53
+1568,Maximiliano Guerrero,demo.usuario312@cemydi.local,49,6,6,2,3,24,66,20,51,154386.93,2,2,5802.0,12.5,2026-07-31 11:25:00,1,22.0
+1569,Tomás Ozuna Durán,demo.usuario313@cemydi.local,7,2,1,2,1,8,13,1,2,14132.2,0,0,0.0,0.0,2026-02-25 17:44:00,157,0.93
+1570,Miguel Pablo Gaitán Tejada,demo.usuario314@cemydi.local,31,5,10,3,1,21,50,9,23,96932.43,3,3,3073.75,5.0,2026-06-26 17:44:00,36,5.0
+1571,Fidel Carranza,demo.usuario315@cemydi.local,17,14,4,4,4,24,43,16,33,81348.2,0,0,0.0,0.0,2026-06-12 11:51:00,50,3.31
+1572,Aldo Garrido,demo.usuario316@cemydi.local,32,7,5,6,1,19,51,12,36,174375.36,0,0,0.0,0.0,2026-07-06 11:55:00,26,12.75
+1573,Elvia Díaz,demo.usuario317@cemydi.local,61,10,10,4,3,26,88,2,7,19843.18,0,0,0.0,0.0,2026-07-03 12:46:00,29,6.29
+1574,Carmen Guerra Rosas,demo.usuario318@cemydi.local,44,11,6,3,0,21,64,10,23,51938.9,0,0,0.0,0.0,2026-06-12 11:57:00,50,4.0
+1575,Serafín Madrigal,demo.usuario319@cemydi.local,17,2,4,3,0,16,26,8,23,58240.87,0,0,0.0,0.0,2026-06-26 16:45:00,36,1.37
+1576,María Cristina Ofelia Alcala Soria,demo.usuario320@cemydi.local,46,17,8,1,3,26,75,19,54,180755.19,0,0,0.0,0.0,2026-06-23 09:59:00,39,3.26
+1577,Germán Vigil,demo.usuario321@cemydi.local,45,10,6,1,0,25,62,16,44,140452.88,1,1,4832.8,7.0,2026-06-19 14:57:00,43,15.5
+1578,Jorge Laureano,demo.usuario322@cemydi.local,33,8,5,3,3,26,52,4,7,18022.85,1,1,4129.8,10.0,2026-07-15 18:56:00,17,17.33
+1579,Claudia Celia Cortez,demo.usuario323@cemydi.local,18,5,2,4,1,14,30,7,16,88876.32,0,0,0.0,0.0,2026-07-31 15:02:00,1,15.0
+1580,Lourdes Olivas Melgar,demo.usuario324@cemydi.local,1,2,0,0,0,3,3,3,3,3905.04,0,0,0.0,0.0,2025-11-13 13:49:00,261,0.43
+1581,Rolando Bueno,demo.usuario325@cemydi.local,24,7,1,3,1,18,36,16,41,199057.97,0,0,0.0,0.0,2026-06-02 16:41:00,60,9.0
+1582,Alma Mayte Mena,demo.usuario326@cemydi.local,35,16,6,3,2,22,62,6,14,26879.36,0,0,0.0,0.0,2026-06-24 15:31:00,38,4.77
+1583,Aida Adela Garza,demo.usuario327@cemydi.local,28,7,4,0,3,19,42,15,43,124435.13,0,0,0.0,0.0,2026-07-23 14:50:00,9,4.2
+1584,Flavio Mota,demo.usuario328@cemydi.local,18,1,3,1,1,15,24,3,9,25625.51,4,4,5119.99,8.5,2026-05-11 11:29:00,82,1.0
+1585,Mauro Adán Aguilar,demo.usuario329@cemydi.local,42,7,5,1,1,20,56,0,0,0.0,0,0,0.0,0.0,2026-04-06 15:44:00,117,4.31
+1586,Concepción Concepción Solano,demo.usuario330@cemydi.local,24,7,2,3,1,21,37,10,26,70112.53,1,1,3057.34,13.0,2026-06-20 11:13:00,42,3.08
+1587,Carla Raquel Abrego Márquez,demo.usuario331@cemydi.local,13,3,1,0,0,14,17,3,4,14377.88,0,0,0.0,0.0,2025-12-18 15:46:00,226,5.67
+1588,Soledad Colunga Venegas,demo.usuario332@cemydi.local,44,14,5,2,1,20,66,11,32,179603.69,0,0,0.0,0.0,2026-06-29 11:02:00,33,5.08
+1589,José Emilio Polanco,demo.usuario333@cemydi.local,36,13,5,2,0,26,56,19,53,122892.33,1,1,4824.56,8.0,2026-06-28 09:52:00,34,9.33
+1590,Wilfrido Francisco Javier Coronado Toledo,demo.usuario334@cemydi.local,43,17,10,3,1,27,74,8,23,139332.57,0,0,0.0,0.0,2026-06-13 11:06:00,49,3.08
+1591,Leonel Castañeda,demo.usuario335@cemydi.local,18,8,7,2,0,14,35,22,70,207521.82,0,0,0.0,0.0,2026-06-19 18:59:00,43,1.84
+1592,Violeta Lucía Pérez Báez,demo.usuario336@cemydi.local,36,6,3,2,2,18,49,16,44,104338.0,0,0,0.0,0.0,2026-06-21 11:43:00,41,6.13
+1593,Alta  Gracia Ozuna,demo.usuario337@cemydi.local,41,21,10,2,2,25,76,2,5,34006.97,2,2,2525.4,7.5,2026-06-03 17:39:00,59,19.0
+1594,Lorenzo Jacobo Salinas,demo.usuario338@cemydi.local,31,8,7,6,0,25,52,8,23,136612.46,3,3,2261.67,4.33,2026-06-22 12:14:00,40,3.47
+1595,Martín Arevalo,demo.usuario339@cemydi.local,48,12,7,6,2,31,75,6,9,17118.99,0,0,0.0,0.0,2026-05-23 18:28:00,70,5.36
+1596,Daniel Javier Gurule,demo.usuario340@cemydi.local,32,8,6,1,0,20,47,11,24,88374.95,1,1,1746.56,4.0,2026-06-02 12:10:00,60,2.35
+1597,Lucía Virginia Cepeda Ortiz,demo.usuario341@cemydi.local,21,5,2,0,1,18,29,14,28,86348.44,0,0,0.0,0.0,2026-06-06 17:35:00,56,1.04
+1598,Carlota Indira Elizondo Caldera,demo.usuario342@cemydi.local,40,7,5,0,0,22,52,12,32,87780.06,0,0,0.0,0.0,2026-07-15 11:36:00,17,7.43
+1599,Andrea de León,demo.usuario343@cemydi.local,35,19,10,3,2,24,69,18,49,149892.53,0,0,0.0,0.0,2026-07-16 15:30:00,16,5.75
+1600,Berta Susana Urrutia Barraza,demo.usuario344@cemydi.local,33,15,13,3,1,23,65,0,0,0.0,0,0,0.0,0.0,2026-06-14 14:15:00,48,13.0
+1601,Georgina Salinas,demo.usuario345@cemydi.local,36,9,10,6,0,27,61,9,27,174787.78,3,3,2093.43,5.0,2026-06-18 09:25:00,44,2.44
+1602,Alonso Olivárez Flórez,demo.usuario346@cemydi.local,24,7,5,3,2,16,41,6,16,40959.69,0,0,0.0,0.0,2026-06-18 17:46:00,44,3.73
+1603,Eloy Óscar Barrera,demo.usuario347@cemydi.local,8,2,3,1,0,9,14,3,8,18669.22,0,0,0.0,0.0,2026-02-13 12:06:00,169,1.17
+1604,Luz Collazo Quintanilla,demo.usuario348@cemydi.local,27,4,2,3,1,21,37,5,9,22594.38,2,2,3442.72,4.0,2026-05-03 18:36:00,90,4.11
+1605,Minerva Nadia Alfaro,demo.usuario349@cemydi.local,35,6,6,3,1,20,51,3,9,37604.13,8,8,6658.75,5.25,2026-06-25 13:59:00,37,7.29
+1606,David Llamas,demo.usuario350@cemydi.local,30,6,2,1,2,21,41,10,21,65662.84,3,3,3131.16,5.67,2026-07-03 15:39:00,29,3.73
+1607,Srita. Sofía Narváez,demo.usuario351@cemydi.local,34,10,4,1,1,26,50,14,36,73620.34,0,0,0.0,0.0,2026-07-05 12:11:00,27,2.17
+1608,Reina Tamez Aranda,demo.usuario352@cemydi.local,37,9,4,3,1,25,54,6,8,15365.16,0,0,0.0,0.0,2026-07-11 09:34:00,21,2.84
+1609,Rosario Rodarte,demo.usuario353@cemydi.local,6,3,0,2,1,9,12,2,6,13426.52,0,0,0.0,0.0,2025-08-16 14:37:00,350,0.86
+1610,Zacarías Villanueva Perales,demo.usuario354@cemydi.local,36,6,7,1,1,23,51,1,3,12526.11,11,11,11616.71,7.55,2026-06-02 11:02:00,60,3.64
+1611,Wendolin Indira Centeno,demo.usuario355@cemydi.local,47,9,7,2,2,28,67,10,28,145530.64,0,0,0.0,0.0,2026-06-19 10:09:00,43,3.53
+1612,Ana Luisa Chávez,demo.usuario356@cemydi.local,11,2,1,0,0,10,14,3,5,16316.36,0,0,0.0,0.0,2025-11-24 13:50:00,250,1.56
+1613,Esteban Medina,demo.usuario357@cemydi.local,22,5,4,2,3,17,36,3,4,13676.02,0,0,0.0,0.0,2026-06-24 10:26:00,38,1.89
+1614,Ivonne Marisol Macías Sáenz,demo.usuario358@cemydi.local,50,18,6,2,2,26,78,0,0,0.0,0,0,0.0,0.0,2026-04-28 17:53:00,95,4.33
+1615,Julio César Rodríquez Cornejo,demo.usuario359@cemydi.local,24,7,2,2,0,17,35,4,11,41961.2,0,0,0.0,0.0,2026-05-01 10:46:00,92,1.67
+1616,Ruby Márquez Portillo,demo.usuario360@cemydi.local,41,16,4,2,1,24,64,13,32,106981.87,3,3,5425.94,7.33,2026-07-04 16:25:00,28,2.37
+1617,Mercedes Cadena Olivo,demo.usuario361@cemydi.local,40,9,4,5,4,23,62,13,36,111473.5,2,2,5640.4,8.5,2026-07-24 16:42:00,8,2.48
+1618,Ramón Santana,demo.usuario362@cemydi.local,37,12,8,3,3,27,63,6,15,82783.06,0,0,0.0,0.0,2026-07-16 15:15:00,16,3.5
+1619,María Luisa Negrete,demo.usuario363@cemydi.local,32,20,1,3,2,25,58,8,21,138564.76,0,0,0.0,0.0,2026-06-27 11:19:00,35,3.05
+1620,Ana María Sosa,demo.usuario364@cemydi.local,18,5,1,2,0,16,26,8,26,156190.44,0,0,0.0,0.0,2026-06-16 12:59:00,46,4.33
+1621,Andrea Arevalo,demo.usuario365@cemydi.local,41,8,4,3,2,23,58,3,7,19367.38,0,0,0.0,0.0,2026-04-15 16:09:00,108,3.63
+1622,Esteban Carreón,demo.usuario366@cemydi.local,28,8,2,3,1,17,42,1,1,11902.68,6,6,8645.1,9.33,2026-07-20 15:27:00,12,2.8
+1623,Wilfrido Arteaga Alba,demo.usuario367@cemydi.local,25,5,5,1,0,16,36,7,18,65738.25,0,0,0.0,0.0,2026-06-24 16:55:00,38,18.0
+1624,Estela Jimínez,demo.usuario368@cemydi.local,45,6,7,7,4,30,69,19,37,75102.67,2,2,2075.16,3.5,2026-06-24 18:39:00,38,4.06
+1625,María Eugenia Natividad Dávila Niño,demo.usuario369@cemydi.local,44,12,11,2,1,28,70,20,57,161180.13,0,0,0.0,0.0,2026-06-07 18:52:00,55,2.92
+1626,Natividad Arguello,demo.usuario370@cemydi.local,9,5,1,0,0,11,15,1,3,14098.47,0,0,0.0,0.0,2026-02-17 15:38:00,165,1.0
+1627,Alberto Alemán,demo.usuario371@cemydi.local,43,8,6,3,2,21,62,14,36,161201.79,1,1,5923.95,15.0,2026-06-24 11:59:00,38,4.13
+1628,Úrsula Salas Amador,demo.usuario372@cemydi.local,54,8,5,3,3,22,73,17,46,138438.04,1,1,3128.88,6.0,2026-06-22 09:48:00,40,3.65
+1629,Concepción Margarita Lozada Curiel,demo.usuario373@cemydi.local,26,13,5,2,1,20,47,6,11,55891.49,3,3,2168.34,5.67,2026-06-23 16:24:00,39,11.75
+1630,Verónica Negrete,demo.usuario374@cemydi.local,43,14,4,3,2,29,66,19,52,112546.13,1,1,2805.24,12.0,2026-07-29 14:33:00,3,2.64
+1631,Gabriel Fierro Contreras,demo.usuario375@cemydi.local,17,4,5,4,2,14,32,0,0,0.0,9,9,10295.7,5.67,2026-06-28 11:09:00,34,5.33
+1632,Anel Valles,demo.usuario376@cemydi.local,9,1,5,1,0,7,16,0,0,0.0,0,0,0.0,0.0,2026-01-27 17:30:00,186,1.14
+1633,José Luis Ledesma Orozco,demo.usuario377@cemydi.local,46,12,7,7,1,25,73,7,22,109237.7,2,2,5819.25,6.0,2026-06-12 09:19:00,50,10.43
+1634,Eugenia Estefanía Zamora,demo.usuario378@cemydi.local,26,5,2,1,1,13,35,5,12,38336.19,0,0,0.0,0.0,2026-04-26 15:45:00,97,1.46
+1635,Karina Acosta,demo.usuario379@cemydi.local,34,13,6,7,2,27,62,5,14,141383.69,2,2,3044.16,8.0,2026-07-02 15:12:00,30,3.65
+1636,Delia Amalia Valverde,demo.usuario380@cemydi.local,56,15,14,2,1,29,88,1,3,27430.71,0,0,0.0,0.0,2026-06-01 09:39:00,61,6.29
+1637,Francisco Homero Carbajal Acosta,demo.usuario381@cemydi.local,18,8,5,0,1,17,32,1,1,27361.53,0,0,0.0,0.0,2026-06-26 09:56:00,36,8.0
+1638,Leonor Lara Guzmán,demo.usuario382@cemydi.local,11,2,4,2,2,14,21,1,3,29036.43,6,6,7140.48,8.0,2026-07-15 09:44:00,17,5.25
+1639,Juan Nava Arriaga,demo.usuario383@cemydi.local,21,1,1,1,1,16,25,16,46,173798.57,2,2,1568.75,5.0,2026-06-11 15:42:00,51,2.08
+1640,Renato Cornelio Ríos Uribe,demo.usuario384@cemydi.local,28,10,5,3,1,20,47,5,15,41193.23,0,0,0.0,0.0,2026-05-01 10:37:00,92,1.88
+1641,José María Daniel Abrego,demo.usuario385@cemydi.local,11,9,1,5,0,16,26,8,26,147812.49,2,2,5091.57,7.5,2026-06-13 13:50:00,49,3.25
+1642,Srita. Silvia Madrid,demo.usuario386@cemydi.local,45,16,8,4,1,23,74,1,4,39338.6,1,1,3123.84,8.0,2026-06-28 10:37:00,34,3.52
+1643,Abraham Campos,demo.usuario387@cemydi.local,28,7,1,1,1,23,38,21,51,154441.39,1,1,4433.2,10.0,2026-06-10 18:31:00,52,6.33
+1644,Dulce María Amalia Armendáriz,demo.usuario388@cemydi.local,26,5,1,3,1,21,36,6,17,47154.9,0,0,0.0,0.0,2026-05-31 09:41:00,62,1.38
+1645,Trinidad Leiva,demo.usuario389@cemydi.local,14,7,4,1,1,13,27,10,27,71514.11,0,0,0.0,0.0,2026-07-20 16:54:00,12,1.08
+1646,Ana Luisa Pulido Palomino,demo.usuario390@cemydi.local,47,11,5,6,1,26,70,11,26,121290.09,1,1,2507.2,8.0,2026-07-06 12:39:00,26,6.36
+1647,Abel Rodríguez Díaz,demo.usuario391@cemydi.local,37,7,4,2,0,22,50,5,9,23032.2,0,0,0.0,0.0,2026-06-03 18:46:00,59,5.56
+1648,Julio César Mireles Curiel,demo.usuario392@cemydi.local,20,9,4,0,0,16,33,8,18,86209.33,0,0,0.0,0.0,2026-07-31 14:24:00,1,2.36
+1649,Julio César Evelio Montaño Barraza,demo.usuario393@cemydi.local,25,4,2,2,0,15,33,0,0,0.0,0,0,0.0,0.0,2026-04-20 12:37:00,103,3.0
+1650,Martha Débora Galarza Cordero,demo.usuario394@cemydi.local,14,3,0,3,1,11,21,3,9,17161.88,4,4,11224.18,8.0,2026-05-21 09:42:00,72,5.25
+1651,Elisa Arevalo,demo.usuario395@cemydi.local,30,17,5,1,6,25,59,8,17,142775.08,3,3,6630.6,8.67,2026-07-09 11:39:00,23,2.46
+1652,Gregorio Enrique Loya Hinojosa,demo.usuario396@cemydi.local,4,2,1,1,0,7,8,3,9,15761.0,0,0,0.0,0.0,2025-10-09 13:54:00,296,0.62
+1653,Wilfrido Briseño Barajas,demo.usuario397@cemydi.local,27,5,1,2,3,15,38,9,28,136779.06,2,2,2655.92,7.0,2026-06-22 11:29:00,40,1.81
+1654,María del Carmen Briones Cervantes,demo.usuario398@cemydi.local,18,3,2,1,4,15,28,12,26,69152.35,0,0,0.0,0.0,2026-06-08 18:29:00,54,1.08
+1655,Alberto Linares Menchaca,demo.usuario399@cemydi.local,41,11,6,3,3,22,64,8,22,201174.92,0,0,0.0,0.0,2026-06-22 13:46:00,40,2.67
+1656,Estela Ávila Chapa,demo.usuario400@cemydi.local,24,9,3,1,2,16,39,5,14,20225.84,0,0,0.0,0.0,2026-04-18 16:46:00,105,4.33

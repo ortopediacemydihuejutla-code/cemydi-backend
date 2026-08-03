@@ -1,0 +1,201 @@
+source_product_id,source_product_name,rank,recommended_product_id,recommended_product_name,similarity
+179,Silla de ruedas estándar,1,197,Silla de transporte ultraligera,0.9842652833967785
+179,Silla de ruedas estándar,2,198,Silla de ruedas infantil,0.9776160628390378
+179,Silla de ruedas estándar,3,180,Silla de ruedas reclinable,0.9734768070678345
+179,Silla de ruedas estándar,4,191,Colchón antiescaras,0.5081489503612775
+179,Silla de ruedas estándar,5,200,Andadera con asiento y ruedas,0.5077437329242594
+180,Silla de ruedas reclinable,1,197,Silla de transporte ultraligera,0.9980809308122394
+180,Silla de ruedas reclinable,2,198,Silla de ruedas infantil,0.9920832181214047
+180,Silla de ruedas reclinable,3,179,Silla de ruedas estándar,0.9734768070678345
+180,Silla de ruedas reclinable,4,184,Muletas axilares ajustables,0.5038968751360178
+180,Silla de ruedas reclinable,5,209,Mesa puente para cama hospitalaria,0.5032040086140687
+181,Silla de ruedas bariátrica,1,199,Scooter de movilidad compacto,0.9826850327473801
+181,Silla de ruedas bariátrica,2,190,Cama hospitalaria eléctrica,0.5073472928370412
+181,Silla de ruedas bariátrica,3,189,Cama hospitalaria manual,0.5050729472288783
+181,Silla de ruedas bariátrica,4,198,Silla de ruedas infantil,0.5012293850599584
+181,Silla de ruedas bariátrica,5,212,Elevador hidráulico de paciente,0.4948831000690033
+182,Andadera plegable aluminio,1,200,Andadera con asiento y ruedas,0.988937360060754
+182,Andadera plegable aluminio,2,184,Muletas axilares ajustables,0.9661149709200341
+182,Andadera plegable aluminio,3,179,Silla de ruedas estándar,0.5058177874507981
+182,Andadera plegable aluminio,4,191,Colchón antiescaras,0.5019653518069139
+182,Andadera plegable aluminio,5,206,Aspirador de secreciones portátil,0.494688837082404
+183,Bastón de cuatro apoyos,1,201,Andadera pediátrica ajustable,0.996982816574872
+183,Bastón de cuatro apoyos,2,202,Bastón plegable de aluminio,0.9714897268823806
+183,Bastón de cuatro apoyos,3,184,Muletas axilares ajustables,0.5090801834667114
+183,Bastón de cuatro apoyos,4,217,Muñequera con férula palmar,0.5061263749404691
+183,Bastón de cuatro apoyos,5,195,Faja lumbar ortopédica,0.504475301760796
+184,Muletas axilares ajustables,1,200,Andadera con asiento y ruedas,0.9673411760657983
+184,Muletas axilares ajustables,2,182,Andadera plegable aluminio,0.9661149709200341
+184,Muletas axilares ajustables,3,183,Bastón de cuatro apoyos,0.5090801834667114
+184,Muletas axilares ajustables,4,201,Andadera pediátrica ajustable,0.5083130853495674
+184,Muletas axilares ajustables,5,209,Mesa puente para cama hospitalaria,0.5050663213966535
+185,Concentrador de oxígeno 5 L,1,205,Cilindro de oxígeno 9500 L,0.9979072081843346
+185,Concentrador de oxígeno 5 L,2,208,BiPAP domiciliario,0.530253268152554
+185,Concentrador de oxígeno 5 L,3,186,Concentrador de oxígeno portátil,0.5284357321075097
+185,Concentrador de oxígeno 5 L,4,204,Regulador para tanque de oxígeno,0.5214447727161045
+185,Concentrador de oxígeno 5 L,5,187,Tanque de oxígeno 682 L,0.5197068475872295
+186,Concentrador de oxígeno portátil,1,187,Tanque de oxígeno 682 L,0.9938482505214001
+186,Concentrador de oxígeno portátil,2,185,Concentrador de oxígeno 5 L,0.5284357321075097
+186,Concentrador de oxígeno portátil,3,205,Cilindro de oxígeno 9500 L,0.5233860524660063
+186,Concentrador de oxígeno portátil,4,207,CPAP automático con humidificador,0.5229647163659513
+186,Concentrador de oxígeno portátil,5,206,Aspirador de secreciones portátil,0.5174607114824529
+187,Tanque de oxígeno 682 L,1,186,Concentrador de oxígeno portátil,0.9938482505214001
+187,Tanque de oxígeno 682 L,2,207,CPAP automático con humidificador,0.5212315898820138
+187,Tanque de oxígeno 682 L,3,185,Concentrador de oxígeno 5 L,0.5197068475872295
+187,Tanque de oxígeno 682 L,4,204,Regulador para tanque de oxígeno,0.516868747877806
+187,Tanque de oxígeno 682 L,5,205,Cilindro de oxígeno 9500 L,0.513571453571964
+188,Nebulizador compresor,1,203,Oxímetro de pulso digital,0.9812769352653762
+188,Nebulizador compresor,2,204,Regulador para tanque de oxígeno,0.9726741795791602
+188,Nebulizador compresor,3,216,Tobillera estabilizadora,0.5088495990346706
+188,Nebulizador compresor,4,214,Barra de apoyo para baño,0.5080278361082958
+188,Nebulizador compresor,5,215,Collarín cervical semirrígido,0.5055331291436357
+189,Cama hospitalaria manual,1,190,Cama hospitalaria eléctrica,0.9962854936713813
+189,Cama hospitalaria manual,2,181,Silla de ruedas bariátrica,0.5050729472288783
+189,Cama hospitalaria manual,3,212,Elevador hidráulico de paciente,0.5019274338586306
+189,Cama hospitalaria manual,4,199,Scooter de movilidad compacto,0.49832349590700703
+189,Cama hospitalaria manual,5,192,Grúa para traslado de pacientes,0.4964864215833513
+190,Cama hospitalaria eléctrica,1,189,Cama hospitalaria manual,0.9962854936713813
+190,Cama hospitalaria eléctrica,2,181,Silla de ruedas bariátrica,0.5073472928370412
+190,Cama hospitalaria eléctrica,3,212,Elevador hidráulico de paciente,0.50301369750482
+190,Cama hospitalaria eléctrica,4,208,BiPAP domiciliario,0.49470950465435043
+190,Cama hospitalaria eléctrica,5,205,Cilindro de oxígeno 9500 L,0.49263631335751285
+191,Colchón antiescaras,1,209,Mesa puente para cama hospitalaria,0.9410943002459083
+191,Colchón antiescaras,2,200,Andadera con asiento y ruedas,0.517058910578274
+191,Colchón antiescaras,3,179,Silla de ruedas estándar,0.5081489503612775
+191,Colchón antiescaras,4,182,Andadera plegable aluminio,0.5019653518069139
+191,Colchón antiescaras,5,206,Aspirador de secreciones portátil,0.49575011930065244
+192,Grúa para traslado de pacientes,1,212,Elevador hidráulico de paciente,0.9971178850560388
+192,Grúa para traslado de pacientes,2,199,Scooter de movilidad compacto,0.5042728671392941
+192,Grúa para traslado de pacientes,3,189,Cama hospitalaria manual,0.4964864215833513
+192,Grúa para traslado de pacientes,4,211,Cojín antiescaras de gel,0.4941714926844808
+192,Grúa para traslado de pacientes,5,190,Cama hospitalaria eléctrica,0.4923785582196475
+193,Baño portátil con ruedas,1,213,Silla cómoda sanitaria,0.9951680182758659
+193,Baño portátil con ruedas,2,194,Banco para regadera,0.5081298291539821
+193,Baño portátil con ruedas,3,198,Silla de ruedas infantil,0.5025356360022338
+193,Baño portátil con ruedas,4,209,Mesa puente para cama hospitalaria,0.5023878350779203
+193,Baño portátil con ruedas,5,197,Silla de transporte ultraligera,0.49346052179817573
+194,Banco para regadera,1,214,Barra de apoyo para baño,0.916407913199922
+194,Banco para regadera,2,202,Bastón plegable de aluminio,0.518525916990193
+194,Banco para regadera,3,203,Oxímetro de pulso digital,0.5096953384074685
+194,Banco para regadera,4,193,Baño portátil con ruedas,0.5081298291539821
+194,Banco para regadera,5,196,Rodillera estabilizadora,0.5003107109377782
+195,Faja lumbar ortopédica,1,217,Muñequera con férula palmar,0.9969006984978359
+195,Faja lumbar ortopédica,2,196,Rodillera estabilizadora,0.9912389184581281
+195,Faja lumbar ortopédica,3,215,Collarín cervical semirrígido,0.9883286864186578
+195,Faja lumbar ortopédica,4,216,Tobillera estabilizadora,0.9870559313143955
+195,Faja lumbar ortopédica,5,183,Bastón de cuatro apoyos,0.504475301760796
+196,Rodillera estabilizadora,1,215,Collarín cervical semirrígido,0.9917274961739881
+196,Rodillera estabilizadora,2,195,Faja lumbar ortopédica,0.9912389184581281
+196,Rodillera estabilizadora,3,217,Muñequera con férula palmar,0.9854629409615244
+196,Rodillera estabilizadora,4,216,Tobillera estabilizadora,0.9774616503800728
+196,Rodillera estabilizadora,5,202,Bastón plegable de aluminio,0.5020562084647998
+197,Silla de transporte ultraligera,1,180,Silla de ruedas reclinable,0.9980809308122394
+197,Silla de transporte ultraligera,2,198,Silla de ruedas infantil,0.9951977100224569
+197,Silla de transporte ultraligera,3,179,Silla de ruedas estándar,0.9842652833967785
+197,Silla de transporte ultraligera,4,184,Muletas axilares ajustables,0.5005559614897205
+197,Silla de transporte ultraligera,5,209,Mesa puente para cama hospitalaria,0.49928803905385893
+198,Silla de ruedas infantil,1,197,Silla de transporte ultraligera,0.9951977100224569
+198,Silla de ruedas infantil,2,180,Silla de ruedas reclinable,0.9920832181214047
+198,Silla de ruedas infantil,3,179,Silla de ruedas estándar,0.9776160628390378
+198,Silla de ruedas infantil,4,209,Mesa puente para cama hospitalaria,0.5030334076085345
+198,Silla de ruedas infantil,5,193,Baño portátil con ruedas,0.5025356360022338
+199,Scooter de movilidad compacto,1,181,Silla de ruedas bariátrica,0.9826850327473801
+199,Scooter de movilidad compacto,2,192,Grúa para traslado de pacientes,0.5042728671392941
+199,Scooter de movilidad compacto,3,180,Silla de ruedas reclinable,0.5021145761220558
+199,Scooter de movilidad compacto,4,198,Silla de ruedas infantil,0.5016793686177788
+199,Scooter de movilidad compacto,5,212,Elevador hidráulico de paciente,0.5014461208675006
+200,Andadera con asiento y ruedas,1,182,Andadera plegable aluminio,0.988937360060754
+200,Andadera con asiento y ruedas,2,184,Muletas axilares ajustables,0.9673411760657983
+200,Andadera con asiento y ruedas,3,191,Colchón antiescaras,0.517058910578274
+200,Andadera con asiento y ruedas,4,179,Silla de ruedas estándar,0.5077437329242594
+200,Andadera con asiento y ruedas,5,206,Aspirador de secreciones portátil,0.4930655914884527
+201,Andadera pediátrica ajustable,1,183,Bastón de cuatro apoyos,0.996982816574872
+201,Andadera pediátrica ajustable,2,202,Bastón plegable de aluminio,0.9721129105736087
+201,Andadera pediátrica ajustable,3,184,Muletas axilares ajustables,0.5083130853495674
+201,Andadera pediátrica ajustable,4,217,Muñequera con férula palmar,0.5053231540540488
+201,Andadera pediátrica ajustable,5,210,Barandal abatible para cama,0.5048135655601748
+202,Bastón plegable de aluminio,1,201,Andadera pediátrica ajustable,0.9721129105736087
+202,Bastón plegable de aluminio,2,183,Bastón de cuatro apoyos,0.9714897268823806
+202,Bastón plegable de aluminio,3,194,Banco para regadera,0.518525916990193
+202,Bastón plegable de aluminio,4,203,Oxímetro de pulso digital,0.5104760156644108
+202,Bastón plegable de aluminio,5,196,Rodillera estabilizadora,0.5020562084647998
+203,Oxímetro de pulso digital,1,188,Nebulizador compresor,0.9812769352653762
+203,Oxímetro de pulso digital,2,204,Regulador para tanque de oxígeno,0.9564681350524924
+203,Oxímetro de pulso digital,3,202,Bastón plegable de aluminio,0.5104760156644108
+203,Oxímetro de pulso digital,4,194,Banco para regadera,0.5096953384074685
+203,Oxímetro de pulso digital,5,217,Muñequera con férula palmar,0.5047092971993207
+204,Regulador para tanque de oxígeno,1,188,Nebulizador compresor,0.9726741795791602
+204,Regulador para tanque de oxígeno,2,203,Oxímetro de pulso digital,0.9564681350524924
+204,Regulador para tanque de oxígeno,3,205,Cilindro de oxígeno 9500 L,0.5215425728306108
+204,Regulador para tanque de oxígeno,4,185,Concentrador de oxígeno 5 L,0.5214447727161045
+204,Regulador para tanque de oxígeno,5,187,Tanque de oxígeno 682 L,0.516868747877806
+205,Cilindro de oxígeno 9500 L,1,185,Concentrador de oxígeno 5 L,0.9979072081843346
+205,Cilindro de oxígeno 9500 L,2,208,BiPAP domiciliario,0.5285689437578639
+205,Cilindro de oxígeno 9500 L,3,186,Concentrador de oxígeno portátil,0.5233860524660063
+205,Cilindro de oxígeno 9500 L,4,204,Regulador para tanque de oxígeno,0.5215425728306108
+205,Cilindro de oxígeno 9500 L,5,187,Tanque de oxígeno 682 L,0.513571453571964
+206,Aspirador de secreciones portátil,1,207,CPAP automático con humidificador,0.9528091937302335
+206,Aspirador de secreciones portátil,2,208,BiPAP domiciliario,0.5229487863644564
+206,Aspirador de secreciones portátil,3,186,Concentrador de oxígeno portátil,0.5174607114824529
+206,Aspirador de secreciones portátil,4,187,Tanque de oxígeno 682 L,0.506531505293655
+206,Aspirador de secreciones portátil,5,191,Colchón antiescaras,0.49575011930065244
+207,CPAP automático con humidificador,1,206,Aspirador de secreciones portátil,0.9528091937302335
+207,CPAP automático con humidificador,2,208,BiPAP domiciliario,0.5232336588513163
+207,CPAP automático con humidificador,3,186,Concentrador de oxígeno portátil,0.5229647163659513
+207,CPAP automático con humidificador,4,187,Tanque de oxígeno 682 L,0.5212315898820138
+207,CPAP automático con humidificador,5,198,Silla de ruedas infantil,0.4931942435022267
+208,BiPAP domiciliario,1,185,Concentrador de oxígeno 5 L,0.530253268152554
+208,BiPAP domiciliario,2,205,Cilindro de oxígeno 9500 L,0.5285689437578639
+208,BiPAP domiciliario,3,207,CPAP automático con humidificador,0.5232336588513163
+208,BiPAP domiciliario,4,206,Aspirador de secreciones portátil,0.5229487863644564
+208,BiPAP domiciliario,5,190,Cama hospitalaria eléctrica,0.49470950465435043
+209,Mesa puente para cama hospitalaria,1,191,Colchón antiescaras,0.9410943002459083
+209,Mesa puente para cama hospitalaria,2,210,Barandal abatible para cama,0.5068561841605503
+209,Mesa puente para cama hospitalaria,3,184,Muletas axilares ajustables,0.5050663213966535
+209,Mesa puente para cama hospitalaria,4,180,Silla de ruedas reclinable,0.5032040086140687
+209,Mesa puente para cama hospitalaria,5,198,Silla de ruedas infantil,0.5030334076085345
+210,Barandal abatible para cama,1,209,Mesa puente para cama hospitalaria,0.5068561841605503
+210,Barandal abatible para cama,2,217,Muñequera con férula palmar,0.5050353264501154
+210,Barandal abatible para cama,3,201,Andadera pediátrica ajustable,0.5048135655601748
+210,Barandal abatible para cama,4,183,Bastón de cuatro apoyos,0.5017973766010648
+210,Barandal abatible para cama,5,203,Oxímetro de pulso digital,0.5015185520580349
+211,Cojín antiescaras de gel,1,196,Rodillera estabilizadora,0.49940721203493316
+211,Cojín antiescaras de gel,2,215,Collarín cervical semirrígido,0.4989008713479246
+211,Cojín antiescaras de gel,3,188,Nebulizador compresor,0.4988622085302688
+211,Cojín antiescaras de gel,4,195,Faja lumbar ortopédica,0.4982504609200767
+211,Cojín antiescaras de gel,5,218,Compresero eléctrico terapéutico,0.4979772818425614
+212,Elevador hidráulico de paciente,1,192,Grúa para traslado de pacientes,0.9971178850560388
+212,Elevador hidráulico de paciente,2,190,Cama hospitalaria eléctrica,0.50301369750482
+212,Elevador hidráulico de paciente,3,189,Cama hospitalaria manual,0.5019274338586306
+212,Elevador hidráulico de paciente,4,199,Scooter de movilidad compacto,0.5014461208675006
+212,Elevador hidráulico de paciente,5,211,Cojín antiescaras de gel,0.4953647910252245
+213,Silla cómoda sanitaria,1,193,Baño portátil con ruedas,0.9951680182758659
+213,Silla cómoda sanitaria,2,197,Silla de transporte ultraligera,0.49770735194414095
+213,Silla cómoda sanitaria,3,198,Silla de ruedas infantil,0.49759487346551656
+213,Silla cómoda sanitaria,4,184,Muletas axilares ajustables,0.4975600285610761
+213,Silla cómoda sanitaria,5,209,Mesa puente para cama hospitalaria,0.49675275323289736
+214,Barra de apoyo para baño,1,194,Banco para regadera,0.916407913199922
+214,Barra de apoyo para baño,2,216,Tobillera estabilizadora,0.519510218786096
+214,Barra de apoyo para baño,3,215,Collarín cervical semirrígido,0.5114432016426607
+214,Barra de apoyo para baño,4,188,Nebulizador compresor,0.5080278361082958
+214,Barra de apoyo para baño,5,204,Regulador para tanque de oxígeno,0.4921049591731132
+215,Collarín cervical semirrígido,1,216,Tobillera estabilizadora,0.9941752529199949
+215,Collarín cervical semirrígido,2,196,Rodillera estabilizadora,0.9917274961739881
+215,Collarín cervical semirrígido,3,195,Faja lumbar ortopédica,0.9883286864186578
+215,Collarín cervical semirrígido,4,217,Muñequera con férula palmar,0.9750037386466649
+215,Collarín cervical semirrígido,5,214,Barra de apoyo para baño,0.5114432016426607
+216,Tobillera estabilizadora,1,215,Collarín cervical semirrígido,0.9941752529199949
+216,Tobillera estabilizadora,2,195,Faja lumbar ortopédica,0.9870559313143955
+216,Tobillera estabilizadora,3,196,Rodillera estabilizadora,0.9774616503800728
+216,Tobillera estabilizadora,4,217,Muñequera con férula palmar,0.972454450044402
+216,Tobillera estabilizadora,5,214,Barra de apoyo para baño,0.519510218786096
+217,Muñequera con férula palmar,1,195,Faja lumbar ortopédica,0.9969006984978359
+217,Muñequera con férula palmar,2,196,Rodillera estabilizadora,0.9854629409615244
+217,Muñequera con férula palmar,3,215,Collarín cervical semirrígido,0.9750037386466649
+217,Muñequera con férula palmar,4,216,Tobillera estabilizadora,0.972454450044402
+217,Muñequera con férula palmar,5,183,Bastón de cuatro apoyos,0.5061263749404691
+218,Compresero eléctrico terapéutico,1,183,Bastón de cuatro apoyos,0.5027336775669308
+218,Compresero eléctrico terapéutico,2,217,Muñequera con férula palmar,0.5023917143510186
+218,Compresero eléctrico terapéutico,3,195,Faja lumbar ortopédica,0.5022675780021632
+218,Compresero eléctrico terapéutico,4,210,Barandal abatible para cama,0.5014543178108889
+218,Compresero eléctrico terapéutico,5,201,Andadera pediátrica ajustable,0.5014156121583647
