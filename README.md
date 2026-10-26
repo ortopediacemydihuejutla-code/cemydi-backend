@@ -90,6 +90,49 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Despliegue en Render
+
+El build genera el cliente Prisma y compila el código; las migraciones se aplican
+por separado antes de iniciar el backend. Si falta `SecurityNotice`, el proceso
+se detiene antes de abrir el puerto: el aviso de puertos es consecuencia de esa
+salida, no un problema con `PORT`.
+
+Antes de actualizar una base existente, conservar un respaldo y ejecutar
+`npm run db:status` desde el entorno de Render. Verificar que `DATABASE_URL` y
+`DATABASE_DIRECT_URL` apunten a la misma base; la segunda debe permitir conexión
+directa con permisos de migración. Para esta actualización, las migraciones
+nuevas son:
+
+- `20261017120000_account_security_challenges`
+- `20261018120000_customer_notifications`
+- `20261025120000_customer_favorites`
+
+Revisar cualquier migración adicional pendiente, fallida o divergente antes de
+aplicarla. No usar `migrate reset`, `migrate dev`, `db push --force-reset` ni
+`--accept-data-loss` en producción. Si una tabla ya existe porque se creó
+manualmente, reconciliar su esquema e historial en lugar de borrarla o marcar
+migraciones como aplicadas sin comprobarlas.
+
+Configuración del servicio:
+
+| Campo de Render | Comando |
+| --- | --- |
+| Build Command | `npm ci --include=dev && npm run build` |
+| Pre-Deploy Command, si está disponible | `npm run db:migrate:deploy` |
+| Start Command, con Pre-Deploy | `npm run start:prod` |
+| Start Command, sin Pre-Deploy | `npm run start:render` |
+
+En una versión ya desplegada que todavía no tenga `start:render`, el comando
+equivalente es `npm run db:migrate:deploy && npm run start:prod`. El operador `&&`
+impide iniciar el backend si falla una migración. Los scripts `start` y
+`start:prod` siguen sin modificar el esquema por sí mismos.
+
+Render ofrece Pre-Deploy en servicios compatibles de pago. Referencia:
+[comandos de despliegue de Render](https://render.com/docs/deploys#pre-deploy-command).
+
+Si el despliegue se bloquea con P3018/42P16 en la vista de clustering, seguir el
+[procedimiento de recuperación para Render gratuito](docs/RENDER_MIGRATION_RECOVERY.md).
+
 ## Run tests
 
 ```bash

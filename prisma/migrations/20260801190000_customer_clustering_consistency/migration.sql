@@ -1,4 +1,46 @@
-CREATE OR REPLACE VIEW analytics.v_dataset_customer_clustering AS
+-- PostgreSQL preserves a view's column contract by position, not just by name.
+-- Keep each environment's existing column order and append only missing columns.
+-- This replaces the query without dropping the view, grants, dependencies or data.
+DO $migration$
+DECLARE
+  expected_columns text[] := ARRAY[
+    'customer_id', 'customer_name', 'email', 'views', 'searches',
+    'add_to_cart', 'favorites', 'shares', 'distinct_products_interacted',
+    'total_interactions', 'completed_sales', 'units_purchased',
+    'amount_spent_sales', 'valid_rentals', 'units_rented',
+    'amount_spent_rentals', 'average_rental_days', 'last_activity',
+    'days_since_last_activity', 'average_monthly_activity'
+  ];
+  existing_columns text[];
+  projection_columns text[];
+  projection text;
+BEGIN
+  SELECT COALESCE(array_agg(attname::text ORDER BY attnum), ARRAY[]::text[])
+  INTO existing_columns
+  FROM pg_attribute
+  WHERE attrelid = to_regclass('analytics.v_dataset_customer_clustering')
+    AND attnum > 0
+    AND NOT attisdropped;
+
+  IF EXISTS (
+    SELECT 1 FROM unnest(existing_columns) AS column_name
+    WHERE NOT (column_name = ANY(expected_columns))
+  ) THEN
+    RAISE EXCEPTION 'Unexpected columns in analytics.v_dataset_customer_clustering; inspect the view before migrating';
+  END IF;
+
+  projection_columns := existing_columns || ARRAY(
+    SELECT column_name FROM unnest(expected_columns) AS column_name
+    WHERE NOT (column_name = ANY(existing_columns))
+  );
+  SELECT string_agg(format('%I', column_name), ', ' ORDER BY ordinal)
+  INTO projection
+  FROM unnest(projection_columns) WITH ORDINALITY AS columns(column_name, ordinal);
+
+  EXECUTE format(
+    'CREATE OR REPLACE VIEW analytics.v_dataset_customer_clustering AS SELECT %s FROM (%s) AS corrected_dataset',
+    projection,
+    $query$
 WITH interaction_summary AS (
   SELECT
     i."userId",
@@ -134,4 +176,8 @@ SELECT
     ELSE round(total_interactions::numeric / active_interaction_months, 2)::double precision
   END AS average_monthly_activity,
   last_activity
-FROM customer_base;
+FROM customer_base
+$query$
+  );
+END;
+$migration$;
