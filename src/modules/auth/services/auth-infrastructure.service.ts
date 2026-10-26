@@ -29,6 +29,11 @@ export class AuthInfrastructureService implements OnModuleInit {
         label: 'AuthToken',
         run: () => this.prisma.authToken.count(),
       },
+      {
+        label: 'SecurityNotice',
+        run: () => this.prisma.securityNotice.count(),
+        migration: '20261017120000_account_security_challenges/migration.sql',
+      },
     ] as const;
 
     for (const check of checks) {
@@ -37,7 +42,7 @@ export class AuthInfrastructureService implements OnModuleInit {
       } catch (error) {
         if (isMissingTrackingTableError(error)) {
           throw new Error(
-            `Falta la tabla de seguridad ${check.label}. Ejecuta la migracion prisma/${AUTH_SECURITY_MIGRATION} antes de iniciar el backend.`,
+            `Falta la tabla de seguridad ${check.label}. Revisa las migraciones pendientes con npx prisma migrate status y aplica prisma/migrations/${'migration' in check ? check.migration : AUTH_SECURITY_MIGRATION} antes de iniciar el backend.`,
           );
         }
 

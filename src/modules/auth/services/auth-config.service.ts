@@ -190,6 +190,26 @@ export class AuthConfigService {
     return randomBytes(32).toString('hex');
   }
 
+  isTrustedWebOrigin(origin: string | undefined): boolean {
+    if (!origin || origin === 'null') return false;
+    const configured = [
+      this.frontendUrl,
+      this.backendUrl,
+      ...(this.configService.get<string>('CORS_ORIGIN') ?? '').split(','),
+    ];
+    return configured.some((value) => {
+      try {
+        const url = new URL(value.trim());
+        return (
+          (url.protocol === 'https:' || url.protocol === 'http:') &&
+          url.origin === origin
+        );
+      } catch {
+        return false;
+      }
+    });
+  }
+
   isCsrfProtectionEnabled(req?: Request) {
     const cookieOptions = this.authCookieBase(req);
     return cookieOptions.secure === true && cookieOptions.sameSite === 'none';

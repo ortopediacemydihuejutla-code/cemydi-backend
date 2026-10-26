@@ -15,11 +15,6 @@ import {
 } from './products-classification.util';
 import { ProductsCloudinaryService } from './products-cloudinary.service';
 import type { UploadedProductFile } from './products-cloudinary.types';
-import {
-  cosineSimilarity as artifactCosineSimilarity,
-  loadModelArtifacts,
-  recommendationVector,
-} from '../analytics/model-artifacts.util';
 
 type FindProductsQuery = {
   search?: string;
@@ -357,74 +352,61 @@ export class ProductsService {
   }
 
   async getRecommendations(id: number, limitRaw?: string) {
-    const { recommendation, recommendationMetadata } = loadModelArtifacts();
     const parsedLimit = Number(limitRaw);
     const limit = Number.isInteger(parsedLimit)
-      ? Math.max(1, Math.min(parsedLimit, recommendation.top_k))
-      : recommendation.top_k;
-    const [products, interactionRows] = await Promise.all([
-      this.prisma.product.findMany({
-        where: { activo: true },
-        include: productInclude,
-      }),
-      this.prisma.$queryRaw<
-        Array<{ product_id: number; views: number; searches: number }>
-      >`
-        SELECT i."productId" AS product_id,
-          count(*) FILTER (WHERE i."interactionType" = 'VIEW')::integer AS views,
-          count(*) FILTER (WHERE i."interactionType" = 'SEARCH')::integer AS searches
-        FROM analytics.customer_product_interactions i
-        WHERE i."batchName" = 'CEMYDI_DEMO_2024_2026_V1'
-        GROUP BY i."productId"
-      `,
-    ]);
+      ? Math.max(1, Math.min(parsedLimit, 12))
+      : 5;
+
+    const products = await this.prisma.product.findMany({
+      where: { activo: true },
+      include: productInclude,
+    });
+
     const target = products.find((product) => product.id === id);
     if (!target) throw new NotFoundException('Producto no encontrado');
-    const interactionsByProduct = new Map(
-      interactionRows.map((row) => [row.product_id, row]),
-    );
-    const vectorFor = (product: ProductWithImages) => {
-      const interactions = interactionsByProduct.get(product.id);
-      return recommendationVector({
-        id: product.id,
-        classification: product.clasificacion,
-        acquisitionType: product.tipoAdquisicion,
-        price: product.precio,
-        stock: product.stock,
-        views: interactions?.views ?? 0,
-        searches: interactions?.searches ?? 0,
-        requiresPrescription: product.requiereReceta,
-      });
-    };
-    const targetVector = vectorFor(target);
+
     const recommendations = products
       .filter((product) => product.id !== id)
       .map((product) => {
         const reasons: string[] = [];
+        let score = 0;
+
         if (
           areEquivalentClassifications(
             product.clasificacion,
             target.clasificacion,
           )
         ) {
+          score += 0.45;
           reasons.push('Misma categoría');
         }
         if (product.tipoAdquisicion === target.tipoAdquisicion) {
+          score += 0.25;
           reasons.push('Misma modalidad');
         }
+        if (
+          product.marca &&
+          product.marca.toLowerCase() === target.marca.toLowerCase()
+        ) {
+          score += 0.15;
+          reasons.push('Misma marca');
+        }
         if (product.material && product.material === target.material) {
+          score += 0.1;
           reasons.push('Material similar');
         }
         if (
           Math.abs(product.precio - target.precio) /
             Math.max(target.precio, 1) <=
-          0.3
+          0.35
         ) {
+          score += 0.15;
           reasons.push('Rango de precio parecido');
         }
+
         return {
           product,
-          score: artifactCosineSimilarity(targetVector, vectorFor(product)),
+          score,
           reasons: reasons.slice(0, 2),
         };
       })
@@ -435,18 +417,11 @@ export class ProductsService {
         recommendationScore: Number(score.toFixed(3)),
         recommendationReasons: reasons.length
           ? reasons
-          : ['Características relacionadas'],
+          : ['Productos sugeridos del catálogo'],
       }));
 
     return {
-      method: `${recommendationMetadata.name}: similitud de coseno (artefacto v${recommendationMetadata.version})`,
-      model: {
-        version: recommendationMetadata.version,
-        technique: recommendationMetadata.technique,
-        batchName: recommendationMetadata.batch_name,
-        topK: recommendationMetadata.top_k,
-        finalMetrics: recommendationMetadata.final_metrics,
-      },
+      method: 'Afinidad de catálogo (categoría, modalidad y precio)',
       sourceProductId: id,
       recommendations,
     };

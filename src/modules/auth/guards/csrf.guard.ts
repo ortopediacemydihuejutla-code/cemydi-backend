@@ -8,7 +8,12 @@ import { Reflector } from '@nestjs/core';
 import { timingSafeEqual } from 'node:crypto';
 import type { Request } from 'express';
 import { AuthConfigService } from '../services/auth-config.service';
-import { AUTH_CSRF_COOKIE, AUTH_CSRF_HEADER } from '../constants';
+import {
+  AUTH_ACCESS_COOKIE,
+  AUTH_REFRESH_COOKIE,
+  AUTH_CSRF_COOKIE,
+  AUTH_CSRF_HEADER,
+} from '../constants';
 import { SKIP_CSRF_KEY } from '../decorators/skip-csrf.decorator';
 
 @Injectable()
@@ -40,6 +45,14 @@ export class CsrfGuard implements CanActivate {
     }
 
     const cookies = request.cookies as Record<string, unknown> | undefined;
+    // Cookie auth takes precedence in JwtStrategy. Never exempt mixed requests.
+    if (
+      !cookies?.[AUTH_ACCESS_COOKIE] &&
+      !cookies?.[AUTH_REFRESH_COOKIE] &&
+      /^Bearer\s+\S+$/i.test(request.headers.authorization ?? '')
+    ) {
+      return true;
+    }
     const cookieToken = cookies?.[AUTH_CSRF_COOKIE];
     const headerToken = request.headers[AUTH_CSRF_HEADER.toLowerCase()];
 

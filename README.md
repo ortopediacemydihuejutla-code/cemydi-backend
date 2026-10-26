@@ -90,32 +90,6 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-## Modelos analíticos CEMYDI
-
-El backend carga y ejecuta los artefactos producidos por las libretas de
-`modelos_propuestos/`; las respuestas no están escritas directamente en el
-código ni se generan al azar.
-
-- Segmentación: carga el escalador y los centroides exportados del pipeline
-  KMeans. Se consulta en `GET /analytics/customer-segmentation` y se muestra en
-  `/admin/analytics/product-segmentation`.
-- Demanda: carga `ridge_demanda_modelo.json`, prepara las once variables del
-  artefacto y ejecuta la fórmula Ridge. Se consulta en
-  `GET /analytics/demand-forecast` y se muestra en
-  `/admin/analytics/demand-forecast`.
-- Recomendación: carga `recomendador_contenido.json` y calcula similitud de
-  coseno con los vectores entrenados. Para productos nuevos construye el vector
-  a partir del catálogo y las interacciones disponibles. Se consulta en
-  `GET /products/:id/recommendations` y se muestra en producto y carrito.
-
-Por omisión, la carpeta se resuelve como `modelos_propuestos` dentro del
-backend. En despliegues donde los artefactos estén en otra ubicación, configure
-`CEMYDI_MODEL_DIR` con una ruta absoluta. Para actualizar un modelo, vuelva a
-ejecutar su libreta y reemplace los archivos correspondientes de `07_Modelos/`.
-En clustering ejecute además `python exportar_clustering_json.py` para exportar
-el pipeline a la representación que consume Node. Finalmente, reinicie el
-backend para vaciar la caché de artefactos.
-
 ## Run tests
 
 ```bash
@@ -168,3 +142,19 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Seguridad de cuenta
+
+`PATCH /users/me` modifica únicamente `nombre`, `telefono` y `direccion`; el `ValidationPipe` rechaza `correo` y `password` en ese contrato. Para cambiar credenciales con sesión autenticada se usan:
+
+| Método | Ruta | Cuerpo |
+| --- | --- | --- |
+| POST | `/users/me/email-change/request` | `newEmail`, `currentPassword` |
+| POST | `/users/me/email-change/resend` | `{}` |
+| POST | `/users/me/email-change/confirm` | `newEmail`, `codigo` |
+| POST | `/users/me/password-change/request` | `currentPassword` |
+| POST | `/users/me/password-change/resend` | `{}` |
+| POST | `/users/me/password-change/confirm` | `codigo`, `newPassword` |
+
+Las solicitudes devuelven `{ message, resendAt, expiresAt }`; las confirmaciones devuelven `{ message }`. Los códigos tienen ocho dígitos, propósito separado, hash, expiración, límite de intentos y espera de 60 segundos entre envíos. La confirmación consume el código, actualiza la cuenta y revoca todas las sesiones, incluida la actual, en una transacción. El correo antiguo continúa vigente hasta confirmar el nuevo. Los avisos de seguridad se guardan en `accounts.security_notices` dentro de la transacción y se entregan con reintento por `SecurityNoticeDeliveryService`; los logs no contienen códigos ni contraseñas. La edición sensible de otra cuenta por un administrador conserva el endpoint administrativo, registra `actorId`, avisa al correo previo y revoca las sesiones.
+
+La migración `20261017120000_account_security_challenges` agrega los propósitos OTP y la cola de avisos; debe aplicarse primero en una base de pruebas y luego mediante el procedimiento de despliegue correspondiente. Las recuperaciones de contraseña web y móvil existentes siguen disponibles y consumen el código de forma condicional para impedir confirmaciones simultáneas.

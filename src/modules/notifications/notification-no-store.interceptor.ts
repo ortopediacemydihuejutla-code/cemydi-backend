@@ -1,0 +1,18 @@
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+} from '@nestjs/common';
+import type { Response } from 'express';
+
+@Injectable()
+export class NotificationNoStoreInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler) {
+    context
+      .switchToHttp()
+      .getResponse<Response>()
+      .setHeader('Cache-Control', 'private, no-store');
+    return next.handle();
+  }
+}

@@ -1,11 +1,4 @@
-import {
-  IsEmail,
-  IsOptional,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
-import { PasswordPolicy } from '../../auth/dto/password-policy.decorators';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -13,11 +6,6 @@ export class UpdateProfileDto {
   @MinLength(2)
   @MaxLength(120)
   nombre?: string;
-
-  @IsOptional()
-  @IsEmail()
-  @MaxLength(120)
-  correo?: string;
 
   @IsOptional()
   @IsString()
@@ -28,8 +16,4 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(180)
   direccion?: string;
-
-  @IsOptional()
-  @PasswordPolicy()
-  password?: string;
 }

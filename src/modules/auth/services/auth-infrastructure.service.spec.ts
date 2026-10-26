@@ -13,6 +13,7 @@ describe('AuthInfrastructureService', () => {
       userSession: { count: jest.fn().mockResolvedValue(0) },
       loginAttempt: { count: jest.fn().mockResolvedValue(0) },
       authToken: { count: jest.fn().mockResolvedValue(0) },
+      securityNotice: { count: jest.fn().mockResolvedValue(0) },
     } as unknown as PrismaService;
 
     const service = new AuthInfrastructureService(prisma);
@@ -27,12 +28,26 @@ describe('AuthInfrastructureService', () => {
       userSession: { count: jest.fn().mockRejectedValue(missingTableError) },
       loginAttempt: { count: jest.fn().mockResolvedValue(0) },
       authToken: { count: jest.fn().mockResolvedValue(0) },
+      securityNotice: { count: jest.fn().mockResolvedValue(0) },
     } as unknown as PrismaService;
 
     const service = new AuthInfrastructureService(prisma);
 
     await expect(service.assertAuthSecurityTablesReady()).rejects.toThrow(
       /auth_security_tracking/,
+    );
+  });
+
+  it('identifica la migración aditiva si falta la cola de avisos', async () => {
+    const prisma = {
+      userSession: { count: jest.fn().mockResolvedValue(0) },
+      loginAttempt: { count: jest.fn().mockResolvedValue(0) },
+      authToken: { count: jest.fn().mockResolvedValue(0) },
+      securityNotice: { count: jest.fn().mockRejectedValue(missingTableError) },
+    } as unknown as PrismaService;
+    const service = new AuthInfrastructureService(prisma);
+    await expect(service.assertAuthSecurityTablesReady()).rejects.toThrow(
+      /20261017120000_account_security_challenges/,
     );
   });
 });

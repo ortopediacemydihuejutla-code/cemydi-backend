@@ -20,14 +20,4 @@ export class AnalyticsController {
   getDashboard(@Query() query: AnalyticsQueryDto) {
     return this.analyticsService.getDashboard(query);
   }
-
-  @Get('customer-segmentation')
-  getCustomerSegmentation() {
-    return this.analyticsService.getCustomerSegmentation();
-  }
-
-  @Get('demand-forecast')
-  getDemandForecast() {
-    return this.analyticsService.getDemandForecast();
-  }
 }

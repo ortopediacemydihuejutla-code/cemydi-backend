@@ -1,173 +1,86 @@
 import { PrismaService } from '../../prisma/prisma.service';
 import { AnalyticsService } from './analytics.service';
+import { ReviewStatus } from '@prisma/client';
 
-const demandRows = [
-  {
-    product_id: 7,
-    product_name: 'Producto de prueba',
-    classification: 'MOVILIDAD',
-    acquisition_type: 'VENTA',
-    month: new Date('2026-01-01T00:00:00.000Z'),
-    month_number: 1,
-    monthly_demand: 10,
-    units_sold: 8,
-    units_rented: 1,
-    views: 20,
-    unit_price: 100,
-    stock_at_month_start: 30,
-    active_promotion: false,
-    requires_prescription: false,
-    previous_month_sales: 7,
-    previous_month_rentals: 0,
-    previous_month_views: 18,
-  },
-  {
-    product_id: 7,
-    product_name: 'Producto de prueba',
-    classification: 'MOVILIDAD',
-    acquisition_type: 'VENTA',
-    month: new Date('2026-02-01T00:00:00.000Z'),
-    month_number: 2,
-    monthly_demand: 12,
-    units_sold: 9,
-    units_rented: 2,
-    views: 24,
-    unit_price: 100,
-    stock_at_month_start: 30,
-    active_promotion: false,
-    requires_prescription: false,
-    previous_month_sales: 8,
-    previous_month_rentals: 1,
-    previous_month_views: 20,
-  },
-  {
-    product_id: 7,
-    product_name: 'Producto de prueba',
-    classification: 'MOVILIDAD',
-    acquisition_type: 'VENTA',
-    month: new Date('2026-03-01T00:00:00.000Z'),
-    month_number: 3,
-    monthly_demand: 14,
-    units_sold: 11,
-    units_rented: 2,
-    views: 28,
-    unit_price: 100,
-    stock_at_month_start: 30,
-    active_promotion: false,
-    requires_prescription: false,
-    previous_month_sales: 9,
-    previous_month_rentals: 2,
-    previous_month_views: 24,
-  },
-  {
-    product_id: 7,
-    product_name: 'Producto de prueba',
-    classification: 'MOVILIDAD',
-    acquisition_type: 'VENTA',
-    month: new Date('2026-04-01T00:00:00.000Z'),
-    month_number: 4,
-    monthly_demand: 16,
-    units_sold: 13,
-    units_rented: 3,
-    views: 32,
-    unit_price: 100,
-    stock_at_month_start: 30,
-    active_promotion: false,
-    requires_prescription: false,
-    previous_month_sales: 11,
-    previous_month_rentals: 2,
-    previous_month_views: 28,
-  },
-];
-
-describe('AnalyticsService demand forecast', () => {
-  const queryRaw = jest.fn();
-  const productFindMany = jest.fn();
-  const promotionFindMany = jest.fn();
+describe('AnalyticsService getDashboard', () => {
   const prisma = {
-    $queryRaw: queryRaw,
-    product: { findMany: productFindMany },
-    promotion: { findMany: promotionFindMany },
+    product: {
+      count: jest.fn(),
+      groupBy: jest.fn(),
+      findMany: jest.fn(),
+    },
+    review: {
+      count: jest.fn(),
+      findMany: jest.fn(),
+      groupBy: jest.fn(),
+    },
+    promotion: {
+      count: jest.fn(),
+    },
+    user: {
+      count: jest.fn(),
+      findMany: jest.fn(),
+    },
+    userSession: {
+      count: jest.fn(),
+      findMany: jest.fn(),
+    },
   } as unknown as PrismaService;
+
   const service = new AnalyticsService(prisma);
 
   beforeEach(() => {
     jest.clearAllMocks();
-    productFindMany.mockResolvedValue([
-      {
-        id: 7,
-        nombre: 'Producto de prueba',
-        clasificacion: 'MOVILIDAD',
-        tipoAdquisicion: 'VENTA',
-        precio: 100,
-        stock: 30,
-        activo: true,
-        requiereReceta: false,
-      },
+  });
+
+  it('calculates dashboard operational KPIs and distributions correctly', async () => {
+    (prisma.product.count as jest.Mock)
+      .mockResolvedValueOnce(57) // productsActive
+      .mockResolvedValueOnce(3); // productsLowStock
+
+    (prisma.review.count as jest.Mock)
+      .mockResolvedValueOnce(4) // reviewsTotalInRange
+      .mockResolvedValueOnce(0) // reviewsPending
+      .mockResolvedValueOnce(4); // reviewsApprovedInRange
+
+    (prisma.promotion.count as jest.Mock).mockResolvedValueOnce(2); // promotionsActive
+    (prisma.user.count as jest.Mock).mockResolvedValueOnce(11); // newUsersInRange
+    (prisma.userSession.count as jest.Mock).mockResolvedValueOnce(25); // sessionActivityEvents
+
+    (prisma.user.findMany as jest.Mock).mockResolvedValueOnce([]);
+    (prisma.review.findMany as jest.Mock).mockResolvedValueOnce([]);
+    (prisma.userSession.findMany as jest.Mock).mockResolvedValueOnce([]);
+
+    (prisma.product.groupBy as jest.Mock).mockResolvedValueOnce([
+      { clasificacion: 'MOVILIDAD', _count: { _all: 20 } },
     ]);
-    promotionFindMany.mockResolvedValue([]);
-  });
+    (prisma.review.groupBy as jest.Mock)
+      .mockResolvedValueOnce([{ rating: 5, _count: { _all: 4 } }])
+      .mockResolvedValueOnce([
+        { status: ReviewStatus.APPROVED, _count: { _all: 4 } },
+      ])
+      .mockResolvedValueOnce([{ productId: 57, _count: { _all: 2 } }]);
 
-  it('reports the evaluation metadata stored with the deployed artifact', async () => {
-    queryRaw.mockResolvedValue(demandRows);
+    (prisma.product.findMany as jest.Mock).mockResolvedValueOnce([
+      { id: 57, nombre: 'Silla de ruedas estándar' },
+    ]);
 
-    const result = await service.getDemandForecast();
+    const result = await service.getDashboard({ days: 30 });
 
-    expect(result.model.artifact).toBe('ridge_demanda_modelo.json');
-    expect(result.model.version).toBe('1.0');
-    expect(result.model.historicalRows).toBe(1240);
-    expect(result.model.trainingRows).toBe(1000);
-    expect(result.model.validationRows).toBe(240);
-    expect(result.model.finalTrainingRows).toBe(1240);
-    expect(result.model.trainingRows + result.model.validationRows).toBe(
-      result.model.historicalRows,
-    );
-    expect(result.model.historicalThrough).toBe('2026-07');
-    expect(result.model.validationFrom).toBe('2026-02');
-    expect(result.model.validationTo).toBe('2026-07');
-    expect(Number.isFinite(result.model.r2)).toBe(true);
-    expect(Number.isFinite(result.model.mae)).toBe(true);
-    expect(Number.isFinite(result.model.rmse)).toBe(true);
-  });
+    expect(result.kpis.productsActive).toBe(57);
+    expect(result.kpis.productsLowStock).toBe(3);
+    expect(result.kpis.reviewsTotalInRange).toBe(4);
+    expect(result.kpis.reviewsPending).toBe(0);
+    expect(result.kpis.reviewsApprovedInRange).toBe(4);
+    expect(result.kpis.promotionsActive).toBe(2);
+    expect(result.kpis.newUsersInRange).toBe(11);
+    expect(result.kpis.sessionActivityEvents).toBe(25);
 
-  it('exposes the latest historical values as the previous-month inputs', async () => {
-    queryRaw.mockResolvedValue(demandRows);
-
-    const result = await service.getDemandForecast();
-
-    expect(result.forecasts[0]).toEqual(
-      expect.objectContaining({
-        previousMonthSales: 13,
-        previousMonthRentals: 3,
-        previousMonthViews: 32,
-      }),
-    );
-  });
-
-  it('returns every model field when the dataset is empty', async () => {
-    queryRaw.mockResolvedValue([]);
-
-    const result = await service.getDemandForecast();
-
-    expect(result.model).toEqual({
-      name: 'Predicción mensual de demanda CEMYDI',
-      version: '1.0',
-      artifact: 'ridge_demanda_modelo.json',
-      historicalRows: 0,
-      trainingRows: 0,
-      validationRows: 0,
-      finalTrainingRows: 0,
-      validationMonths: 0,
-      products: 0,
-      historicalMonths: 0,
-      r2: 0,
-      mae: 0,
-      rmse: 0,
-      forecastMonth: null,
-      historicalThrough: null,
-      validationFrom: null,
-      validationTo: null,
-    });
-    expect(result.forecasts).toEqual([]);
+    expect(result.distributions.productsByClassification).toEqual([
+      { clasificacion: 'MOVILIDAD', count: 20 },
+    ]);
+    expect(result.topProductsByReviewsInRange).toEqual([
+      { productId: 57, nombre: 'Silla de ruedas estándar', reviewCount: 2 },
+    ]);
   });
 });

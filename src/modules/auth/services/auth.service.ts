@@ -44,6 +44,10 @@ export class AuthService {
     return this.authGoogleService.loginWithAuthorizationCode(code);
   }
 
+  loginWithMobileGoogleIdToken(idToken: string): Promise<SessionAuthResult> {
+    return this.authGoogleService.loginWithMobileIdToken(idToken);
+  }
+
   refresh(refreshTokenRaw: string): Promise<SessionAuthResult> {
     return this.authSessionService.refresh(refreshTokenRaw);
   }

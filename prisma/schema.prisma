@@ -35,9 +35,110 @@ model User {
   rentalStatusHistory     RentalStatusHistory[]   @relation("RentalStatusHistoryActor")
   depositResolvedRentals  RentalRequest[]         @relation("RentalRequestDepositResolvedBy")
   adminNotificationReads  AdminNotificationRead[]
+  favorites               Favorite[]              @relation("UserFavorites")
+  notificationPreference  NotificationPreference?
+  notificationInbox       NotificationRecipient[]
+  pushSubscriptions       PushSubscription[]
 
   @@map("users")
   @@schema("accounts")
+}
+
+model NotificationPreference {
+  userId      Int     @id
+  pushEnabled Boolean @default(true)
+  system      Boolean @default(true)
+  offers      Boolean @default(true)
+  rentals     Boolean @default(true)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+  @@schema("accounts")
+}
+
+model NotificationAutomation {
+  id            Int     @id @default(1)
+  rentalStatus  Boolean @default(true)
+  prescriptions Boolean @default(true)
+  security      Boolean @default(true)
+
+  @@map("notification_automation")
+  @@schema("management")
+}
+
+model NotificationCampaign {
+  id              String                  @id @default(cuid())
+  requestKey      String                  @unique
+  payloadHash     String?
+  category        String
+  source          String                  @default("MANUAL")
+  title           String
+  body            String
+  destinationType String                  @default("NONE")
+  destinationId   String?
+  createdById     Int?
+  createdAt       DateTime                @default(now())
+  recipients      NotificationRecipient[]
+
+  @@index([createdAt, id])
+  @@map("notification_campaigns")
+  @@schema("management")
+}
+
+model NotificationRecipient {
+  id           String               @id @default(cuid())
+  campaignId   String
+  userId       Int
+  readAt       DateTime?
+  createdAt    DateTime             @default(now())
+  campaign     NotificationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries   PushDelivery[]
+
+  @@unique([campaignId, userId])
+  @@index([userId, createdAt, id])
+  @@index([userId, readAt])
+  @@map("notification_recipients")
+  @@schema("accounts")
+}
+
+model PushSubscription {
+  id             String                @id @default(cuid())
+  identity       String                @unique
+  userId         Int
+  sessionTokenId String
+  channel        String
+  endpoint       String
+  p256dh         String?
+  auth           String?
+  active         Boolean               @default(true)
+  updatedAt      DateTime              @updatedAt
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries     PushDelivery[]
+
+  @@index([userId, active])
+  @@map("push_subscriptions")
+  @@schema("accounts")
+}
+
+model PushDelivery {
+  id             String                @id @default(cuid())
+  recipientId    String
+  subscriptionId String
+  status         String                @default("PENDING")
+  attemptCount   Int                   @default(0)
+  nextAttemptAt  DateTime              @default(now())
+  leaseUntil     DateTime?
+  receiptId      String?
+  errorCode      String?
+  acceptedAt     DateTime?
+  recipient      NotificationRecipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  subscription   PushSubscription      @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientId, subscriptionId])
+  @@index([status, nextAttemptAt, leaseUntil])
+  @@map("push_deliveries")
+  @@schema("management")
 }
 
 model AdminNotificationRead {
@@ -80,6 +181,7 @@ model Product {
   promotionLinks   PromotionProduct[]
   reviews          Review[]
   cartItems        ShoppingCartItem[]
+  favorites        Favorite[]         @relation("ProductFavorites")
   rentalItems      RentalRequestItem[]
 
   @@index([clasificacion], map: "idx_products_clasificacion")
@@ -340,6 +442,23 @@ model AuthToken {
   @@schema("accounts")
 }
 
+model SecurityNotice {
+  id            String    @id @default(cuid())
+  userId        Int
+  actorId       Int?
+  correo        String
+  kind          String
+  createdAt     DateTime  @default(now())
+  deliveredAt   DateTime?
+  nextAttemptAt DateTime  @default(now())
+  leaseUntil    DateTime?
+  attemptCount  Int       @default(0)
+
+  @@index([deliveredAt, nextAttemptAt, leaseUntil])
+  @@map("security_notices")
+  @@schema("accounts")
+}
+
 model ShoppingCart {
   id        String             @id @default(cuid())
   userId    Int                @unique @map("userId")
@@ -375,6 +494,23 @@ model ShoppingCartItem {
   @@map("shopping_cart_items")
   @@schema("accounts")
 }
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("userId")
+  productId Int      @map("productId")
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  user    User    @relation("UserFavorites", fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation("ProductFavorites", fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId], map: "uq_favorites_user_product")
+  @@index([userId], map: "idx_favorites_user_id")
+  @@index([productId], map: "idx_favorites_product_id")
+  @@map("favorites")
+  @@schema("accounts")
+}
+
 
 model RentalRequest {
   id                    String                @id @default(cuid())
@@ -603,6 +739,8 @@ enum ReviewStatus {
 enum AuthTokenPurpose {
   EMAIL_VERIFICATION_LINK
   PASSWORD_RESET_CODE
+  EMAIL_CHANGE_CODE
+  PASSWORD_CHANGE_CODE
 
   @@schema("public")
 }

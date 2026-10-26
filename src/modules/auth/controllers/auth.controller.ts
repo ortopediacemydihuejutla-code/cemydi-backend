@@ -43,6 +43,7 @@ import { RequestPasswordResetDto } from '../dto/request-password-reset.dto';
 import { VerifyPasswordResetCodeDto } from '../dto/verify-password-reset-code.dto';
 import { VerifyPasswordResetTokenDto } from '../dto/verify-password-reset-token.dto';
 import { SkipCsrf } from '../decorators/skip-csrf.decorator';
+import { TrustedOriginGuard } from '../guards/trusted-origin.guard';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 
@@ -144,13 +145,6 @@ export class AuthController {
   }
 
   private extractClientIp(req: Request): string {
-    const forwarded = req.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string' && forwarded.trim()) {
-      return forwarded.split(',')[0].trim();
-    }
-    if (Array.isArray(forwarded) && forwarded[0]) {
-      return forwarded[0].trim();
-    }
     return req.ip || req.socket?.remoteAddress || 'unknown';
   }
 
@@ -173,6 +167,7 @@ export class AuthController {
 
   @Post('login')
   @SkipCsrf()
+  @UseGuards(TrustedOriginGuard)
   @Throttle(AUTH_LOGIN_THROTTLE)
   async login(
     @Body() dto: LoginDto,
@@ -283,7 +278,6 @@ export class AuthController {
   }
 
   @Get('csrf')
-  @UseGuards(JwtAuthGuard)
   issueCsrfToken(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -358,6 +352,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @SkipCsrf()
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const accessToken = this.extractAccessToken(req);
     const refreshToken = this.extractRefreshToken(req);

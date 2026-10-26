@@ -9,6 +9,7 @@ import { AuthGoogleService } from './services/auth-google.service';
 import { AuthSecurityOverviewService } from './services/auth-security-overview.service';
 import { AuthInfrastructureService } from './services/auth-infrastructure.service';
 import { AuthController } from './controllers/auth.controller';
+import { MobileAuthController } from './controllers/mobile-auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { MailModule } from '../mail/mail.module';
@@ -20,6 +21,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from './guards/optional-jwt-auth.guard';
 import { CsrfGuard } from './guards/csrf.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { TrustedOriginGuard } from './guards/trusted-origin.guard';
 
 @Global()
 @Module({
@@ -58,8 +60,9 @@ import { RolesGuard } from './guards/roles.guard';
     OptionalJwtAuthGuard,
     RolesGuard,
     CsrfGuard,
+    TrustedOriginGuard,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, MobileAuthController],
   exports: [
     PassportModule,
     JwtModule,

@@ -96,4 +96,36 @@ describe('CsrfGuard', () => {
       ),
     ).toBe(true);
   });
+
+  it('allows Bearer-only mutations, which still require the JWT guard', () => {
+    (authConfigService.isCsrfProtectionEnabled as jest.Mock).mockReturnValue(
+      true,
+    );
+    expect(
+      guard.canActivate(
+        buildContext({
+          method: 'PATCH',
+          headers: { authorization: 'Bearer native-token' },
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it.each(['cemydi_access', 'cemydi_refresh'])(
+    'does not exempt a Bearer request carrying %s',
+    (cookie) => {
+      (authConfigService.isCsrfProtectionEnabled as jest.Mock).mockReturnValue(
+        true,
+      );
+      expect(() =>
+        guard.canActivate(
+          buildContext({
+            method: 'PATCH',
+            cookies: { [cookie]: 'cookie-token' },
+            headers: { authorization: 'Bearer native-token' },
+          }),
+        ),
+      ).toThrow(ForbiddenException);
+    },
+  );
 });

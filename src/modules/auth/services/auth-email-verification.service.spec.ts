@@ -11,7 +11,7 @@ import { AuthEmailVerificationService } from './auth-email-verification.service'
 describe('AuthEmailVerificationService', () => {
   let service: AuthEmailVerificationService;
   let prisma: {
-    user: { findFirst: jest.Mock; update: jest.Mock };
+    user: { findFirst: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
     authToken: {
       findFirst: jest.Mock;
       updateMany: jest.Mock;
@@ -19,19 +19,34 @@ describe('AuthEmailVerificationService', () => {
       create: jest.Mock;
     };
     $transaction: jest.Mock;
+    $queryRaw: jest.Mock;
   };
   let mail: { sendEmailVerificationLink: jest.Mock };
 
   beforeEach(() => {
     prisma = {
-      user: { findFirst: jest.fn(), update: jest.fn() },
+      user: {
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 7,
+          correo: 'user@example.com',
+          activo: true,
+        }),
+      },
       authToken: {
         findFirst: jest.fn(),
-        updateMany: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         update: jest.fn(),
         create: jest.fn(),
       },
-      $transaction: jest.fn().mockResolvedValue([]),
+      $transaction: jest.fn(
+        (operation: unknown): Promise<unknown> =>
+          typeof operation === 'function'
+            ? (operation as (tx: unknown) => Promise<unknown>)(prisma)
+            : Promise.resolve([]),
+      ),
+      $queryRaw: jest.fn().mockResolvedValue([{ id: 7 }]),
     };
     mail = { sendEmailVerificationLink: jest.fn() };
     const config = {
@@ -83,6 +98,7 @@ describe('AuthEmailVerificationService', () => {
     prisma.authToken.findFirst.mockResolvedValue({
       id: 'verification-code',
       userId: 7,
+      correo: 'user@example.com',
       codeHash: 'hash',
       attemptCount: 0,
       consumedAt: null,
@@ -97,9 +113,12 @@ describe('AuthEmailVerificationService', () => {
         codigo: '12345678',
       }),
     ).resolves.toEqual({ message: 'Correo verificado correctamente' });
-    expect(prisma.authToken.update).toHaveBeenCalledWith(
+    expect(prisma.authToken.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'verification-code' },
+        where: expect.objectContaining({
+          id: 'verification-code',
+          consumedAt: null,
+        }),
         data: { consumedAt: expect.any(Date) },
       }),
     );
@@ -134,6 +153,7 @@ describe('AuthEmailVerificationService', () => {
     prisma.authToken.findFirst.mockResolvedValue({
       id: 'token-1',
       userId: 7,
+      correo: 'user@example.com',
       consumedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
       user: { id: 7 },
@@ -153,9 +173,9 @@ describe('AuthEmailVerificationService', () => {
         data: { emailVerifiedAt: expect.any(Date) },
       }),
     );
-    expect(prisma.authToken.update).toHaveBeenCalledWith(
+    expect(prisma.authToken.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'token-1' },
+        where: expect.objectContaining({ id: 'token-1', consumedAt: null }),
         data: { consumedAt: expect.any(Date) },
       }),
     );
@@ -203,5 +223,34 @@ describe('AuthEmailVerificationService', () => {
       service.resendEmailVerification({ correo: 'user@example.com' }),
     ).resolves.toEqual(RESEND_VERIFICATION_RESPONSE);
     expect(mail.sendEmailVerificationLink).not.toHaveBeenCalled();
+  });
+
+  it('does not verify a different email after a concurrent administrative change', async () => {
+    prisma.authToken.findFirst.mockResolvedValue({
+      id: 'old-email-link',
+      userId: 7,
+      correo: 'old@example.com',
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    await expect(
+      service.confirmEmailVerification('a'.repeat(64)),
+    ).rejects.toThrow('inválido');
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('does not verify an account when the token was revoked before consumption', async () => {
+    prisma.authToken.findFirst.mockResolvedValue({
+      id: 'revoked-link',
+      userId: 7,
+      correo: 'user@example.com',
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    prisma.authToken.updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(
+      service.confirmEmailVerification('a'.repeat(64)),
+    ).rejects.toThrow('inválido');
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 });

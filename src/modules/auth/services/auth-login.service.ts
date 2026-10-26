@@ -9,6 +9,9 @@ import { REGISTER_PUBLIC_RESPONSE } from '../constants';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 
+const DUMMY_BCRYPT_HASH =
+  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+
 @Injectable()
 export class AuthLoginService {
   constructor(
@@ -63,6 +66,9 @@ export class AuthLoginService {
 
     await this.assertNotLocked(user?.id, correo, ipAddress);
 
+    const passwordHash = user?.password ?? DUMMY_BCRYPT_HASH;
+    const passwordValid = await bcrypt.compare(dto.password, passwordHash);
+
     if (!user) {
       await this.registerLoginAttempt({
         correo,
@@ -83,8 +89,6 @@ export class AuthLoginService {
       });
       throw new UnauthorizedException('Credenciales invalidas');
     }
-
-    const passwordValid = await bcrypt.compare(dto.password, user.password);
 
     if (!passwordValid) {
       await this.registerLoginAttempt({
@@ -140,13 +144,28 @@ export class AuthLoginService {
     }
 
     if (userConditions.length > 0) {
+      const lastSuccess = await this.prisma.loginAttempt.findFirst({
+        where: {
+          OR: userConditions,
+          success: true,
+        },
+        orderBy: [{ attemptedAt: 'desc' }, { id: 'desc' }],
+        select: { attemptedAt: true },
+      });
+
+      const failureThreshold =
+        lastSuccess && lastSuccess.attemptedAt > windowStart
+          ? lastSuccess.attemptedAt
+          : windowStart;
+
       const failedAccountAttempts = await this.prisma.loginAttempt.count({
         where: {
           OR: userConditions,
           success: false,
-          attemptedAt: {
-            gte: windowStart,
-          },
+          attemptedAt:
+            lastSuccess && lastSuccess.attemptedAt > windowStart
+              ? { gt: failureThreshold }
+              : { gte: failureThreshold },
         },
       });
 

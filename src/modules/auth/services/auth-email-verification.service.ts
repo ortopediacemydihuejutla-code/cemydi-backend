@@ -89,7 +89,11 @@ export class AuthEmailVerificationService {
       );
     }
 
-    await this.completeEmailVerification(authToken.id, authToken.userId, now);
+    await this.completeEmailVerification(
+      authToken.id,
+      authToken.userId,
+      authToken.correo,
+    );
 
     return {
       message: 'Correo verificado correctamente',
@@ -137,7 +141,11 @@ export class AuthEmailVerificationService {
       throw new BadRequestException('El código es inválido o expiró');
     }
 
-    await this.completeEmailVerification(authToken.id, authToken.userId, now);
+    await this.completeEmailVerification(
+      authToken.id,
+      authToken.userId,
+      authToken.correo,
+    );
 
     return {
       message: 'Correo verificado correctamente',
@@ -147,22 +155,43 @@ export class AuthEmailVerificationService {
   private async completeEmailVerification(
     authTokenId: string,
     userId: number,
-    now: Date,
+    correo: string,
   ) {
-    await this.prisma.$transaction([
-      this.prisma.user.update({
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "accounts"."users" WHERE "id" = ${userId} FOR UPDATE`;
+      const account = await tx.user.findUnique({ where: { id: userId } });
+      if (!account?.activo || account.correo !== correo) {
+        throw new BadRequestException(
+          'El enlace de verificación es inválido o expiró',
+        );
+      }
+      const now = new Date();
+      const consumed = await tx.authToken.updateMany({
+        where: {
+          id: authTokenId,
+          userId,
+          correo,
+          purpose: AuthTokenPurpose.EMAIL_VERIFICATION_LINK,
+          consumedAt: null,
+          expiresAt: { gt: now },
+          attemptCount: {
+            lt: this.authConfigService.emailVerificationMaxAttempts,
+          },
+        },
+        data: { consumedAt: now },
+      });
+      if (consumed.count !== 1) {
+        throw new BadRequestException(
+          'El enlace de verificación es inválido o expiró',
+        );
+      }
+      await tx.user.update({
         where: { id: userId },
         data: {
           emailVerifiedAt: now,
         },
-      }),
-      this.prisma.authToken.update({
-        where: { id: authTokenId },
-        data: {
-          consumedAt: now,
-        },
-      }),
-      this.prisma.authToken.updateMany({
+      });
+      await tx.authToken.updateMany({
         where: {
           userId,
           purpose: AuthTokenPurpose.EMAIL_VERIFICATION_LINK,
@@ -174,8 +203,8 @@ export class AuthEmailVerificationService {
         data: {
           consumedAt: now,
         },
-      }),
-    ]);
+      });
+    });
   }
 
   async issueEmailVerificationLink(
@@ -228,10 +257,8 @@ export class AuthEmailVerificationService {
       return true;
     } catch (error) {
       const errorName = error instanceof Error ? error.name : 'Error';
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error desconocido';
       this.logger.error(
-        `No se pudo enviar la verificación. userId=${userId} tipo=${errorName} detalle=${errorMessage}`,
+        `No se pudo enviar la verificación. userId=${userId} tipo=${errorName}`,
       );
       return false;
     }
