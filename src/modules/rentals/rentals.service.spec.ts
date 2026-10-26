@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import {
   CartItemMode,
@@ -157,6 +158,9 @@ function rentalRequest(overrides: Partial<Record<string, unknown>> = {}) {
 
 function createService(txOverrides: Record<string, unknown> = {}) {
   const tx = {
+    notificationAutomation: {
+      findUnique: jest.fn().mockResolvedValue({ rentalStatus: false }),
+    },
     $queryRaw: jest
       .fn()
       .mockResolvedValueOnce([])

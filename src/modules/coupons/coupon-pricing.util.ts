@@ -35,10 +35,7 @@ export function validateCouponForSubtotal(
   if (now > coupon.endAt) {
     return invalidCoupon('Este cupón ya venció');
   }
-  if (
-    coupon.usageLimit !== null &&
-    coupon.usedCount >= coupon.usageLimit
-  ) {
+  if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
     return invalidCoupon('Este cupón alcanzó su límite de usos');
   }
   if (eligibleSubtotal <= 0) {

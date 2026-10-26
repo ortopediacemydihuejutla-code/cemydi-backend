@@ -26,6 +26,7 @@ const RESERVED_WINDOWS_NAMES = new Set([
 export function sanitizeFileName(fileName: string, fallback = 'archivo') {
   const normalized = fileName
     .normalize('NFKC')
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f"<>:|?*\\/]+/g, '-')
     .replace(/\s+/g, ' ')
     .replace(/^\.+/, '')

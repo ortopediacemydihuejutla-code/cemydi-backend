@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -147,5 +148,14 @@ describe('AlexaService', () => {
         }),
       }),
     );
+  });
+
+  it('returns exit payload correctly', () => {
+    expect(service.getExit()).toEqual({
+      screen: 'exit',
+      title: 'Hasta luego',
+      speechText:
+        'Gracias por visitar Ortopedia CEMYDI. Estaremos listos para ayudarte cuando regreses.',
+    });
   });
 });

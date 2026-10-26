@@ -42,10 +42,7 @@ export class CartController {
   }
 
   @Post('coupon')
-  applyCoupon(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: ApplyCouponDto,
-  ) {
+  applyCoupon(@CurrentUser() user: AuthUser, @Body() dto: ApplyCouponDto) {
     return this.cartService.applyCoupon(user, dto);
   }
 

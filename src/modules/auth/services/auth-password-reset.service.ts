@@ -6,6 +6,7 @@ import { BCRYPT_ROUNDS } from '../../../common/crypto/bcrypt.constants';
 import { MailService } from '../../mail/mail.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AuthConfigService } from './auth-config.service';
+import { notifySecurityChange } from '../../notifications/notification-events';
 import {
   generateNumericAuthCode,
   hashAuthCode,
@@ -41,7 +42,7 @@ export class AuthPasswordResetService {
       },
     });
 
-    if (!user) {
+    if (!user || user.activo === false) {
       return { ...PASSWORD_RESET_PUBLIC_RESPONSE };
     }
 
@@ -103,10 +104,8 @@ export class AuthPasswordResetService {
       });
     } catch (error) {
       const errorName = error instanceof Error ? error.name : 'Error';
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error desconocido';
       this.logger.error(
-        `No se pudo enviar la recuperación de contraseña. userId=${user.id} tipo=${errorName} detalle=${errorMessage}`,
+        `No se pudo enviar la recuperación de contraseña. userId=${user.id} tipo=${errorName}`,
       );
     }
 
@@ -145,6 +144,7 @@ export class AuthPasswordResetService {
     await this.completePasswordReset(
       authToken.id,
       authToken.userId,
+      authToken.correo,
       dto.newPassword,
     );
 
@@ -158,6 +158,7 @@ export class AuthPasswordResetService {
     await this.completePasswordReset(
       authToken.id,
       authToken.userId,
+      authToken.correo,
       dto.newPassword,
     );
 
@@ -169,38 +170,50 @@ export class AuthPasswordResetService {
   private async completePasswordReset(
     authTokenId: string,
     userId: number,
+    correo: string,
     newPassword: string,
   ) {
-    const now = new Date();
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          password: passwordHash,
-        },
-      }),
-      this.prisma.authToken.update({
-        where: { id: authTokenId },
-        data: {
-          consumedAt: now,
-        },
-      }),
-      this.prisma.authToken.updateMany({
+    await this.prisma.$transaction(async (tx) => {
+      // Serialize recovery with email/password changes, then recheck ownership.
+      await tx.$queryRaw`SELECT "id" FROM "accounts"."users" WHERE "id" = ${userId} FOR UPDATE`;
+      const account = await tx.user.findUnique({ where: { id: userId } });
+      if (!account || !account.activo || account.correo !== correo) {
+        throw new BadRequestException('El código es inválido o expiró');
+      }
+      const now = new Date();
+      const consumed = await tx.authToken.updateMany({
         where: {
+          id: authTokenId,
           userId,
+          correo,
           purpose: AuthTokenPurpose.PASSWORD_RESET_CODE,
           consumedAt: null,
-          id: {
-            not: authTokenId,
-          },
+          expiresAt: { gt: now },
+          attemptCount: { lt: this.authConfigService.passwordResetMaxAttempts },
         },
-        data: {
-          consumedAt: now,
+        data: { consumedAt: now },
+      });
+      if (consumed.count !== 1) {
+        throw new BadRequestException('El código es inválido o expiró');
+      }
+      await tx.user.update({
+        where: { id: userId },
+        data: { password: passwordHash },
+      });
+      await tx.authToken.updateMany({
+        where: {
+          userId,
+          consumedAt: null,
         },
-      }),
-      this.authSessionService.buildRevokeSessionsQuery(userId, now),
-    ]);
+        data: { consumedAt: now },
+      });
+      await tx.userSession.updateMany({
+        where: { userId, endedAt: null },
+        data: { endedAt: now, lastSeenAt: now, refreshTokenHash: null },
+      });
+      await notifySecurityChange(tx, userId, false);
+    });
   }
 
   private async getValidPasswordResetCode(
@@ -240,8 +253,14 @@ export class AuthPasswordResetService {
 
     if (!codeValid) {
       if (registerAttemptOnFailure) {
-        await this.prisma.authToken.update({
-          where: { id: authToken.id },
+        await this.prisma.authToken.updateMany({
+          where: {
+            id: authToken.id,
+            consumedAt: null,
+            attemptCount: {
+              lt: this.authConfigService.passwordResetMaxAttempts,
+            },
+          },
           data: {
             attemptCount: {
               increment: 1,

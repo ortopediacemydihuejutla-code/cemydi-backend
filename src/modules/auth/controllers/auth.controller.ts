@@ -43,6 +43,7 @@ import { RequestPasswordResetDto } from '../dto/request-password-reset.dto';
 import { VerifyPasswordResetCodeDto } from '../dto/verify-password-reset-code.dto';
 import { VerifyPasswordResetTokenDto } from '../dto/verify-password-reset-token.dto';
 import { SkipCsrf } from '../decorators/skip-csrf.decorator';
+import { TrustedOriginGuard } from '../guards/trusted-origin.guard';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 
@@ -143,6 +144,10 @@ export class AuthController {
     );
   }
 
+  private extractClientIp(req: Request): string {
+    return req.ip || req.socket?.remoteAddress || 'unknown';
+  }
+
   private getGoogleLoginErrorReason(error: unknown) {
     if (!(error instanceof UnauthorizedException)) {
       return 'google';
@@ -162,13 +167,15 @@ export class AuthController {
 
   @Post('login')
   @SkipCsrf()
+  @UseGuards(TrustedOriginGuard)
   @Throttle(AUTH_LOGIN_THROTTLE)
   async login(
     @Body() dto: LoginDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.login(dto);
+    const clientIp = this.extractClientIp(req);
+    const result = await this.authService.login(dto, clientIp);
     this.setAuthCookies(req, res, result);
     return { user: result.user };
   }
@@ -271,7 +278,6 @@ export class AuthController {
   }
 
   @Get('csrf')
-  @UseGuards(JwtAuthGuard)
   issueCsrfToken(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -346,6 +352,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @SkipCsrf()
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const accessToken = this.extractAccessToken(req);
     const refreshToken = this.extractRefreshToken(req);

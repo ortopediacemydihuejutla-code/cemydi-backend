@@ -114,61 +114,6 @@ type ProductWithImages = Prisma.ProductGetPayload<{
   include: typeof productInclude;
 }>;
 
-function normalizeRecommendationText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
-function productTokens(product: ProductWithImages) {
-  const weightedFields: Array<[string, number]> = [
-    [product.clasificacion, 5],
-    [product.tipoAdquisicion, 4],
-    [product.marca, 3],
-    [product.material ?? '', 3],
-    [product.nombre, 2],
-    [product.descripcion, 1],
-    [product.indicacionesUso ?? '', 1],
-    [product.medidas ?? '', 1],
-  ];
-  const tokens: string[] = [];
-  for (const [value, weight] of weightedFields) {
-    const words = normalizeRecommendationText(value)
-      .split(/\s+/)
-      .filter(Boolean);
-    for (let repeat = 0; repeat < weight; repeat += 1) tokens.push(...words);
-  }
-  tokens.push(
-    `price-${Math.floor(Math.log10(Math.max(product.precio, 1)) * 2)}`,
-  );
-  if (product.requiereReceta) tokens.push('requiere-receta');
-  return tokens;
-}
-
-function cosineSimilarity(left: string[], right: string[]) {
-  const leftCounts = new Map<string, number>();
-  const rightCounts = new Map<string, number>();
-  left.forEach((token) =>
-    leftCounts.set(token, (leftCounts.get(token) ?? 0) + 1),
-  );
-  right.forEach((token) =>
-    rightCounts.set(token, (rightCounts.get(token) ?? 0) + 1),
-  );
-  let dot = 0;
-  for (const [token, count] of leftCounts)
-    dot += count * (rightCounts.get(token) ?? 0);
-  const leftNorm = Math.sqrt(
-    [...leftCounts.values()].reduce((sum, count) => sum + count ** 2, 0),
-  );
-  const rightNorm = Math.sqrt(
-    [...rightCounts.values()].reduce((sum, count) => sum + count ** 2, 0),
-  );
-  return leftNorm && rightNorm ? dot / (leftNorm * rightNorm) : 0;
-}
-
 @Injectable()
 export class ProductsService {
   constructor(
@@ -409,43 +354,59 @@ export class ProductsService {
   async getRecommendations(id: number, limitRaw?: string) {
     const parsedLimit = Number(limitRaw);
     const limit = Number.isInteger(parsedLimit)
-      ? Math.max(1, Math.min(parsedLimit, 16))
-      : 8;
+      ? Math.max(1, Math.min(parsedLimit, 12))
+      : 5;
+
     const products = await this.prisma.product.findMany({
       where: { activo: true },
       include: productInclude,
     });
+
     const target = products.find((product) => product.id === id);
     if (!target) throw new NotFoundException('Producto no encontrado');
-    const targetTokens = productTokens(target);
+
     const recommendations = products
       .filter((product) => product.id !== id)
       .map((product) => {
         const reasons: string[] = [];
+        let score = 0;
+
         if (
           areEquivalentClassifications(
             product.clasificacion,
             target.clasificacion,
           )
         ) {
+          score += 0.45;
           reasons.push('Misma categoría');
         }
         if (product.tipoAdquisicion === target.tipoAdquisicion) {
+          score += 0.25;
           reasons.push('Misma modalidad');
         }
+        if (
+          product.marca &&
+          product.marca.toLowerCase() === target.marca.toLowerCase()
+        ) {
+          score += 0.15;
+          reasons.push('Misma marca');
+        }
         if (product.material && product.material === target.material) {
+          score += 0.1;
           reasons.push('Material similar');
         }
         if (
           Math.abs(product.precio - target.precio) /
             Math.max(target.precio, 1) <=
-          0.3
+          0.35
         ) {
+          score += 0.15;
           reasons.push('Rango de precio parecido');
         }
+
         return {
           product,
-          score: cosineSimilarity(targetTokens, productTokens(product)),
+          score,
           reasons: reasons.slice(0, 2),
         };
       })
@@ -456,11 +417,11 @@ export class ProductsService {
         recommendationScore: Number(score.toFixed(3)),
         recommendationReasons: reasons.length
           ? reasons
-          : ['Características relacionadas'],
+          : ['Productos sugeridos del catálogo'],
       }));
 
     return {
-      method: 'Similitud de contenido (coseno)',
+      method: 'Afinidad de catálogo (categoría, modalidad y precio)',
       sourceProductId: id,
       recommendations,
     };

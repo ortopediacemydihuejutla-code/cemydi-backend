@@ -1,3 +1,4 @@
+import { notifySecurityChange } from '../notifications/notification-events';
 import {
   BadRequestException,
   Injectable,
@@ -45,27 +46,17 @@ export class UsersService {
   async updateMe(user: AuthUser, dto: UpdateProfileDto) {
     const db = this.prisma.forUser(user);
     const data: Prisma.UserUpdateInput = {};
-    const passwordChanged = dto.password !== undefined;
 
     if (dto.nombre !== undefined) data.nombre = dto.nombre.trim();
-    if (dto.correo !== undefined) data.correo = dto.correo.trim().toLowerCase();
     if (dto.telefono !== undefined) data.telefono = dto.telefono.trim() || null;
     if (dto.direccion !== undefined)
       data.direccion = dto.direccion.trim() || null;
-    if (dto.password !== undefined)
-      data.password = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
 
     if (Object.keys(data).length === 0) {
       throw new BadRequestException('No hay campos para actualizar');
     }
 
     const updatedUser = await this.updateUserRecord(db, user.sub, data);
-
-    if (passwordChanged) {
-      await this.authService.revokeUserSessions(user.sub, {
-        excludeSid: user.sid || undefined,
-      });
-    }
 
     return {
       message: 'Perfil actualizado correctamente',
@@ -168,18 +159,93 @@ export class UsersService {
       );
     }
 
+    if (
+      currentUser.sub === id &&
+      (dto.correo !== undefined || passwordChanged)
+    ) {
+      throw new BadRequestException(
+        'Usa la verificación de seguridad para cambiar tus credenciales.',
+      );
+    }
+
     if (Object.keys(data).length === 0) {
       throw new BadRequestException('No hay campos para actualizar');
     }
 
-    const updatedUser = await this.updateUserRecord(
-      this.prisma.asAdmin(),
-      id,
-      data,
-    );
-
-    if (passwordChanged || roleChanged || activeChanged) {
-      await this.authService.revokeUserSessions(id);
+    const sensitive = dto.correo !== undefined || passwordChanged;
+    let updatedUser: Parameters<typeof this.toSafeUser>[0];
+    if (sensitive || roleChanged || activeChanged) {
+      try {
+        updatedUser = (await this.prisma.asAdmin().$transaction(async (tx) => {
+          await tx.$queryRaw`SELECT "id" FROM "accounts"."users" WHERE "id" = ${id} FOR UPDATE`;
+          const previous = await tx.user.findUnique({ where: { id } });
+          if (!previous) throw new NotFoundException('Usuario no encontrado');
+          const emailChanged =
+            dto.correo !== undefined &&
+            dto.correo.trim().toLowerCase() !== previous.correo.toLowerCase();
+          const next = await tx.user.update({
+            where: { id },
+            data: {
+              ...data,
+              ...(emailChanged ? { emailVerifiedAt: null } : {}),
+            },
+          });
+          await tx.authToken.updateMany({
+            where: { userId: id, consumedAt: null },
+            data: { consumedAt: new Date() },
+          });
+          await tx.userSession.updateMany({
+            where: { userId: id, endedAt: null },
+            data: {
+              endedAt: new Date(),
+              lastSeenAt: new Date(),
+              refreshTokenHash: null,
+            },
+          });
+          if (emailChanged) {
+            await tx.securityNotice.create({
+              data: {
+                userId: id,
+                actorId: currentUser.sub,
+                correo: previous.correo,
+                kind: 'ADMIN_EMAIL_CHANGED',
+              },
+            });
+            await notifySecurityChange(tx, id, true);
+          }
+          if (passwordChanged) {
+            await tx.securityNotice.create({
+              data: {
+                userId: id,
+                actorId: currentUser.sub,
+                correo: previous.correo,
+                kind: 'ADMIN_PASSWORD_CHANGED',
+              },
+            });
+            await notifySecurityChange(tx, id, false);
+          }
+          return next;
+        })) as Parameters<typeof this.toSafeUser>[0];
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          throw new BadRequestException('El correo ya esta en uso');
+        }
+        throw error;
+      }
+      if (dto.correo && !updatedUser.emailVerifiedAt) {
+        await this.authService.resendEmailVerification({
+          correo: updatedUser.correo,
+        });
+      }
+    } else {
+      updatedUser = (await this.updateUserRecord(
+        this.prisma.asAdmin(),
+        id,
+        data,
+      )) as Parameters<typeof this.toSafeUser>[0];
     }
 
     return {

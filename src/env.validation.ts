@@ -116,6 +116,35 @@ export function validateEnv(config: EnvRecord) {
     throw new Error('AUTH_COOKIE_SECURE no puede desactivarse en production.');
   }
 
+  const vapidKeys = [
+    'VAPID_PUBLIC_KEY',
+    'VAPID_PRIVATE_KEY',
+    'VAPID_SUBJECT',
+  ] as const;
+  const hasVapid = vapidKeys.some(
+    (key) => typeof normalized[key] === 'string' && normalized[key].trim(),
+  );
+  if (hasVapid) {
+    for (const key of vapidKeys)
+      normalized[key] = requireNonEmptyString(
+        normalized[key],
+        `${key} es obligatorio al configurar Web Push.`,
+      );
+    const publicKey = normalized.VAPID_PUBLIC_KEY as string;
+    const privateKey = normalized.VAPID_PRIVATE_KEY as string;
+    if (
+      Buffer.from(publicKey, 'base64url').length !== 65 ||
+      Buffer.from(privateKey, 'base64url').length !== 32
+    ) {
+      throw new Error('Las claves VAPID no tienen el formato esperado.');
+    }
+    const subject = normalized.VAPID_SUBJECT as string;
+    if (!/^(mailto:[^\s@]+@[^\s@]+\.[^\s@]+|https:\/\/[^\s]+)$/.test(subject)) {
+      throw new Error(
+        'VAPID_SUBJECT debe ser un correo mailto: o una URL https://.',
+      );
+    }
+  }
   return normalized;
 }
 

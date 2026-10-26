@@ -226,8 +226,7 @@ export class AlexaService {
         descripcion: promotion.descripcion,
         fechaInicio: promotion.startAt.toISOString(),
         fechaFin: promotion.endAt.toISOString(),
-        imagen:
-          promotion.imageUrl || product.images[0]?.imageUrl || null,
+        imagen: promotion.imageUrl || product.images[0]?.imageUrl || null,
         product: this.mapProductCard(product),
       })),
     };
@@ -311,7 +310,13 @@ export class AlexaService {
   }
 
   private normalizeAcquisitionType(value: unknown): string {
-    return String(value ?? '')
+    const text =
+      typeof value === 'string'
+        ? value
+        : typeof value === 'number'
+          ? String(value)
+          : '';
+    return text
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')

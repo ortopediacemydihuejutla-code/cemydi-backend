@@ -86,6 +86,9 @@ function setup() {
     (callback: (client: typeof db) => unknown) => callback(db),
   );
   const prisma = {
+    notificationAutomation: {
+      findUnique: jest.fn().mockResolvedValue({ prescriptions: false }),
+    },
     forUser: jest.fn().mockReturnValue(db),
     $queryRaw: jest.fn().mockResolvedValue([{ id: 'rental-1' }]),
     $transaction: jest.fn(),

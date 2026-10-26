@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { persistAutomaticNotification } from '../notifications/notification-events';
 import {
   BadRequestException,
   ConflictException,
@@ -383,6 +385,8 @@ export class RentalDocumentsService {
         where: { id: documentId },
         select: {
           id: true,
+          userId: true,
+          status: true,
           rentalRequestItem: {
             select: {
               rentalRequest: { select: { status: true } },
@@ -400,7 +404,7 @@ export class RentalDocumentsService {
         );
       }
 
-      return tx.rentalDocument.update({
+      const reviewed = await tx.rentalDocument.update({
         where: { id: documentId },
         data: {
           status,
@@ -415,6 +419,23 @@ export class RentalDocumentsService {
           },
         },
       });
+      if (document.status !== status) {
+        await persistAutomaticNotification(
+          tx,
+          'prescriptions',
+          document.userId,
+          {
+            requestKey: `prescription:${randomUUID()}`,
+            source: 'PRESCRIPTION',
+            category: 'RENTAL',
+            title: 'Revisión de receta',
+            body: 'La revisión de tu receta tiene una actualización. Consulta el resultado en el detalle de tu renta.',
+            destinationType: 'RENTAL',
+            destinationId: rentalRequestId,
+          },
+        );
+      }
+      return reviewed;
     });
 
     return {

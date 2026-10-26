@@ -14,20 +14,10 @@ export class AnalyticsController {
 
   /**
    * Resumen para el panel de analíticas: KPIs, series diarias y distribuciones
-   * basadas en datos reales (sin modelo de ventas aún).
+   * basadas en datos operacionales registrados (sin modelo de ventas aún).
    */
   @Get()
   getDashboard(@Query() query: AnalyticsQueryDto) {
     return this.analyticsService.getDashboard(query);
-  }
-
-  @Get('customer-segmentation')
-  getCustomerSegmentation() {
-    return this.analyticsService.getCustomerSegmentation();
-  }
-
-  @Get('demand-forecast')
-  getDemandForecast() {
-    return this.analyticsService.getDemandForecast();
   }
 }

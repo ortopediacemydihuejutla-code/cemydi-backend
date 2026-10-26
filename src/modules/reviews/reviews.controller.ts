@@ -34,6 +34,12 @@ export class ReviewsController {
     return this.reviewsService.listHomeTestimonials();
   }
 
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  listMine(@CurrentUser() user: AuthUser) {
+    return this.reviewsService.listMine(user);
+  }
+
   @Get('product/:productId/mine')
   @UseGuards(JwtAuthGuard)
   getMyReviewByProduct(

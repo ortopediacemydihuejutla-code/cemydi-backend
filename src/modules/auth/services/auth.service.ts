@@ -32,8 +32,8 @@ export class AuthService {
     return this.authLoginService.register(dto);
   }
 
-  login(dto: LoginDto) {
-    return this.authLoginService.login(dto);
+  login(dto: LoginDto, ipAddress?: string) {
+    return this.authLoginService.login(dto, ipAddress);
   }
 
   buildGoogleAuthorizationUrl(state: string) {
@@ -42,6 +42,10 @@ export class AuthService {
 
   loginWithGoogleCode(code: string): Promise<SessionAuthResult> {
     return this.authGoogleService.loginWithAuthorizationCode(code);
+  }
+
+  loginWithMobileGoogleIdToken(idToken: string): Promise<SessionAuthResult> {
+    return this.authGoogleService.loginWithMobileIdToken(idToken);
   }
 
   refresh(refreshTokenRaw: string): Promise<SessionAuthResult> {

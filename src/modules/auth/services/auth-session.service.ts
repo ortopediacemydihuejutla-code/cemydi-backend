@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Rol } from '@prisma/client';
+import { Prisma, Rol } from '@prisma/client';
 import { randomBytes, randomUUID } from 'crypto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AuthConfigService } from './auth-config.service';
@@ -75,8 +75,28 @@ export class AuthSessionService {
       id: number;
       correo: string;
       rol: Rol;
+      password?: string;
     },
+    transaction?: Prisma.TransactionClient,
   ): Promise<SessionAuthResult> {
+    if (!transaction) {
+      return this.prisma.$transaction(async (tx) => {
+        // Do not resurrect a login validated before a credential change.
+        await tx.$queryRaw`SELECT "id" FROM "accounts"."users" WHERE "id" = ${user.id} FOR UPDATE`;
+        const current = await tx.user.findUnique({ where: { id: user.id } });
+        if (
+          !current?.activo ||
+          !current.emailVerifiedAt ||
+          !user.password ||
+          current.password !== user.password ||
+          current.correo !== user.correo ||
+          current.rol !== user.rol
+        ) {
+          throw new UnauthorizedException('Credenciales invalidas');
+        }
+        return this.createSessionForUser(current, tx);
+      });
+    }
     const sessionId = randomUUID();
     const refreshToken = randomBytes(32).toString('hex');
     const refreshTokenHash = hashAuthValue(refreshToken);
@@ -102,16 +122,19 @@ export class AuthSessionService {
       ? new Date(tokenExpiration * 1000)
       : new Date(now.getTime() + 15 * 60 * 1000);
 
-    await this.persistAuthTracking({
-      userId: user.id,
-      correo: user.correo,
-      sessionId,
-      refreshTokenHash,
-      expiresAt: refreshExpiresAt,
-      success: true,
-      reason: 'LOGIN_OK',
-      attemptedAt: now,
-    });
+    await this.persistAuthTracking(
+      {
+        userId: user.id,
+        correo: user.correo,
+        sessionId,
+        refreshTokenHash,
+        expiresAt: refreshExpiresAt,
+        success: true,
+        reason: 'LOGIN_OK',
+        attemptedAt: now,
+      },
+      transaction,
+    );
 
     return {
       accessToken,
@@ -181,15 +204,22 @@ export class AuthSessionService {
       ? new Date(tokenExpiration * 1000)
       : new Date(now.getTime() + 15 * 60 * 1000);
 
-    await this.prisma.asAdmin().userSession.update({
+    const rotation = await this.prisma.asAdmin().userSession.updateMany({
       where: {
         tokenId: session.tokenId,
+        refreshTokenHash,
+        endedAt: null,
+        expiresAt: { gt: now },
       },
       data: {
         refreshTokenHash: rotatedRefreshHash,
         lastSeenAt: now,
       },
     });
+
+    if (rotation.count !== 1) {
+      throw new UnauthorizedException('Sesion invalida');
+    }
 
     return {
       accessToken,
@@ -339,37 +369,38 @@ export class AuthSessionService {
     });
   }
 
-  private async persistAuthTracking(input: {
-    userId: number;
-    correo: string;
-    sessionId: string;
-    refreshTokenHash: string;
-    expiresAt: Date;
-    success: boolean;
-    reason: string;
-    attemptedAt: Date;
-  }) {
-    await this.prisma.$transaction([
-      this.prisma.userSession.create({
-        data: {
-          id: input.sessionId,
-          tokenId: input.sessionId,
-          refreshTokenHash: input.refreshTokenHash,
-          userId: input.userId,
-          createdAt: input.attemptedAt,
-          lastSeenAt: input.attemptedAt,
-          expiresAt: input.expiresAt,
-        },
-      }),
-      this.prisma.loginAttempt.create({
-        data: {
-          userId: input.userId,
-          correo: input.correo,
-          success: input.success,
-          reason: input.reason,
-          attemptedAt: input.attemptedAt,
-        },
-      }),
-    ]);
+  private async persistAuthTracking(
+    input: {
+      userId: number;
+      correo: string;
+      sessionId: string;
+      refreshTokenHash: string;
+      expiresAt: Date;
+      success: boolean;
+      reason: string;
+      attemptedAt: Date;
+    },
+    tx: Prisma.TransactionClient,
+  ) {
+    await tx.userSession.create({
+      data: {
+        id: input.sessionId,
+        tokenId: input.sessionId,
+        refreshTokenHash: input.refreshTokenHash,
+        userId: input.userId,
+        createdAt: input.attemptedAt,
+        lastSeenAt: input.attemptedAt,
+        expiresAt: input.expiresAt,
+      },
+    });
+    await tx.loginAttempt.create({
+      data: {
+        userId: input.userId,
+        correo: input.correo,
+        success: input.success,
+        reason: input.reason,
+        attemptedAt: input.attemptedAt,
+      },
+    });
   }
 }

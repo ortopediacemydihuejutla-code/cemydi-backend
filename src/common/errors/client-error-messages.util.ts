@@ -30,7 +30,7 @@ export function localizeClientMessage(input: {
 }) {
   if (
     input.exception instanceof ThrottlerException ||
-    input.statusCode === HttpStatus.TOO_MANY_REQUESTS ||
+    input.statusCode === Number(HttpStatus.TOO_MANY_REQUESTS) ||
     isRateLimitMessage(input.message)
   ) {
     return RATE_LIMIT_CLIENT_MESSAGE;

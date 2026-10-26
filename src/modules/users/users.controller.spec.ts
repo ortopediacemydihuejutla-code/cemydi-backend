@@ -3,6 +3,10 @@ import { Rol } from '@prisma/client';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { AccountSecurityService } from './account-security.service';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -21,6 +25,7 @@ describe('UsersController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [
+        { provide: AccountSecurityService, useValue: {} },
         {
           provide: UsersService,
           useValue: usersService,
@@ -53,5 +58,19 @@ describe('UsersController', () => {
 
     await expect(controller.getMe(authUser)).resolves.toEqual(response);
     expect(usersService.getMe).toHaveBeenCalledWith(authUser);
+  });
+
+  it('rechaza correo y contraseña en el DTO del PATCH de perfil', async () => {
+    for (const field of ['correo', 'password']) {
+      const dto = plainToInstance(UpdateProfileDto, {
+        nombre: 'Cliente',
+        [field]: 'inseguro',
+      });
+      const errors = await validate(dto, {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      });
+      expect(errors.map((error) => error.property)).toContain(field);
+    }
   });
 });

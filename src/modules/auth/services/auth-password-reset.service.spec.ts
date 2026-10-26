@@ -11,28 +11,48 @@ import { AuthSessionService } from './auth-session.service';
 describe('AuthPasswordResetService', () => {
   let service: AuthPasswordResetService;
   let prisma: {
-    user: { findFirst: jest.Mock; update: jest.Mock };
+    user: { findFirst: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
     authToken: {
       findFirst: jest.Mock;
       updateMany: jest.Mock;
       create: jest.Mock;
       update: jest.Mock;
     };
+    userSession: { updateMany: jest.Mock };
+    notificationAutomation: { findUnique: jest.Mock };
     $transaction: jest.Mock;
+    $queryRaw: jest.Mock;
   };
   let mail: { sendPasswordResetCode: jest.Mock };
   let sessions: { buildRevokeSessionsQuery: jest.Mock };
 
   beforeEach(() => {
     prisma = {
-      user: { findFirst: jest.fn(), update: jest.fn() },
+      user: {
+        findFirst: jest.fn(),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 9,
+          correo: 'user@example.com',
+          activo: true,
+        }),
+        update: jest.fn(),
+      },
       authToken: {
         findFirst: jest.fn().mockResolvedValue(null),
-        updateMany: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         create: jest.fn(),
         update: jest.fn(),
       },
-      $transaction: jest.fn().mockResolvedValue([]),
+      userSession: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      notificationAutomation: {
+        findUnique: jest.fn().mockResolvedValue({ security: false }),
+      },
+      $transaction: jest.fn((operation: unknown) =>
+        typeof operation === 'function'
+          ? (operation as (tx: unknown) => Promise<unknown>)(prisma)
+          : Promise.resolve([]),
+      ),
+      $queryRaw: jest.fn().mockResolvedValue([{ id: 9 }]),
     };
     mail = { sendPasswordResetCode: jest.fn() };
     sessions = { buildRevokeSessionsQuery: jest.fn().mockReturnValue({}) };
@@ -60,6 +80,20 @@ describe('AuthPasswordResetService', () => {
 
     await expect(
       service.requestPasswordReset({ correo: 'missing@example.com' }),
+    ).resolves.toEqual(PASSWORD_RESET_PUBLIC_RESPONSE);
+    expect(mail.sendPasswordResetCode).not.toHaveBeenCalled();
+  });
+
+  it('returns public response without sending email when account is inactive', async () => {
+    prisma.user.findFirst.mockResolvedValue({
+      id: 10,
+      correo: 'inactive@example.com',
+      nombre: 'Inactivo',
+      activo: false,
+    });
+
+    await expect(
+      service.requestPasswordReset({ correo: 'inactive@example.com' }),
     ).resolves.toEqual(PASSWORD_RESET_PUBLIC_RESPONSE);
     expect(mail.sendPasswordResetCode).not.toHaveBeenCalled();
   });
@@ -100,6 +134,7 @@ describe('AuthPasswordResetService', () => {
     prisma.authToken.findFirst.mockResolvedValue({
       id: 'reset-link',
       userId: 9,
+      correo: 'user@example.com',
       consumedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
     });
@@ -120,6 +155,7 @@ describe('AuthPasswordResetService', () => {
     prisma.authToken.findFirst.mockResolvedValue({
       id: 'reset-link',
       userId: 9,
+      correo: 'user@example.com',
       consumedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
     });
@@ -130,16 +166,13 @@ describe('AuthPasswordResetService', () => {
         newPassword: 'NewSecure@1',
       }),
     ).resolves.toEqual({ message: 'Contraseña actualizada correctamente' });
-    expect(prisma.authToken.update).toHaveBeenCalledWith(
+    expect(prisma.authToken.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'reset-link' },
+        where: expect.objectContaining({ id: 'reset-link', consumedAt: null }),
         data: { consumedAt: expect.any(Date) },
       }),
     );
-    expect(sessions.buildRevokeSessionsQuery).toHaveBeenCalledWith(
-      9,
-      expect.any(Date),
-    );
+    expect(prisma.userSession.updateMany).toHaveBeenCalled();
   });
 
   it('keeps the generic response when Brevo is temporarily unavailable', async () => {
@@ -182,9 +215,12 @@ describe('AuthPasswordResetService', () => {
         codigo: '12345678',
       }),
     ).rejects.toMatchObject({ message: 'El código es inválido o expiró' });
-    expect(prisma.authToken.update).toHaveBeenCalledWith(
+    expect(prisma.authToken.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'invalid-code' },
+        where: expect.objectContaining({
+          id: 'invalid-code',
+          consumedAt: null,
+        }),
         data: { attemptCount: { increment: 1 } },
       }),
     );
@@ -201,6 +237,7 @@ describe('AuthPasswordResetService', () => {
     prisma.authToken.findFirst.mockResolvedValue({
       id: 'valid-code',
       userId: 9,
+      correo: 'user@example.com',
       codeHash: 'hash',
       attemptCount: 0,
       expiresAt: new Date(Date.now() + 60_000),
@@ -223,15 +260,48 @@ describe('AuthPasswordResetService', () => {
         data: { password: expect.any(String) },
       }),
     );
-    expect(prisma.authToken.update).toHaveBeenCalledWith(
+    expect(prisma.authToken.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'valid-code' },
+        where: expect.objectContaining({ id: 'valid-code', consumedAt: null }),
         data: { consumedAt: expect.any(Date) },
       }),
     );
-    expect(sessions.buildRevokeSessionsQuery).toHaveBeenCalledWith(
-      9,
-      expect.any(Date),
-    );
+    expect(prisma.userSession.updateMany).toHaveBeenCalled();
+  });
+
+  it('rejects a recovery link issued to the previous email without changing credentials', async () => {
+    prisma.authToken.findFirst.mockResolvedValue({
+      id: 'old-email-link',
+      userId: 9,
+      correo: 'old@example.com',
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    await expect(
+      service.confirmPasswordResetToken({
+        token: 'e'.repeat(64),
+        newPassword: 'NewSecure@1',
+      }),
+    ).rejects.toThrow('El código es inválido o expiró');
+    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(prisma.userSession.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects an already consumed recovery link at the transaction boundary', async () => {
+    prisma.authToken.findFirst.mockResolvedValue({
+      id: 'used-link',
+      userId: 9,
+      correo: 'user@example.com',
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    prisma.authToken.updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(
+      service.confirmPasswordResetToken({
+        token: 'f'.repeat(64),
+        newPassword: 'NewSecure@1',
+      }),
+    ).rejects.toThrow('El código es inválido o expiró');
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 });

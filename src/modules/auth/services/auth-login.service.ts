@@ -9,6 +9,9 @@ import { REGISTER_PUBLIC_RESPONSE } from '../constants';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 
+const DUMMY_BCRYPT_HASH =
+  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+
 @Injectable()
 export class AuthLoginService {
   constructor(
@@ -50,7 +53,7 @@ export class AuthLoginService {
     return { ...REGISTER_PUBLIC_RESPONSE };
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, ipAddress?: string) {
     const correo = dto.correo.trim().toLowerCase();
     const user = await this.prisma.user.findFirst({
       where: {
@@ -61,33 +64,37 @@ export class AuthLoginService {
       },
     });
 
+    await this.assertNotLocked(user?.id, correo, ipAddress);
+
+    const passwordHash = user?.password ?? DUMMY_BCRYPT_HASH;
+    const passwordValid = await bcrypt.compare(dto.password, passwordHash);
+
     if (!user) {
       await this.registerLoginAttempt({
         correo,
+        ipAddress,
         success: false,
         reason: 'USER_NOT_FOUND',
       });
       throw new UnauthorizedException('Credenciales invalidas');
     }
 
-    await this.assertKnownUserNotLocked(user.id);
-
     if (!user.password) {
       await this.registerLoginAttempt({
         userId: user.id,
         correo: user.correo,
+        ipAddress,
         success: false,
         reason: 'INVALID_PASSWORD',
       });
       throw new UnauthorizedException('Credenciales invalidas');
     }
 
-    const passwordValid = await bcrypt.compare(dto.password, user.password);
-
     if (!passwordValid) {
       await this.registerLoginAttempt({
         userId: user.id,
         correo: user.correo,
+        ipAddress,
         success: false,
         reason: 'INVALID_PASSWORD',
       });
@@ -98,6 +105,7 @@ export class AuthLoginService {
       await this.registerLoginAttempt({
         userId: user.id,
         correo: user.correo,
+        ipAddress,
         success: false,
         reason: 'EMAIL_NOT_VERIFIED',
       });
@@ -108,6 +116,7 @@ export class AuthLoginService {
       await this.registerLoginAttempt({
         userId: user.id,
         correo: user.correo,
+        ipAddress,
         success: false,
         reason: 'USER_INACTIVE',
       });
@@ -117,32 +126,81 @@ export class AuthLoginService {
     return this.authSessionService.createSessionForUser(user);
   }
 
-  private async assertKnownUserNotLocked(userId: number) {
+  private async assertNotLocked(
+    userId?: number,
+    correo?: string,
+    ipAddress?: string,
+  ) {
     const windowStart = new Date(
       Date.now() - this.authConfigService.loginLockoutMinutes * 60 * 1000,
     );
 
-    const failedAttempts = await this.prisma.loginAttempt.count({
-      where: {
-        userId,
-        success: false,
-        reason: 'INVALID_PASSWORD',
-        attemptedAt: {
-          gte: windowStart,
-        },
-      },
-    });
+    const userConditions: Array<Record<string, unknown>> = [];
+    if (userId) {
+      userConditions.push({ userId });
+    }
+    if (correo) {
+      userConditions.push({ correo: { equals: correo, mode: 'insensitive' } });
+    }
 
-    if (failedAttempts >= this.authConfigService.loginMaxFailedAttempts) {
-      throw new UnauthorizedException(
-        'Demasiados intentos fallidos. Intenta de nuevo mas tarde.',
-      );
+    if (userConditions.length > 0) {
+      const lastSuccess = await this.prisma.loginAttempt.findFirst({
+        where: {
+          OR: userConditions,
+          success: true,
+        },
+        orderBy: [{ attemptedAt: 'desc' }, { id: 'desc' }],
+        select: { attemptedAt: true },
+      });
+
+      const failureThreshold =
+        lastSuccess && lastSuccess.attemptedAt > windowStart
+          ? lastSuccess.attemptedAt
+          : windowStart;
+
+      const failedAccountAttempts = await this.prisma.loginAttempt.count({
+        where: {
+          OR: userConditions,
+          success: false,
+          attemptedAt:
+            lastSuccess && lastSuccess.attemptedAt > windowStart
+              ? { gt: failureThreshold }
+              : { gte: failureThreshold },
+        },
+      });
+
+      if (
+        failedAccountAttempts >= this.authConfigService.loginMaxFailedAttempts
+      ) {
+        throw new UnauthorizedException(
+          'Demasiados intentos fallidos. Intenta de nuevo mas tarde.',
+        );
+      }
+    }
+
+    if (ipAddress && ipAddress !== 'unknown') {
+      const failedIpAttempts = await this.prisma.loginAttempt.count({
+        where: {
+          ipAddress,
+          success: false,
+          attemptedAt: {
+            gte: windowStart,
+          },
+        },
+      });
+
+      if (failedIpAttempts >= this.authConfigService.loginMaxFailedAttempts) {
+        throw new UnauthorizedException(
+          'Demasiados intentos fallidos. Intenta de nuevo mas tarde.',
+        );
+      }
     }
   }
 
   private async registerLoginAttempt(input: {
     userId?: number;
     correo: string;
+    ipAddress?: string;
     success: boolean;
     reason: string;
   }) {
@@ -150,6 +208,7 @@ export class AuthLoginService {
       data: {
         userId: input.userId,
         correo: input.correo,
+        ipAddress: input.ipAddress,
         success: input.success,
         reason: input.reason,
       },

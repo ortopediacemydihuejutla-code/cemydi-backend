@@ -18,6 +18,7 @@ type GoogleTokenResponse = {
 
 type GoogleTokenInfoResponse = {
   aud?: string;
+  sub?: string;
   email?: string;
   email_verified?: string | boolean;
   name?: string;
@@ -55,7 +56,22 @@ export class AuthGoogleService {
       );
     }
 
-    const profile = await this.verifyGoogleIdentity(tokenResponse.id_token);
+    const profile = await this.verifyGoogleIdentity(tokenResponse.id_token, [
+      this.authConfigService.googleClientId,
+    ]);
+    return this.createSessionFromGoogleProfile(profile);
+  }
+
+  async loginWithMobileIdToken(idToken: string): Promise<SessionAuthResult> {
+    const profile = await this.verifyGoogleIdentity(idToken, [
+      this.authConfigService.googleClientId,
+    ]);
+    return this.createSessionFromGoogleProfile(profile);
+  }
+
+  private async createSessionFromGoogleProfile(
+    profile: GoogleTokenInfoResponse,
+  ): Promise<SessionAuthResult> {
     const email = profile.email?.trim().toLowerCase();
     const emailVerified =
       profile.email_verified === true || profile.email_verified === 'true';
@@ -74,32 +90,50 @@ export class AuthGoogleService {
       'Cliente CEMYDI';
 
     const now = new Date();
-    const user = await this.prisma.user.upsert({
-      where: { correo: email },
-      update: {
-        emailVerifiedAt: now,
-      },
-      create: {
-        nombre: displayName,
-        correo: email,
-        password: await this.createUnusablePasswordHash(),
-        emailVerifiedAt: now,
-      },
-      select: {
-        id: true,
-        nombre: true,
-        correo: true,
-        activo: true,
-        rol: true,
-        emailVerifiedAt: true,
-      },
+    const unusablePassword = await this.createUnusablePasswordHash();
+    return this.prisma.$transaction(async (tx) => {
+      const account = await tx.user.upsert({
+        where: { correo: email },
+        update: {
+          // A real update locks an existing account until this transaction commits.
+          correo: email,
+        },
+        create: {
+          nombre: displayName,
+          correo: email,
+          password: unusablePassword,
+          emailVerifiedAt: now,
+        },
+        select: {
+          id: true,
+          nombre: true,
+          correo: true,
+          activo: true,
+          rol: true,
+          emailVerifiedAt: true,
+        },
+      });
+      if (!account.activo) {
+        throw new UnauthorizedException('Cuenta inactiva');
+      }
+      if (!account.emailVerifiedAt) {
+        // A pending registration may contain a password chosen by someone else.
+        await tx.user.update({
+          where: { id: account.id },
+          data: { password: unusablePassword, emailVerifiedAt: now },
+        });
+        await tx.authToken.updateMany({
+          where: { userId: account.id, consumedAt: null },
+          data: { consumedAt: now },
+        });
+        await tx.userSession.updateMany({
+          where: { userId: account.id, endedAt: null },
+          data: { endedAt: now, lastSeenAt: now, refreshTokenHash: null },
+        });
+        account.emailVerifiedAt = now;
+      }
+      return this.authSessionService.createSessionForUser(account, tx);
     });
-
-    if (!user.activo) {
-      throw new UnauthorizedException('Cuenta inactiva');
-    }
-
-    return this.authSessionService.createSessionForUser(user);
   }
 
   private async exchangeCodeForTokens(code: string) {
@@ -131,16 +165,23 @@ export class AuthGoogleService {
     return body;
   }
 
-  private async verifyGoogleIdentity(idToken: string) {
+  private async verifyGoogleIdentity(
+    idToken: string,
+    allowedAudiences: string[],
+  ) {
     const url = new URL('https://oauth2.googleapis.com/tokeninfo');
     url.searchParams.set('id_token', idToken);
-
     const response = await fetch(url);
     const body = (await response
       .json()
       .catch(() => ({}))) as GoogleTokenInfoResponse;
 
-    if (!response.ok || body.aud !== this.authConfigService.googleClientId) {
+    if (
+      !response.ok ||
+      !body.sub ||
+      !body.aud ||
+      !allowedAudiences.includes(body.aud)
+    ) {
       throw new UnauthorizedException('Identidad de Google invalida');
     }
 

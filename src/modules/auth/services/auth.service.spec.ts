@@ -32,9 +32,11 @@ describe('AuthService', () => {
   let prismaService: {
     user: {
       findFirst: jest.Mock;
+      findUnique: jest.Mock;
       create: jest.Mock;
     };
     userSession: {
+      create: jest.Mock;
       updateMany: jest.Mock;
       update: jest.Mock;
       findFirst: jest.Mock;
@@ -42,6 +44,7 @@ describe('AuthService', () => {
     loginAttempt: {
       create: jest.Mock;
       count: jest.Mock;
+      findFirst: jest.Mock;
     };
     authToken: {
       findFirst: jest.Mock;
@@ -51,22 +54,29 @@ describe('AuthService', () => {
     };
     $transaction: jest.Mock;
     asAdmin: jest.Mock;
+    $queryRaw: jest.Mock;
   };
 
   beforeEach(async () => {
     prismaService = {
       user: {
         findFirst: jest.fn(),
+        findUnique: jest.fn(
+          (): Promise<unknown> =>
+            prismaService.user.findFirst() as Promise<unknown>,
+        ),
         create: jest.fn(),
       },
       userSession: {
-        updateMany: jest.fn(),
+        create: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         update: jest.fn(),
         findFirst: jest.fn(),
       },
       loginAttempt: {
         create: jest.fn(),
         count: jest.fn().mockResolvedValue(0),
+        findFirst: jest.fn().mockResolvedValue(null),
       },
       authToken: {
         findFirst: jest.fn().mockResolvedValue(null),
@@ -74,7 +84,13 @@ describe('AuthService', () => {
         create: jest.fn(),
         update: jest.fn(),
       },
-      $transaction: jest.fn().mockResolvedValue([]),
+      $transaction: jest.fn(
+        (operation: unknown): Promise<unknown> =>
+          typeof operation === 'function'
+            ? (operation as (tx: unknown) => Promise<unknown>)(prismaService)
+            : Promise.resolve([]),
+      ),
+      $queryRaw: jest.fn().mockResolvedValue([]),
       asAdmin: jest.fn(),
     };
     mailService = {
@@ -177,6 +193,39 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
+  it('only counts failed attempts occurred after the most recent successful login', async () => {
+    prismaService.user.findFirst.mockResolvedValue({
+      id: 8,
+      correo: 'locked@example.com',
+      password: '$2b$12$hashed-password',
+      emailVerifiedAt: new Date(),
+      activo: true,
+    });
+
+    const recentSuccessTime = new Date();
+    prismaService.loginAttempt.findFirst.mockResolvedValue({
+      attemptedAt: recentSuccessTime,
+    });
+    prismaService.loginAttempt.count.mockResolvedValue(0);
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    jest.spyOn(require('bcrypt'), 'compare').mockResolvedValue(true);
+
+    await expect(
+      service.login({
+        correo: 'locked@example.com',
+        password: VALID_PASSWORD,
+      }),
+    ).resolves.toBeDefined();
+
+    const countMock = prismaService.loginAttempt.count;
+    expect(countMock).toHaveBeenCalled();
+    const lastCountCall = countMock.mock.calls.at(-1) as [
+      { where?: { attemptedAt?: { gt?: Date } } },
+    ];
+    expect(lastCountCall[0]?.where?.attemptedAt?.gt).toEqual(recentSuccessTime);
+  });
+
   it('rotates refresh tokens and issues a new access token', async () => {
     prismaService.asAdmin.mockReturnValue({
       userSession: {
@@ -192,7 +241,7 @@ describe('AuthService', () => {
             emailVerifiedAt: new Date(),
           },
         }),
-        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     });
 

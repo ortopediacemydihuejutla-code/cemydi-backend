@@ -31,6 +31,7 @@ import {
   MyRentalFilter,
 } from './dto/list-my-rentals-query.dto';
 import { RentalDocumentsService } from './rental-documents.service';
+import { notifyRentalStatus } from '../notifications/notification-events';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -1016,6 +1017,7 @@ export class RentalsService {
         note,
       },
     });
+    await notifyRentalStatus(tx, rentalRequestId, toStatus);
   }
 
   private orderInventoryItems<T extends { productId: number }>(items: T[]) {
