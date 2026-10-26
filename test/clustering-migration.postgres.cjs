@@ -70,13 +70,13 @@ const testDirectory = fs.mkdtempSync(
   path.join(root, '.temp/migration-recovery-'),
 );
 
-function runSql(sql) {
+function runSql(sql, expectedStatus = 0) {
   const result = spawnSync(psql, sqlArgs, {
     input: sql,
     encoding: 'utf8',
     env,
   });
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, expectedStatus, result.stderr);
 }
 
 function prisma(args, expectedStatus = 0) {
@@ -246,6 +246,83 @@ async function main() {
   runSql(fixedSql);
   assert.deepEqual((await contract())[0].columns, columns);
 
+  const stockMigration = '20260801210000_monthly_demand_stock_semantics';
+  const stockSql = fs.readFileSync(
+    path.join(root, 'prisma/migrations', stockMigration, 'migration.sql'),
+    'utf8',
+  );
+  runSql(
+    'CREATE TABLE analytics.monthly_source (product_id integer, stock integer); INSERT INTO analytics.monthly_source VALUES (1, 17); CREATE VIEW analytics.v_dataset_monthly_demand AS SELECT product_id, stock AS stock_at_month_start FROM analytics.monthly_source; GRANT SELECT ON analytics.v_dataset_monthly_demand TO PUBLIC; CREATE VIEW analytics.monthly_dependent AS SELECT stock_at_month_start FROM analytics.v_dataset_monthly_demand;',
+  );
+  const stockIdentity =
+    await db.$queryRaw`SELECT oid::text AS oid, relacl::text AS grants FROM pg_class WHERE oid = 'analytics.v_dataset_monthly_demand'::regclass`;
+  const stockDirectory = path.join(migrations, stockMigration);
+  fs.mkdirSync(stockDirectory);
+  const stockFile = path.join(stockDirectory, 'migration.sql');
+  fs.writeFileSync(
+    stockFile,
+    'ALTER VIEW analytics.v_dataset_monthly_demand RENAME COLUMN stock_available TO stock_at_month_start;',
+  );
+  const stockFailure = prisma(['migrate', 'deploy'], 1);
+  assert.match(stockFailure, /P3018/);
+  assert.match(stockFailure, /42703/);
+  fs.writeFileSync(stockFile, stockSql);
+
+  // A missing/unknown contract must not be hidden by resetting migration state.
+  runSql(
+    'ALTER VIEW analytics.v_dataset_monthly_demand RENAME TO monthly_contract_checked; CREATE VIEW analytics.v_dataset_monthly_demand AS SELECT stock AS unknown_stock FROM analytics.monthly_source;',
+  );
+  assert.match(recover(1), /contrato de stock ambiguo/);
+  assert.equal(
+    (
+      await db.$queryRaw`SELECT rolled_back_at FROM public._prisma_migrations WHERE migration_name = ${stockMigration} AND finished_at IS NULL`
+    )[0].rolled_back_at,
+    null,
+  );
+  runSql(
+    'ALTER VIEW analytics.v_dataset_monthly_demand RENAME TO monthly_unknown_checked; ALTER VIEW analytics.monthly_contract_checked RENAME TO v_dataset_monthly_demand;',
+  );
+  recover();
+  prisma(['migrate', 'deploy']);
+  assert.deepEqual(
+    await db.$queryRaw`SELECT oid::text AS oid, relacl::text AS grants FROM pg_class WHERE oid = 'analytics.v_dataset_monthly_demand'::regclass`,
+    stockIdentity,
+  );
+  assert.equal(
+    (
+      await db.$queryRaw`SELECT stock_at_month_start FROM analytics.monthly_dependent`
+    )[0].stock_at_month_start,
+    17,
+  );
+  assert.match(recover(), /No hay un fallo pendiente/);
+  runSql(stockSql);
+
+  runSql(
+    'ALTER VIEW analytics.v_dataset_monthly_demand RENAME TO monthly_current_checked; CREATE VIEW analytics.v_dataset_monthly_demand AS SELECT product_id, stock AS stock_available FROM analytics.monthly_source; CREATE VIEW analytics.monthly_legacy_dependent AS SELECT stock_available AS value FROM analytics.v_dataset_monthly_demand;',
+  );
+  runSql(stockSql);
+  runSql(stockSql);
+  assert.equal(
+    (
+      await db.$queryRaw`SELECT stock_at_month_start FROM analytics.v_dataset_monthly_demand`
+    )[0].stock_at_month_start,
+    17,
+  );
+  assert.equal(
+    (
+      await db.$queryRaw`SELECT value FROM analytics.monthly_legacy_dependent`
+    )[0].value,
+    17,
+  );
+  runSql(
+    'ALTER VIEW analytics.v_dataset_monthly_demand RENAME TO monthly_legacy_checked; CREATE VIEW analytics.v_dataset_monthly_demand AS SELECT stock AS stock_available, stock AS stock_at_month_start FROM analytics.monthly_source;',
+  );
+  runSql(stockSql, 3);
+  assert.equal(
+    (await db.$queryRaw`SELECT stock FROM analytics.monthly_source`)[0].stock,
+    17,
+  );
+
   console.log(
     'PASS: reproduced P3018/42P16 and recovered with resolve --rolled-back + migrate deploy',
   );
@@ -257,6 +334,12 @@ async function main() {
   );
   console.log(
     'PASS: handles both historical column orders, an absent view and repeated application',
+  );
+  console.log(
+    'PASS: reproduced P3018/42703, recovered the stock migration and preserved rows, identity, grants and dependencies',
+  );
+  console.log(
+    'PASS: stock rename supports both names, is repeatable and rejects ambiguous/unknown contracts',
   );
 }
 
