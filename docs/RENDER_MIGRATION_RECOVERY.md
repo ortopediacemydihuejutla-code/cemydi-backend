@@ -1,4 +1,4 @@
-# Recuperar el fallo de la vista de clustering en Render gratuito
+# Recuperar los fallos de vistas analíticas en Render gratuito
 
 El error P3018 con código PostgreSQL 42P16 en
 `20260801190000_customer_clustering_consistency` ocurre porque `CREATE OR REPLACE
@@ -11,6 +11,13 @@ vista todavía no existe, la crea; si falta una columna conocida, la agrega al
 final. No elimina la vista, sus permisos, dependencias ni datos. Una columna
 desconocida hace que se detenga para revisión. La corrección también admite el
 orden de los entornos donde la versión anterior ya se aplicó correctamente.
+
+La siguiente migración, `20260801210000_monthly_demand_stock_semantics`, puede
+fallar con P3018/42703 si la vista ya tiene `stock_at_month_start` y se intenta
+renombrar otra vez `stock_available`. Su versión corregida verifica el contrato:
+renombra únicamente si existe solo el nombre antiguo, conserva el nuevo si ya
+está presente y agrega el comentario de la columna en la misma transacción. Si
+faltan ambos nombres, existen ambos o falta la vista, falla sin borrarla.
 
 ## Procedimiento sin Shell ni Pre-Deploy de pago
 
@@ -29,7 +36,11 @@ orden de los entornos donde la versión anterior ya se aplicó correctamente.
    incluya la corrección.
 
 El primer comando comprueba el historial y solo recupera los intentos pendientes
-de esa migración cuyo error sea el 42P16 conocido de nombres de columna. Usa
+de las dos migraciones cuyo error coincida con el 42P16 conocido de clustering
+o el 42703 de `stock_available`. Para la vista mensual también comprueba que
+exista exactamente uno de los dos nombres de stock antes de cambiar el estado.
+Conserva el nombre `db:recover:clustering` para que el Start Command ya configurado
+en Render siga funcionando. Usa
 `prisma migrate resolve --rolled-back`, que permite reintentar el SQL corregido;
 no marca la migración como aplicada ni borra datos. Si encuentra otra causa,
 falla y no cambia el estado. El segundo comando aplica las migraciones pendientes
@@ -52,7 +63,9 @@ aplicada para ocultar el error.
 aislado. Verifica recuperación mediante Prisma, consumo del estado fallido,
 conservación de filas, identidad de la vista, orden de columnas, permisos y vistas
 dependientes. Comprueba ambos órdenes históricos, creación desde ausencia,
-reaplicación y rechazo de fallos de otra causa. Solo acepta una conexión explícita
+reaplicación y rechazo de fallos de otra causa. También reproduce P3018/42703,
+recupera la migración mensual mediante Prisma y verifica ambos nombres de stock,
+reaplicación y rechazo de contratos ambiguos o desconocidos. Solo acepta una conexión explícita
 a 127.0.0.1, usuario `test_security` y una base vacía con prefijo
 `migration_recovery_test`; nunca toma la URL de la aplicación ni borra una base.
 
