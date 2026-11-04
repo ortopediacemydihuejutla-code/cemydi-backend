@@ -158,6 +158,7 @@ function rentalRequest(overrides: Partial<Record<string, unknown>> = {}) {
 
 function createService(txOverrides: Record<string, unknown> = {}) {
   const tx = {
+    accountDeletionRequest: { findUnique: jest.fn().mockResolvedValue(null) },
     notificationAutomation: {
       findUnique: jest.fn().mockResolvedValue({ rentalStatus: false }),
     },

@@ -118,6 +118,7 @@ export async function notifyRentalStatus(
     DELIVERED: 'entregada',
     RETURNED: 'devuelta',
   };
+  if (rental.userId === null) return;
   return persistAutomaticNotification(tx, 'rentalStatus', rental.userId, {
     requestKey: `rental:${randomUUID()}`,
     source: 'RENTAL_STATUS',
@@ -142,4 +143,35 @@ export function notifySecurityChange(
     body: 'Se actualizaron los datos de seguridad de tu cuenta CEMYDI. Si no lo solicitaste, contacta a soporte.',
     destinationType: 'ACCOUNT',
   });
+}
+
+export async function notifyReviewModeration(
+  tx: Prisma.TransactionClient,
+  userId: number,
+  productId: number,
+  status: 'APPROVED' | 'REJECTED',
+  createdById: number,
+) {
+  const user = await tx.user.findFirst({
+    where: { id: userId, rol: 'CLIENT', activo: true },
+    select: { id: true },
+  });
+  if (!user) return;
+  const approved = status === 'APPROVED';
+  return persistNotification(
+    tx,
+    {
+      requestKey: `review:${randomUUID()}`,
+      source: 'REVIEW_STATUS',
+      category: 'SYSTEM',
+      title: approved ? 'Reseña aprobada' : 'Reseña rechazada',
+      body: approved
+        ? 'Tu reseña fue aprobada y ya está publicada. Gracias por compartir tu experiencia.'
+        : 'Tu reseña no fue aprobada. Puedes editarla y enviarla de nuevo desde el producto o Mis reseñas.',
+      destinationType: 'PRODUCT',
+      destinationId: String(productId),
+      createdById,
+    },
+    [user.id],
+  );
 }

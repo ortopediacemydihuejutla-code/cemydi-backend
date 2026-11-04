@@ -20,6 +20,7 @@ import {
 } from '../../common/dates/date-only.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../auth/types/auth-user.interface';
+import { assertNoAccountDeletion } from '../users/account-deletion-policy';
 import {
   calculateDiscountedPrice,
   getBestActivePromotion,
@@ -275,6 +276,7 @@ export class RentalsService {
         )
       `;
       await this.assertActiveUser(tx, currentUser.sub);
+      await assertNoAccountDeletion(tx, currentUser.sub);
       const cart = await tx.shoppingCart.findUnique({
         where: { userId: currentUser.sub },
         include: {

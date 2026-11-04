@@ -85,7 +85,7 @@ export class RentalDocumentsCloudinaryService {
       invalidate: true,
     })) as { result?: string };
 
-    if (result.result && !['ok', 'not found'].includes(result.result)) {
+    if (!result.result || !['ok', 'not found'].includes(result.result)) {
       throw new Error(`Cloudinary no elimino el activo: ${result.result}`);
     }
   }

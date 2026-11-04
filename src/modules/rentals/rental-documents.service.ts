@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { assertNoAccountDeletion } from '../users/account-deletion-policy';
 import { persistAutomaticNotification } from '../notifications/notification-events';
 import {
   BadRequestException,
@@ -103,6 +104,7 @@ export class RentalDocumentsService {
       );
       saved = (await db.$transaction(async (tx) => {
         await this.lockUserRentalFlow(tx, currentUser.sub);
+        await assertNoAccountDeletion(tx, currentUser.sub);
         const lockedItem = await tx.shoppingCartItem.findFirst({
           where: {
             id: itemId,
@@ -675,6 +677,25 @@ export class RentalDocumentsService {
         pendingAssetCleanup: pending as unknown as Prisma.InputJsonValue,
       },
     });
+  }
+
+  async deleteAllAccountAssets(userId: number) {
+    const documents = await this.prisma
+      .asAdmin()
+      .rentalDocument.findMany({ where: { userId } });
+    for (const document of documents) {
+      const pending = document.pendingAssetCleanup;
+      if (
+        pending !== null &&
+        (!Array.isArray(pending) ||
+          this.parsePendingCleanup(pending).length !== pending.length)
+      ) {
+        throw new Error(
+          'La receta contiene referencias de limpieza inválidas; requiere revisión antes de completar la eliminación.',
+        );
+      }
+      await this.deleteStoredDocumentAssets(document);
+    }
   }
 
   private async deleteStoredDocumentAssets(document: {

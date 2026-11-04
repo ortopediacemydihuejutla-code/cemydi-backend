@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaService } from '../../prisma/prisma.service';
 import { BackupsController } from './backups.controller';
 import { BackupsService } from './backups.service';
 
@@ -23,7 +24,19 @@ describe('BackupsController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BackupsController],
-      providers: [{ provide: BackupsService, useValue: mockBackupsService }],
+      providers: [
+        { provide: BackupsService, useValue: mockBackupsService },
+        {
+          provide: PrismaService,
+          useValue: {
+            asAdmin: () => ({
+              accountDeletionRequest: {
+                findFirst: jest.fn().mockResolvedValue(null),
+              },
+            }),
+          },
+        },
+      ],
     }).compile();
 
     controller = module.get<BackupsController>(BackupsController);

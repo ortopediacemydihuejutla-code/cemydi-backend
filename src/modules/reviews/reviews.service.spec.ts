@@ -1,6 +1,10 @@
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ReviewStatus, Rol } from '@prisma/client';
+import { Prisma, ReviewStatus, Rol } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReviewsService } from './reviews.service';
 
@@ -8,6 +12,7 @@ describe('ReviewsService', () => {
   let service: ReviewsService;
 
   const mockPrismaService = {
+    $transaction: jest.fn(),
     asReader: jest.fn().mockReturnThis(),
     forUser: jest.fn().mockReturnThis(),
     review: {
@@ -16,9 +21,12 @@ describe('ReviewsService', () => {
       count: jest.fn(),
       upsert: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       delete: jest.fn(),
     },
     user: {
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
     },
     product: {
@@ -28,6 +36,7 @@ describe('ReviewsService', () => {
 
   const mockUser = {
     sub: 1,
+    sid: 'review-test-session',
     id: 1,
     correo: 'user@test.com',
     nombre: 'User',
@@ -45,6 +54,12 @@ describe('ReviewsService', () => {
 
     service = module.get<ReviewsService>(ReviewsService);
     jest.clearAllMocks();
+    mockPrismaService.$transaction.mockImplementation(
+      (callback: (tx: typeof mockPrismaService) => Promise<unknown>) =>
+        callback(mockPrismaService),
+    );
+    mockPrismaService.review.updateMany.mockResolvedValue({ count: 1 });
+    mockPrismaService.user.findFirst.mockResolvedValue(null);
     mockPrismaService.asReader.mockReturnValue(mockPrismaService);
     mockPrismaService.forUser.mockReturnValue(mockPrismaService);
   });
@@ -108,6 +123,24 @@ describe('ReviewsService', () => {
       expect(result.review.status).toBe(ReviewStatus.PENDING);
     });
 
+    it.each(['Servicio de mierda', '<script>alert(1)</script>', '     '])(
+      'no persiste contenido rechazado: %s',
+      async (comment) => {
+        mockPrismaService.user.findUnique.mockResolvedValue({
+          id: 1,
+          activo: true,
+        });
+        mockPrismaService.product.findUnique.mockResolvedValue({
+          id: 10,
+          activo: true,
+        });
+        await expect(
+          service.submit(mockUser, { productId: 10, rating: 5, comment }),
+        ).rejects.toThrow();
+        expect(mockPrismaService.review.upsert).not.toHaveBeenCalled();
+      },
+    );
+
     it('debe lanzar UnauthorizedException si el usuario no está activo', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         id: 1,
@@ -132,8 +165,13 @@ describe('ReviewsService', () => {
 
   describe('approve & remove', () => {
     it('debe aprobar una reseña', async () => {
-      mockPrismaService.review.update.mockResolvedValue({
+      mockPrismaService.review.findUnique.mockResolvedValue({
+        comment: 'Buen producto',
+      });
+      mockPrismaService.review.findUniqueOrThrow.mockResolvedValue({
         id: 1,
+        userId: 1,
+        productId: 10,
         status: ReviewStatus.APPROVED,
       });
 
@@ -141,10 +179,53 @@ describe('ReviewsService', () => {
       expect(result.message).toContain('aprobada');
     });
 
+    it('impide aprobar contenido histórico que incumple la política', async () => {
+      mockPrismaService.review.findUnique.mockResolvedValue({
+        comment: '<svg onload=alert(1)>',
+      });
+      await expect(service.approve(mockUser, 1)).rejects.toThrow('sin HTML');
+      expect(mockPrismaService.review.update).not.toHaveBeenCalled();
+    });
+
     it('debe eliminar una reseña', async () => {
       mockPrismaService.review.delete.mockResolvedValue({ id: 1 });
       const result = await service.remove(1);
       expect(result.message).toContain('correctamente');
+    });
+  });
+  describe('visibilidad después de moderar', () => {
+    it('solo activa Inicio si la reseña sigue aprobada al escribir', async () => {
+      mockPrismaService.review.findUnique.mockResolvedValue({
+        status: ReviewStatus.APPROVED,
+        showOnHome: false,
+      });
+      mockPrismaService.review.count.mockResolvedValue(0);
+      mockPrismaService.review.update.mockResolvedValue({
+        id: 1,
+        showOnHome: true,
+      });
+      await service.setShowOnHome(1, true);
+      expect(mockPrismaService.review.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1, status: ReviewStatus.APPROVED },
+        }),
+      );
+    });
+    it('un rechazo concurrente no puede reactivar el testimonio', async () => {
+      mockPrismaService.review.findUnique.mockResolvedValue({
+        status: ReviewStatus.APPROVED,
+        showOnHome: false,
+      });
+      mockPrismaService.review.count.mockResolvedValue(0);
+      mockPrismaService.review.update.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('changed', {
+          code: 'P2025',
+          clientVersion: 'test',
+        }),
+      );
+      await expect(service.setShowOnHome(1, true)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
   });
 });

@@ -75,6 +75,13 @@ export class ReviewsController {
     return this.reviewsService.approve(user, id);
   }
 
+  @Patch(':id/reject')
+  @Roles(Rol.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  reject(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+    return this.reviewsService.reject(user, id);
+  }
+
   @Patch(':id/home-visibility')
   @Roles(Rol.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)

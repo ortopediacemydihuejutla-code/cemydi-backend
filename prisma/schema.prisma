@@ -39,8 +39,32 @@ model User {
   notificationPreference  NotificationPreference?
   notificationInbox       NotificationRecipient[]
   pushSubscriptions       PushSubscription[]
+  deletionRequest         AccountDeletionRequest?
 
   @@map("users")
+  @@schema("accounts")
+}
+
+model AccountDeletionRequest {
+  id               String    @id @default(uuid())
+  userId           Int?      @unique
+  subjectId        Int       @unique
+  subjectCreatedAt DateTime
+  status           String    @default("AWAITING_CONFIRMATION")
+  codeHash         String?
+  codeExpiresAt    DateTime?
+  attemptCount     Int       @default(0)
+  resendAt         DateTime?
+  confirmedAt      DateTime?
+  completedAt      DateTime?
+  nextAttemptAt    DateTime  @default(now())
+  leaseUntil       DateTime?
+  errorCode        String?
+  createdAt        DateTime  @default(now())
+  user             User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextAttemptAt])
+  @@map("account_deletion_requests")
   @@schema("accounts")
 }
 
@@ -515,7 +539,7 @@ model Favorite {
 model RentalRequest {
   id                    String                @id @default(cuid())
   folio                 String?               @unique
-  userId                Int                   @map("userId")
+  userId                Int?                  @map("userId")
   status                RentalRequestStatus   @default(PENDING)
   subtotal              Float                 @default(0)
   depositTotal          Float                 @default(0) @map("depositTotal")
@@ -553,7 +577,7 @@ model RentalRequest {
   statusUpdatedAt       DateTime              @default(now()) @map("statusUpdatedAt")
   createdAt             DateTime              @default(now()) @map("createdAt")
   updatedAt             DateTime              @updatedAt @map("updatedAt")
-  user                  User                  @relation("RentalRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  user                  User?                 @relation("RentalRequestUser", fields: [userId], references: [id], onDelete: SetNull)
   approvedBy            User?                 @relation("RentalRequestApprovedBy", fields: [approvedById], references: [id])
   statusUpdatedBy       User?                 @relation("RentalRequestStatusUpdatedBy", fields: [statusUpdatedById], references: [id])
   depositResolvedBy     User?                 @relation("RentalRequestDepositResolvedBy", fields: [depositResolvedById], references: [id])

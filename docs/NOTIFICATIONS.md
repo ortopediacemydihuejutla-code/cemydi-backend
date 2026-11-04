@@ -31,7 +31,7 @@ El envío contiene `requestId` UUID v4, `category`, `title` (3–100), `body` (3
 
 La migración `20261018120000_customer_notifications` crea campañas, destinatarios, preferencias, automatizaciones, suscripciones y cola durable. Aplicarla antes de desplegar el código. El rol principal de la API requiere acceso a estas tablas; si se configuran conexiones DB CLIENT para rentas, deben permitir también las escrituras transaccionales del outbox.
 
-Rentas, revisión de recetas y cambios de correo/contraseña escriben los avisos en la misma transacción que el cambio funcional. Un rollback elimina también el aviso. Ofertas y comunicados manuales solo se generan al confirmar un envío administrativo. Las preferencias controlan push: la bandeja se conserva incluso al desactivar todas las categorías.
+Rentas, revisión de recetas, moderación de reseñas y cambios de correo/contraseña escriben los avisos en la misma transacción que el cambio funcional. Un rollback elimina también el aviso. Ofertas y comunicados manuales solo se generan al confirmar un envío administrativo. Las preferencias controlan push: la bandeja se conserva incluso al desactivar todas las categorías.
 
 El worker consulta cada cinco segundos, reclama cada trabajo con un lease de dos minutos y reintenta errores transitorios hasta cinco intentos con espera exponencial. Revalida cuenta, propietario del dispositivo, sesión y preferencias antes de enviar. Los avisos genéricos de seguridad permiten la sesión que acaba de revocarse en la transacción de cambio de credenciales; las sesiones cerradas antes de ese evento quedan excluidas. Un dispositivo reasignado a otra cuenta nunca recibe trabajos anteriores. Los endpoints web se restringen a proveedores admitidos para evitar solicitudes internas arbitrarias.
 
@@ -52,3 +52,11 @@ Referencias: [Web Push](https://github.com/web-push-libs/web-push), [envío y re
 - `npx eslint src/modules/notifications src/env.validation.ts`.
 - `npm run test:notifications:postgres`: solo base local migrada. Crea destinatarios temporales, comprueba aislamiento, lecturas, idempotencia, preferencias y rollback; elimina sus fixtures y bloquea todas las llamadas push externas.
 - Falta validar la recepción real en navegadores/dispositivos con credenciales configuradas. Las pruebas automatizadas no afirman entrega a sistemas operativos.
+
+## Moderación de reseñas
+
+Aprobación y rechazo usan `source: REVIEW_STATUS`, categoría `SYSTEM` y destino
+`PRODUCT`. Generan bandeja para el cliente activo y outbox push en la transacción
+de moderación. `pushEnabled` y `system` controlan el envío externo; no se añade
+un destino, preferencia o columna. Una decisión repetida no genera otro aviso.
+Los contratos y las pruebas están en [REVIEWS.md](./REVIEWS.md).
