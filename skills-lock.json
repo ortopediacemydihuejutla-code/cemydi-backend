@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "skills": {
+    "api-and-interface-design": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/api-and-interface-design/SKILL.md",
+      "computedHash": "26f5a9e7abfd332d7a2e5887cf19bddd3393f47514c379b36bf227c1f15cdec4"
+    },
+    "api-design-principles": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/backend-development/skills/api-design-principles/SKILL.md",
+      "computedHash": "a91429c25bb978f99f5da8d8752b8ae87ece51abcb24acb3953a5b1662c9bd5c"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
+    },
+    "grill-me": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/grill-me/SKILL.md",
+      "computedHash": "5e0c683385eafd83f106ac6c9d67dfbbfe5aa4b3fe65aad114eb1055a99c818f"
+    },
+    "jest": {
+      "source": "bobmatnyc/claude-mpm-skills",
+      "sourceType": "github",
+      "skillPath": "toolchains/typescript/testing/jest/SKILL.md",
+      "computedHash": "d45d376dfa7465184963c0300928fb352634334045e8a6315259978e372ed014"
+    },
+    "nestjs-best-practices": {
+      "source": "kadajett/agent-nestjs-skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "7f14f088a79090183152c2aa556f708b2f5b7d0dacfb0ad339df2d498ba52aa3"
+    },
+    "nestjs-code-review": {
+      "source": "giuseppe-trisciuoglio/developer-kit",
+      "sourceType": "github",
+      "skillPath": "plugins/developer-kit-typescript/skills/nestjs-code-review/SKILL.md",
+      "computedHash": "5f8a8879f43ee99849251abd8c6bd9528a9699b01e635d24bc6b8af00cd3ef5d"
+    },
+    "nestjs-expert": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-expert/SKILL.md",
+      "computedHash": "ad9fa965c867945f974d631ee290691f6ff14bf930390ca30e61679c8d854e4e"
+    },
+    "nestjs-patterns": {
+      "source": "affaan-m/ecc",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-patterns/SKILL.md",
+      "computedHash": "838807825d825b067786a83ad714872139cb53123acf6cf11335fd23f8f75c4e"
+    },
+    "nodejs-backend-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "autoskills-registry",
+      "computedHash": "710a5e6f83c46e8f6c43356df55c143a7375c4414559a581654ce51709138c55"
+    },
+    "nodejs-best-practices": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "7361ab02fb6b09913e3bdd9cf61c629ed6c17de9485e6a781054e5d437ccfc29"
+    },
+    "postgresql-optimization": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/postgresql-optimization/SKILL.md",
+      "computedHash": "8022448de70ba9a485e3b5bce34c5bbc644f93eb39b68431c9f7dabcf03aeb09"
+    },
+    "postgresql-table-design": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/database-design/skills/postgresql-table-design/SKILL.md",
+      "computedHash": "d9832627098bddf570aef2219092625faf6b2a14aeeb0f6fb96ed691a020100a"
+    },
+    "prisma-cli": {
+      "source": "prisma/skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "d2b4e410bb24df07e0a399cf1fd70ca6a2f696079f7e6445eb602116566d2278"
+    },
+    "prisma-client-api": {
+      "source": "prisma/skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "922d6b5b4eb4387e72e409fa063f8e1bffb9037aed595cba0d3c257f418b6c18"
+    },
+    "prisma-database-setup": {
+      "source": "prisma/skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "50c6cbc7090ef356c026cb76352952b83b65bee8b3f3c7ac337461f5b352e9b9"
+    },
+    "prisma-postgres": {
+      "source": "prisma/skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "3adda04ae85b8593cfca45d48d5d410ddffb2797ea53f6dc9dfe34b8d71d35e9"
+    },
+    "security-and-hardening": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-and-hardening/SKILL.md",
+      "computedHash": "c2556c7890d2509981d6613c8f51a9371d1415b805d802912339e0b4e530fe3c"
+    },
+    "typescript-advanced-types": {
+      "source": "wshobson/agents",
+      "sourceType": "autoskills-registry",
+      "computedHash": "5ca0e177c6aaaba1889255691224daafdb7d71f317cc70bede1590d3907ded42"
+    }
+  }
+}

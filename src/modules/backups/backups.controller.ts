@@ -1,3 +1,4 @@
+import { AccountDeletionRestoreGuard } from '../users/account-deletion-restore.guard';
 import {
   Body,
   Controller,
@@ -139,6 +140,7 @@ export class BackupsController {
   }
 
   @Post('database/:id/restore')
+  @UseGuards(AccountDeletionRestoreGuard)
   @Throttle({ default: { limit: 1, ttl: 300_000 } })
   async restoreDatabaseBackupById(@Param('id', ParseIntPipe) id: number) {
     const result = await this.backupsService.restoreDatabaseBackupRecord(id);

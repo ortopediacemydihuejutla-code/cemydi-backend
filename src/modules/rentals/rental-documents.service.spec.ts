@@ -62,6 +62,7 @@ function storedDocument(overrides: Record<string, unknown> = {}) {
 
 function setup() {
   const db = {
+    accountDeletionRequest: { findUnique: jest.fn().mockResolvedValue(null) },
     $queryRaw: jest.fn().mockResolvedValue([{ acquired: 1 }]),
     $transaction: jest.fn(),
     shoppingCartItem: {

@@ -71,7 +71,7 @@ export class AdminNotificationsService {
         id: `rental:${rental.id}`,
         category: 'rental' as const,
         title: 'Nueva solicitud de renta',
-        description: `${rental.folio ?? `Solicitud ${rental.id.slice(0, 8)}`} · ${rental.user.nombre || rental.user.correo}`,
+        description: `${rental.folio ?? `Solicitud ${rental.id.slice(0, 8)}`} · ${rental.user?.nombre || rental.user?.correo || 'Cuenta eliminada'}`,
         occurredAt: rental.createdAt.toISOString(),
         href: '/admin/rentals',
       })),

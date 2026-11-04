@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -8,6 +9,8 @@ import { Prisma, ReviewStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { validateReviewComment } from './review-content';
+import { notifyReviewModeration } from '../notifications/notification-events';
 
 @Injectable()
 export class ReviewsService {
@@ -119,6 +122,7 @@ export class ReviewsService {
       throw new NotFoundException('Producto no encontrado');
     }
 
+    const comment = validateReviewComment(dto.comment);
     const status = ReviewStatus.PENDING;
 
     const review = await db.review.upsert({
@@ -132,7 +136,7 @@ export class ReviewsService {
         productId: dto.productId,
         userId: currentUser.sub,
         rating: dto.rating,
-        comment: dto.comment.trim(),
+        comment,
         status,
         showOnHome: false,
         approvedAt: null,
@@ -140,7 +144,7 @@ export class ReviewsService {
       },
       update: {
         rating: dto.rating,
-        comment: dto.comment.trim(),
+        comment,
         status,
         showOnHome: false,
         approvedAt: null,
@@ -292,7 +296,7 @@ export class ReviewsService {
       }
 
       const review = await this.prisma.review.update({
-        where: { id },
+        where: { id, ...(showOnHome ? { status: ReviewStatus.APPROVED } : {}) },
         data: { showOnHome },
         include: {
           product: {
@@ -329,60 +333,83 @@ export class ReviewsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException('Reseña no encontrada');
+        throw new ConflictException(
+          'La reseña cambió. Actualiza la lista e intenta de nuevo.',
+        );
       }
 
       throw error;
     }
   }
 
-  async approve(currentUser: AuthUser, id: number) {
-    try {
-      const review = await this.prisma.review.update({
-        where: { id },
-        data: {
-          status: ReviewStatus.APPROVED,
-          approvedAt: new Date(),
-          approvedById: currentUser.sub,
+  approve(currentUser: AuthUser, id: number) {
+    return this.moderate(currentUser, id, ReviewStatus.APPROVED);
+  }
+
+  reject(currentUser: AuthUser, id: number) {
+    return this.moderate(currentUser, id, ReviewStatus.REJECTED);
+  }
+
+  private async moderate(
+    currentUser: AuthUser,
+    id: number,
+    status: 'APPROVED' | 'REJECTED',
+  ) {
+    const include = {
+      product: { select: { id: true, nombre: true } },
+      user: { select: { id: true, nombre: true, correo: true } },
+      approvedBy: { select: { id: true, nombre: true, correo: true } },
+    } satisfies Prisma.ReviewInclude;
+    const review = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.review.findUnique({ where: { id }, include });
+      if (!existing) throw new NotFoundException('Reseña no encontrada');
+      if (status === ReviewStatus.APPROVED)
+        validateReviewComment(existing.comment);
+      if (existing.status === status) return existing;
+
+      const updated = await tx.review.updateMany({
+        where: {
+          id,
+          status: existing.status,
+          updatedAt: existing.updatedAt,
+          comment: existing.comment,
+          rating: existing.rating,
         },
-        include: {
-          product: {
-            select: {
-              id: true,
-              nombre: true,
-            },
-          },
-          user: {
-            select: {
-              id: true,
-              nombre: true,
-              correo: true,
-            },
-          },
-          approvedBy: {
-            select: {
-              id: true,
-              nombre: true,
-              correo: true,
-            },
-          },
-        },
+        data:
+          status === ReviewStatus.APPROVED
+            ? { status, approvedAt: new Date(), approvedById: currentUser.sub }
+            : {
+                status,
+                showOnHome: false,
+                approvedAt: null,
+                approvedById: null,
+              },
       });
-
-      return {
-        message: 'Reseña aprobada y publicada',
-        review,
-      };
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException('Reseña no encontrada');
+      if (updated.count !== 1) {
+        throw new ConflictException(
+          'La reseña cambió mientras la revisabas. Actualiza la lista e intenta de nuevo.',
+        );
       }
-
-      throw error;
-    }
+      const result = await tx.review.findUniqueOrThrow({
+        where: { id },
+        include,
+      });
+      await notifyReviewModeration(
+        tx,
+        result.userId,
+        result.productId,
+        status,
+        currentUser.sub,
+      );
+      return result;
+    });
+    return {
+      message:
+        status === ReviewStatus.APPROVED
+          ? 'Reseña aprobada y publicada'
+          : 'Reseña rechazada. El cliente puede editarla y enviarla de nuevo.',
+      review,
+    };
   }
 
   async remove(id: number) {

@@ -262,6 +262,14 @@ export class UsersService {
     }
 
     try {
+      const target = await this.prisma.user.findUnique({
+        where: { id },
+        select: { rol: true },
+      });
+      if (target?.rol === Rol.CLIENT)
+        throw new BadRequestException(
+          'La eliminación de una cuenta de cliente requiere su solicitud verificada. No se permite el borrado directo.',
+        );
       await this.prisma.user.delete({ where: { id } });
       return { message: 'Usuario eliminado correctamente' };
     } catch (error) {
