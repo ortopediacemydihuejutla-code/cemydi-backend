@@ -23,6 +23,24 @@ const recoveries = [
       /["«]stock_available["»]/.test(logs),
     checkStockView: true,
   },
+  {
+    name: '20261103193000_account_deletion',
+    markers: [
+      'CREATE TABLE IF NOT EXISTS',
+      'CREATE UNIQUE INDEX IF NOT EXISTS',
+      'DO $rental_user_fk$',
+      'conkey = ARRAY[rental_user_column]',
+      'confkey = ARRAY[account_id_column]',
+      'BEGIN;',
+      'COMMIT;',
+    ],
+    matches: (logs) =>
+      logs.includes('42704') &&
+      logs.includes('ATExecDropConstraint') &&
+      /constraint ["«]rental_requests_userId_fkey["»] of relation ["«]rental_requests["»] does not exist/.test(
+        logs,
+      ),
+  },
 ];
 const args = process.argv.slice(2);
 if (args.length && (args.length !== 2 || args[0] !== '--schema')) {
@@ -99,11 +117,12 @@ async function main() {
     await prisma.$disconnect();
   }
   if (!pending.length) {
-    console.log('No hay un fallo pendiente de analítica que recuperar.');
+    console.log('No hay un fallo pendiente de migración que recuperar.');
     return;
   }
-  // Each known failure happened on the first atomic DDL statement. Never mark
-  // these migrations as applied: retry the corrected SQL with migrate deploy.
+  // Retry only reviewed failures with corrected, repeatable SQL. Account
+  // deletion may have created its table/indexes before failing. Never mark
+  // these migrations as applied: migrate deploy must execute the remaining DDL.
   for (const migrationName of pending) {
     const result = spawnSync(
       process.execPath,

@@ -1,4 +1,4 @@
-# Recuperar los fallos de vistas analíticas en Render gratuito
+# Recuperar los fallos conocidos de migraciones en Render
 
 El error P3018 con código PostgreSQL 42P16 en
 `20260801190000_customer_clustering_consistency` ocurre porque `CREATE OR REPLACE
@@ -19,6 +19,30 @@ renombra únicamente si existe solo el nombre antiguo, conserva el nuevo si ya
 está presente y agrega el comentario de la columna en la misma transacción. Si
 faltan ambos nombres, existen ambos o falta la vista, falla sin borrarla.
 
+## Eliminación de cuentas: P3018/42704
+
+`20261103193000_account_deletion` podía fallar al eliminar la restricción
+`"rental_requests_userId_fkey"`. El SQL histórico de rentas declaró el nombre sin
+comillas, por lo que PostgreSQL lo almacenó como `rental_requests_userid_fkey`.
+Una base creada desde el schema de Prisma conserva las mayúsculas; probar solo
+ese caso no reproducía el contrato de producción.
+
+El SQL corregido localiza las claves foráneas por tabla de origen, columna
+`userId`, tabla de destino y columna `id`, sin depender de su nombre. Reemplaza
+únicamente esa relación por `ON DELETE SET NULL` y permite `userId` nulo. Conserva
+las otras relaciones, las filas de rentas y sus importes. La creación de la tabla
+de solicitudes y sus índices admite reintentos si una ejecución fallida ya los
+creó; todos los cambios nuevos se ejecutan dentro de una transacción.
+
+El recuperador existente también reconoce exclusivamente el fallo 42704 de esa
+restricción con origen `ATExecDropConstraint`. Comprueba que el archivo SQL
+corregido esté publicado y registra el intento como `--rolled-back`; después
+`migrate deploy` debe ejecutar realmente el SQL. No borra tablas ni marca una
+migración como aplicada. Un error distinto permanece bloqueado para revisión.
+
+El Start Command mostrado abajo ya cubre este caso: no hace falta agregar otro
+comando ni ejecutar `npm audit fix --force`, cuyo aviso no causó este fallo.
+
 ## Procedimiento sin Shell ni Pre-Deploy de pago
 
 1. Conservar un respaldo de Neon antes de modificar su esquema.
@@ -36,9 +60,10 @@ faltan ambos nombres, existen ambos o falta la vista, falla sin borrarla.
    incluya la corrección.
 
 El primer comando comprueba el historial y solo recupera los intentos pendientes
-de las dos migraciones cuyo error coincida con el 42P16 conocido de clustering
-o el 42703 de `stock_available`. Para la vista mensual también comprueba que
-exista exactamente uno de los dos nombres de stock antes de cambiar el estado.
+de las tres migraciones cuyo error coincida con el 42P16 conocido de clustering,
+el 42703 de `stock_available` o el 42704 de la restricción de rentas. Para la vista
+mensual también comprueba que exista exactamente uno de los dos nombres de stock
+antes de cambiar el estado.
 Conserva el nombre `db:recover:clustering` para que el Start Command ya configurado
 en Render siga funcionando. Usa
 `prisma migrate resolve --rolled-back`, que permite reintentar el SQL corregido;
@@ -69,10 +94,17 @@ reaplicación y rechazo de contratos ambiguos o desconocidos. Solo acepta una co
 a 127.0.0.1, usuario `test_security` y una base vacía con prefijo
 `migration_recovery_test`; nunca toma la URL de la aplicación ni borra una base.
 
-En entornos donde esta migración ya esté aplicada, la versión corregida cambia
-el checksum del archivo histórico. Antes de crear nuevas migraciones con
+La misma prueba reproduce P3018/42704 con la restricción histórica sin comillas,
+simula una ejecución parcial con una solicitud existente y verifica la
+recuperación mediante Prisma. Comprueba los nombres histórico, generado por
+Prisma y personalizado, la ausencia de la clave foránea, la reaplicación, el
+rechazo de errores diferentes y la conservación de la relación de aprobación y
+de las filas de rentas y solicitudes al eliminar la cuenta.
+
+En entornos donde estas migraciones ya estén aplicadas, las versiones corregidas
+cambian los checksums de los archivos históricos. Antes de crear nuevas migraciones con
 `migrate dev`, revisar su historial; no aceptar un reinicio de base para resolver
 ese aviso. El despliegue de recuperación probado usa `migrate deploy`.
 
 Referencias: [contrato de CREATE OR REPLACE VIEW](https://www.postgresql.org/docs/current/sql-createview.html),
-[recuperar una migración fallida con Prisma](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/patching-and-hotfixing#failed-migration).
+[recuperar una migración fallida con Prisma](https://www.prisma.io/docs/orm/v6/prisma-migrate/workflows/patching-and-hotfixing#failed-migration).
