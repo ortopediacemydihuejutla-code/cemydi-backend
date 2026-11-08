@@ -356,16 +356,16 @@ export class AuthSessionService {
 
   private async revokeSessionByTokenId(sessionId: string) {
     const now = new Date();
-    await this.prisma.asAdmin().userSession.updateMany({
-      where: {
-        tokenId: sessionId,
-        endedAt: null,
-      },
-      data: {
-        endedAt: now,
-        lastSeenAt: now,
-        refreshTokenHash: null,
-      },
+    await this.prisma.asAdmin().$transaction(async (tx) => {
+      // Lock the session before subscriptions, matching registration's lock order.
+      await tx.userSession.updateMany({
+        where: { tokenId: sessionId, endedAt: null },
+        data: { endedAt: now, lastSeenAt: now, refreshTokenHash: null },
+      });
+      await tx.pushSubscription.updateMany({
+        where: { sessionTokenId: sessionId },
+        data: { active: false },
+      });
     });
   }
 

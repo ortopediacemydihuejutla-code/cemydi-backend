@@ -39,6 +39,40 @@ El worker consulta cada cinco segundos, reclama cada trabajo con un lease de dos
 
 ## Configuración
 
+### Privacidad móvil y logout — 8 de noviembre de 2026
+
+Todo envío `EXPO`, manual o automático, usa título «CEMYDI» y cuerpo «Tienes una
+nueva actualización. Abre la app para consultarla». El payload `data` contiene
+solo `notificationId` y `userId`; el texto completo sigue en la bandeja
+autenticada. Web Push conserva su payload actual. No se puede retirar un mensaje
+ya aceptado por Expo/FCM, por lo que no deben enviarse datos médicos al sistema.
+
+Logout por access o refresh revoca la sesión y desactiva sus suscripciones en una
+transacción, filtrada por `sessionTokenId`. El registro de suscripciones adquiere
+primero el bloqueo de la sesión y comprueba propietario, vigencia y `endedAt`,
+antes del upsert. Esto serializa logout/registro sin desactivar otra sesión o un
+endpoint reasignado. No cambia endpoints, DTOs, transporte de autenticación ni
+schema. La excepción de avisos de seguridad por cambios de credenciales sigue
+vigente, pero una suscripción desactivada por logout se omite igualmente.
+
+El móvil persiste metadatos push en SecureStore y espera confirmación de logout
+para borrarlos. Sin red no garantiza revocación remota; tampoco afirma entrega o
+desregistro por el simple resultado de una prueba unitaria. Requiere desplegar
+este backend antes de validar el cliente corregido en un dispositivo.
+
+`npm run test:notifications:postgres` añade carreras de registro/logout y comprueba
+que una suscripción reasignada a otra sesión/cuenta permanece activa. Solo usa
+fixtures desechables en PostgreSQL local y bloquea envíos externos.
+
+Validación de esta corrección: 49 tests de notificaciones, sesión y controller
+móvil; build Nest, ESLint de los seis archivos TypeScript modificados y prueba
+PostgreSQL local aprobados. `tsc --noEmit` global aún incluye errores previos en
+fixtures de tests (AuthUser, AnalyticsQueryDto, carrito, promociones y el cast
+previo AuthConfigService); no se amplió el alcance para reescribirlos. El build
+de producción usa `tsconfig.build.json` y pasó.
+
+### Credenciales
+
 1. Web: instalar dependencias, generar Prisma y aplicar la migración. Definir conjuntamente `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (`mailto:` válido o URL HTTPS). Con base local y `EMAIL_FROM` configurado, `npm run notifications:configure:webpush` genera claves una sola vez en `.env`, sin imprimirlas. Conservar esas claves entre reinicios y despliegues.
 2. Móvil: registrar el token Expo obtenido por la app. `EXPO_ACCESS_TOKEN` es opcional y se usa si se activó la seguridad adicional de Expo. Project ID y credenciales FCM/APNs se configuran en el proyecto móvil/EAS; no se inventan desde el backend.
 3. Sin VAPID, la bandeja funciona y `/push-config` devuelve `null`; los trabajos web sin configuración se registran como fallo. No se simula entrega exitosa.

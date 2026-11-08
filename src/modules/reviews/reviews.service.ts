@@ -9,6 +9,7 @@ import { Prisma, ReviewStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { ListProductReviewsQueryDto } from './dto/list-product-reviews-query.dto';
 import { validateReviewComment } from './review-content';
 import { notifyReviewModeration } from '../notifications/notification-events';
 
@@ -19,7 +20,55 @@ export class ReviewsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async listApprovedByProduct(productId: number) {
+  async listApprovedByProduct(
+    productId: number,
+    pagination?: ListProductReviewsQueryDto,
+  ) {
+    if (pagination) {
+      const page = pagination.page ?? 1;
+      const pageSize = pagination.pageSize ?? 10;
+      const where = { productId, status: ReviewStatus.APPROVED };
+      return this.prisma.asReader().$transaction(
+        async (tx) => {
+          const stats = await tx.review.aggregate({
+            where,
+            _count: { _all: true },
+            _avg: { rating: true },
+          });
+          const reviews = await tx.review.findMany({
+            where,
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+            select: {
+              id: true,
+              rating: true,
+              comment: true,
+              createdAt: true,
+              user: { select: { id: true, nombre: true } },
+            },
+          });
+          const total = stats._count._all;
+          const totalPages = Math.max(1, Math.ceil(total / pageSize));
+          return {
+            reviews,
+            summary: {
+              count: total,
+              averageRating: Number((stats._avg.rating ?? 0).toFixed(2)),
+            },
+            pagination: {
+              page,
+              pageSize,
+              total,
+              totalPages,
+              hasPreviousPage: page > 1,
+              hasNextPage: page < totalPages,
+            },
+          };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+      );
+    }
     const reviews = await this.prisma.asReader().review.findMany({
       where: {
         productId,

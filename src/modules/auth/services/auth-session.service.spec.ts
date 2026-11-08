@@ -7,6 +7,54 @@ import { hashAuthValue } from '../utils/auth-crypto.util';
 import { Rol } from '@prisma/client';
 
 describe('AuthSessionService conditional rotation', () => {
+  it.each(['access', 'refresh'])(
+    'revokes the session and its push subscriptions together through %s logout',
+    async (transport) => {
+      const updates: string[] = [];
+      const tx = {
+        userSession: {
+          findFirst: jest.fn().mockResolvedValue({ tokenId: 'current' }),
+          updateMany: jest.fn().mockImplementation(() => {
+            updates.push('session');
+            return Promise.resolve({ count: 1 });
+          }),
+        },
+        pushSubscription: {
+          updateMany: jest.fn().mockImplementation(() => {
+            updates.push('subscription');
+            return Promise.resolve({ count: 1 });
+          }),
+        },
+      };
+      const transaction = jest.fn(
+        (callback: (db: typeof tx) => Promise<unknown>) => callback(tx),
+      );
+      const service = new AuthSessionService(
+        {
+          asAdmin: () => ({ ...tx, $transaction: transaction }),
+        } as unknown as PrismaService,
+        {} as JwtService,
+        {} as AuthConfigService,
+      );
+      if (transport === 'access') {
+        await service.logout({
+          id: 7,
+          sub: 7,
+          sid: 'current',
+          rol: 'CLIENT',
+          correo: 'fixture@example.com',
+        });
+      } else {
+        await service.tryLogoutWithRefreshToken('fixture-refresh');
+      }
+      expect(transaction).toHaveBeenCalledTimes(1);
+      expect(updates).toEqual(['session', 'subscription']);
+      expect(tx.pushSubscription.updateMany).toHaveBeenCalledWith({
+        where: { sessionTokenId: 'current' },
+        data: { active: false },
+      });
+    },
+  );
   it.each(['password', 'correo', 'rol', 'activo'] as const)(
     'rejects an in-flight login when %s changed before session persistence',
     async (field) => {

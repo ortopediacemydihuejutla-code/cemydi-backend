@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from './notifications.service';
@@ -40,6 +41,7 @@ function fixture() {
       updateMany: jest.fn(),
     },
     pushDelivery: { createMany: jest.fn() },
+    userSession: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     notificationAutomation: { findUnique: jest.fn().mockResolvedValue(null) },
     notificationPreference: {
       upsert: jest.fn(),
@@ -310,6 +312,32 @@ describe('NotificationsService', () => {
         where: { identity: expect.any(String), userId: 7 },
       }),
     );
+  });
+  it('rejects a registration whose session expired or was revoked during the request', async () => {
+    const { db, service } = fixture();
+    db.userSession.updateMany.mockResolvedValue({ count: 0 });
+    await expect(
+      service.registerPush(
+        {
+          id: 7,
+          sub: 7,
+          correo: 'client@test.dev',
+          rol: 'CLIENT',
+          sid: 'ended',
+        },
+        { channel: 'EXPO', endpoint: 'ExpoPushToken[token123]' },
+      ),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(db.pushSubscription.upsert).not.toHaveBeenCalled();
+    expect(db.userSession.updateMany).toHaveBeenCalledWith({
+      where: {
+        tokenId: 'ended',
+        userId: 7,
+        endedAt: null,
+        expiresAt: { gt: expect.any(Date) },
+      },
+      data: { lastSeenAt: expect.any(Date) },
+    });
   });
 });
 

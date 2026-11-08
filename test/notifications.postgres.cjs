@@ -11,6 +11,9 @@ const {
   PushDeliveryService,
 } = require('../dist/modules/notifications/push-delivery.service');
 const {
+  AuthSessionService,
+} = require('../dist/modules/auth/services/auth-session.service');
+const {
   persistAutomaticNotification,
 } = require('../dist/modules/notifications/notification-events');
 
@@ -212,8 +215,86 @@ async function main() {
       (await service.detail(first.id, owned)).item.readAt.getTime(),
       originalReadAt.getTime(),
     );
+    const auth = new AuthSessionService({ asAdmin: () => prisma }, {}, {});
+    const actor = (client, sid) => ({
+      id: client.id,
+      sub: client.id,
+      correo: client.correo,
+      rol: 'CLIENT',
+      sid,
+    });
+    const otherSession = `qa-${tag}-${second.id}`;
+    const otherToken = await prisma.pushSubscription.findFirstOrThrow({
+      where: { sessionTokenId: otherSession },
+    });
+    // Exercise both contenders on real PostgreSQL row locks, without provider calls.
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const sid = `qa-concurrent-${tag}-${attempt}`;
+      await prisma.userSession.create({
+        data: {
+          tokenId: sid,
+          userId: first.id,
+          expiresAt: new Date(Date.now() + 3600000),
+          refreshTokenHash: `hash-${sid}`,
+        },
+      });
+      const user = actor(first, sid);
+      const dto = {
+        channel: 'EXPO',
+        endpoint: `ExpoPushToken[${tag}_${attempt}]`,
+      };
+      await service.registerPush(user, dto);
+      const operations =
+        attempt % 2
+          ? [auth.logout(user), service.registerPush(user, dto)]
+          : [service.registerPush(user, dto), auth.logout(user)];
+      const outcomes = await Promise.allSettled(operations);
+      const logoutIndex = attempt % 2 ? 0 : 1;
+      assert.equal(outcomes[logoutIndex].status, 'fulfilled');
+      const closed = await prisma.userSession.findUniqueOrThrow({
+        where: { tokenId: sid },
+      });
+      assert.ok(closed.endedAt);
+      assert.equal(closed.refreshTokenHash, null);
+      assert.equal(
+        await prisma.pushSubscription.count({
+          where: { sessionTokenId: sid, active: true },
+        }),
+        0,
+      );
+      await assert.rejects(
+        () => service.registerPush(user, dto),
+        (error) => error.getStatus() === 401,
+      );
+    }
+    // A token transferred to another account/session must survive the previous logout.
+    const firstSession = `qa-${tag}-${first.id}`;
+    const firstToken = await prisma.pushSubscription.findFirstOrThrow({
+      where: { sessionTokenId: firstSession },
+    });
+    await service.registerPush(actor(second, otherSession), {
+      channel: 'EXPO',
+      endpoint: firstToken.endpoint,
+    });
+    await auth.logout(actor(first, firstSession));
+    assert.equal(
+      (
+        await prisma.pushSubscription.findUniqueOrThrow({
+          where: { id: firstToken.id },
+        })
+      ).active,
+      true,
+    );
+    assert.equal(
+      (
+        await prisma.pushSubscription.findUniqueOrThrow({
+          where: { id: otherToken.id },
+        })
+      ).active,
+      true,
+    );
     console.log(
-      'PASS PostgreSQL: selected delivery, idempotency, ownership, shared preferences, late opt-out, read state, transactional rollback and history. No push requests.',
+      'PASS PostgreSQL: notification isolation, preferences, history, rollback, concurrent logout/registration and reassigned-token isolation. No push requests.',
     );
   } finally {
     global.fetch = originalFetch;

@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ListReviewsAdminQueryDto } from './dto/list-reviews-admin-query.dto';
+import { ListProductReviewsQueryDto } from './dto/list-product-reviews-query.dto';
 import { ReviewsService } from './reviews.service';
 
 @Controller('reviews')
@@ -25,7 +26,12 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Get('product/:productId')
-  listApprovedByProduct(@Param('productId', ParseIntPipe) productId: number) {
+  listApprovedByProduct(
+    @Param('productId', ParseIntPipe) productId: number,
+    @Query() query: ListProductReviewsQueryDto = {},
+  ) {
+    if (query.page !== undefined || query.pageSize !== undefined)
+      return this.reviewsService.listApprovedByProduct(productId, query);
     return this.reviewsService.listApprovedByProduct(productId);
   }
 

@@ -357,8 +357,14 @@ describe('AuthService', () => {
   });
 
   it('revokes a specific session on logout', async () => {
+    const revokePush = jest.fn().mockResolvedValue({ count: 1 });
     prismaService.asAdmin.mockReturnValue({
-      userSession: prismaService.userSession,
+      $transaction: jest.fn((operation: (tx: unknown) => Promise<unknown>) =>
+        operation({
+          userSession: prismaService.userSession,
+          pushSubscription: { updateMany: revokePush },
+        }),
+      ),
     });
 
     await service.logout({
@@ -377,5 +383,9 @@ describe('AuthService', () => {
         },
       }),
     );
+    expect(revokePush).toHaveBeenCalledWith({
+      where: { sessionTokenId: 'session-logout' },
+      data: { active: false },
+    });
   });
 });

@@ -198,8 +198,9 @@ export class PushDeliveryService implements OnModuleInit, OnModuleDestroy {
     }
     const response = await this.expoRequest('send', {
       to: subscription.endpoint,
-      title: campaign.title,
-      body: campaign.body,
+      // The OS can display this while locked; details stay in the authenticated inbox.
+      title: 'CEMYDI',
+      body: 'Tienes una nueva actualización. Abre la app para consultarla',
       data: { notificationId: recipient.id, userId: recipient.userId },
       sound: 'default',
       channelId: 'cemydi',

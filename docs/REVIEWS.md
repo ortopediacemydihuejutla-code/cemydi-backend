@@ -59,3 +59,40 @@ La activación de testimonios también condiciona la escritura a que la reseña 
 Validaciones de esta ampliación: build NestJS, ESLint/Prettier de archivos
 modificados y suites de reseñas/notificaciones (88 casos, incluidos dos de
 visibilidad concurrente). No se ejecutaron migraciones ni escrituras en producción.
+
+## Paginación pública opcional — 8 de noviembre de 2026
+
+Con autorización del usuario, `GET /reviews/product/:productId` acepta `page`
+(entero 1–1 000 000) y `pageSize` (1–50). Enviar cualquiera activa paginación; los
+valores omitidos toman 1 y 10. La validación global rechaza parámetros vacíos,
+repetidos, fraccionarios y fuera de rango con 400 antes de consultar Prisma.
+Sin ambos parámetros conserva el listado completo y `{ reviews, summary }` para
+la web y APK anteriores. Este modo legacy aún no está acotado: la mejora limita
+las lecturas paginadas del nuevo móvil, no todos los accesos públicos históricos.
+
+El modo paginado añade `{ pagination: { page, pageSize, total, totalPages,
+hasPreviousPage, hasNextPage } }`. Usa `skip/take`, selecciona solo campos públicos
+y ordena `createdAt DESC, id DESC`. `summary.count/averageRating` corresponden a
+todas las aprobadas del producto, no solo a la página. Agregación y página se leen
+en una transacción RepeatableRead; no se materializa el listado completo para
+calcular el promedio. Vacío y páginas fuera de rango conservan el resumen global.
+No hay migraciones, nuevos roles ni cambios en POST/moderación/testimonios.
+
+Android carga 10 opiniones por petición y pagina bajo demanda. Se debe desplegar
+este backend antes del cliente actualizado. La caché móvil separa páginas de
+valoraciones planas y mantiene invalidaciones por prefijo. La web existente no
+requiere cambios. La consistencia de cada transacción no implica un snapshot
+único entre peticiones: las publicaciones concurrentes pueden desplazar offsets.
+
+Comprobar con suites de reviews y `npm run test:reviews:postgres`. La prueba de
+PostgreSQL solo permite base local, crea fixtures en una transacción que revierte
+y verifica orden estable, páginas, resumen, estados aprobados y contrato legacy.
+No envía notificaciones ni escribe en cuentas reales.
+
+Validación de esta ampliación: 76 pruebas del módulo de reseñas, build NestJS,
+ESLint y Prettier de archivos modificados y `git diff --check` aprobados. La prueba
+PostgreSQL local aprobó páginas 10/10/5, exclusión de pendientes, promedio global,
+orden sin duplicados con fechas iguales, página fuera de rango y respuesta legacy.
+El cliente aprobó 110 suites/714 pruebas y sus controles de calidad. No se ejecutó
+despliegue ni push Git. La recepción del contrato en producción y la presentación
+Android física siguen pendientes del despliegue y de una build actualizada.

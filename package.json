@@ -27,6 +27,7 @@
     "db:studio": "prisma studio",
     "notifications:configure:webpush": "node scripts/configure-web-push.cjs",
     "test:notifications:postgres": "npm run build && node test/notifications.postgres.cjs",
+    "test:reviews:postgres": "npm run build && node test/reviews-pagination.postgres.cjs",
     "test:account-deletion:postgres": "npm run build && node test/account-deletion.postgres.cjs",
     "test:security:http": "jest --config ./test/jest-e2e.json --runInBand --runTestsByPath test/security-hardening.e2e-spec.ts",
     "test:security:postgres": "npm run build && node test/security-hardening.postgres.cjs",

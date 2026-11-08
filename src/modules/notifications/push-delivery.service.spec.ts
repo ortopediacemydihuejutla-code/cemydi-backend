@@ -108,6 +108,36 @@ describe('PushDeliveryService', () => {
       }),
     );
   });
+  it.each([
+    'MANUAL',
+    'RENTAL_STATUS',
+    'PRESCRIPTION',
+    'SECURITY',
+    'REVIEW_STATUS',
+  ])('keeps %s details out of every Expo payload', async (source) => {
+    const { job, service } = fixture();
+    job.recipient.campaign.source = source;
+    job.recipient.campaign.category = 'SYSTEM';
+    job.recipient.campaign.title = 'Receta de paciente';
+    job.recipient.campaign.body = 'Diagnóstico y tratamiento confidencial';
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data: { status: 'ok', id: 'receipt' } }),
+    });
+    await service.processPending();
+    const request = fetchMock.mock.calls[0]?.[1] as { body: string };
+    expect(JSON.parse(request.body)).toEqual({
+      to: 'ExpoPushToken[token]',
+      title: 'CEMYDI',
+      body: 'Tienes una nueva actualización. Abre la app para consultarla',
+      data: { notificationId: 'inbox', userId: 7 },
+      sound: 'default',
+      channelId: 'cemydi',
+      ttl: 3600,
+    });
+    expect(request.body).not.toContain(job.recipient.campaign.title);
+    expect(request.body).not.toContain(job.recipient.campaign.body);
+  });
   it('permits only sessions active at the security event, including those revoked by that change', async () => {
     const { job, db, service } = fixture();
     job.recipient.campaign.source = 'SECURITY';

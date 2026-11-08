@@ -2,6 +2,7 @@ import {
   ExecutionContext,
   INestApplication,
   UnauthorizedException,
+  ValidationPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -93,6 +94,10 @@ describe('review moderation HTTP authorization', () => {
   let origin: string;
   const service = {
     reject: jest.fn().mockResolvedValue({ message: 'Rechazada' }),
+    listApprovedByProduct: jest.fn().mockResolvedValue({
+      reviews: [],
+      summary: { count: 0, averageRating: 0 },
+    }),
   };
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -119,6 +124,13 @@ describe('review moderation HTTP authorization', () => {
       })
       .compile();
     app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
     await app.listen(0, '127.0.0.1');
     origin = await app.getUrl();
   });
@@ -126,6 +138,34 @@ describe('review moderation HTTP authorization', () => {
     await app.close();
   });
   beforeEach(() => service.reject.mockClear());
+  it('pagina lecturas públicas solo al recibir parámetros y mantiene la llamada web anterior', async () => {
+    service.listApprovedByProduct.mockClear();
+    const legacy = await fetch(`${origin}/reviews/product/1`);
+    expect(legacy.status).toBe(200);
+    expect(service.listApprovedByProduct).toHaveBeenLastCalledWith(1);
+    const paged = await fetch(`${origin}/reviews/product/1?page=2&pageSize=10`);
+    expect(paged.status).toBe(200);
+    expect(service.listApprovedByProduct).toHaveBeenLastCalledWith(1, {
+      page: 2,
+      pageSize: 10,
+    });
+  });
+  it.each([
+    'page=0',
+    'page=-1',
+    'page=1.5',
+    'page=abc',
+    'page=1000001',
+    'page=',
+    'pageSize=51',
+    'pageSize=0',
+    'page=1&page=2',
+  ])('rechaza parámetros inválidos antes de consultar: %s', async (query) => {
+    service.listApprovedByProduct.mockClear();
+    const response = await fetch(`${origin}/reviews/product/1?${query}`);
+    expect(response.status).toBe(400);
+    expect(service.listApprovedByProduct).not.toHaveBeenCalled();
+  });
   it('exige sesión y rol ADMIN para rechazar', async () => {
     const guest = await fetch(`${origin}/reviews/12/reject`, {
       method: 'PATCH',

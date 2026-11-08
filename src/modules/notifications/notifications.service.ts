@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
@@ -236,12 +237,26 @@ export class NotificationsService {
       auth: dto.channel === 'WEB' ? dto.auth : null,
       active: true,
     };
-    const subscription = await this.prisma.pushSubscription.upsert({
-      where: { identity: hash(dto.endpoint) },
-      create: { identity: hash(dto.endpoint), ...data },
-      update: data,
+    return this.prisma.$transaction(async (tx) => {
+      // A concurrent logout must finish before this registration can continue.
+      const session = await tx.userSession.updateMany({
+        where: {
+          tokenId: user.sid,
+          userId: user.id,
+          endedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+        data: { lastSeenAt: new Date() },
+      });
+      if (session.count !== 1)
+        throw new UnauthorizedException('La sesión ya no está activa');
+      const subscription = await tx.pushSubscription.upsert({
+        where: { identity: hash(dto.endpoint) },
+        create: { identity: hash(dto.endpoint), ...data },
+        update: data,
+      });
+      return { id: subscription.id };
     });
-    return { id: subscription.id };
   }
 
   async unregisterPush(userId: number, endpoint: string) {

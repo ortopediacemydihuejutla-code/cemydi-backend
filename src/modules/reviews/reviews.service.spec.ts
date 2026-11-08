@@ -19,6 +19,7 @@ describe('ReviewsService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
       count: jest.fn(),
+      aggregate: jest.fn(),
       upsert: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
@@ -69,6 +70,56 @@ describe('ReviewsService', () => {
   });
 
   describe('listApprovedByProduct', () => {
+    it('limita la página y conserva el promedio y total de todas las aprobadas', async () => {
+      mockPrismaService.review.aggregate.mockResolvedValue({
+        _count: { _all: 27 },
+        _avg: { rating: 4.456 },
+      });
+      mockPrismaService.review.findMany.mockResolvedValue([
+        { id: 11, rating: 2 },
+      ]);
+      const result = await service.listApprovedByProduct(10, {
+        page: 2,
+        pageSize: 10,
+      });
+      expect(result).toMatchObject({
+        summary: { count: 27, averageRating: 4.46 },
+        pagination: {
+          page: 2,
+          pageSize: 10,
+          total: 27,
+          totalPages: 3,
+          hasNextPage: true,
+          hasPreviousPage: true,
+        },
+      });
+      expect(mockPrismaService.review.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { productId: 10, status: ReviewStatus.APPROVED },
+          skip: 10,
+          take: 10,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        }),
+      );
+      expect(mockPrismaService.$transaction).toHaveBeenCalledWith(
+        expect.any(Function),
+        { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+      );
+    });
+    it('devuelve una página vacía con resumen cero y sin páginas siguientes', async () => {
+      mockPrismaService.review.aggregate.mockResolvedValue({
+        _count: { _all: 0 },
+        _avg: { rating: null },
+      });
+      mockPrismaService.review.findMany.mockResolvedValue([]);
+      expect(
+        await service.listApprovedByProduct(10, { page: 1 }),
+      ).toMatchObject({
+        reviews: [],
+        summary: { count: 0, averageRating: 0 },
+        pagination: { pageSize: 10, totalPages: 1, hasNextPage: false },
+      });
+    });
     it('debe calcular correctamente el promedio y resumen de reseñas', async () => {
       mockPrismaService.review.findMany.mockResolvedValue([
         {
@@ -91,6 +142,9 @@ describe('ReviewsService', () => {
       expect(result.summary.count).toBe(2);
       expect(result.summary.averageRating).toBe(4.5);
       expect(result.reviews).toHaveLength(2);
+      expect(result).not.toHaveProperty('pagination');
+      const calls = mockPrismaService.review.findMany.mock.calls as unknown[][];
+      expect(calls[0]?.[0]).not.toHaveProperty('take');
     });
   });
 
