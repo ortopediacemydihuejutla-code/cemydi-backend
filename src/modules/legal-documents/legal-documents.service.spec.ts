@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DEFAULT_LEGAL_DOCUMENTS } from './legal-documents.constants';
 import { LegalDocumentsService } from './legal-documents.service';
 
 describe('LegalDocumentsService', () => {
@@ -59,6 +60,33 @@ describe('LegalDocumentsService', () => {
 
       const result = await service.getPublicContent('politicas-de-privacidad');
       expect(result.document.title).toBe('Política de privacidad');
+      expect(result.document.description).toBe('Descripcion');
+    });
+
+    it('recupera el aviso cuando el documento guardado está vacío', async () => {
+      const slug = 'politicas-de-privacidad';
+      const fields = Object.fromEntries(
+        Object.keys(DEFAULT_LEGAL_DOCUMENTS[slug].fields).map((key) => [
+          key,
+          '',
+        ]),
+      );
+      mockPrismaService.legalDocument.findUnique.mockResolvedValue({
+        id: 1,
+        slug,
+        title: 'Política de privacidad',
+        description: '',
+        sections: { fields, customSections: [] },
+      });
+
+      const { document } = await service.getPublicContent(slug);
+      expect(document.description).toBe(
+        DEFAULT_LEGAL_DOCUMENTS[slug].description,
+      );
+      expect(document.fields.privacyEmail).toBe('contacto@cemydi.com');
+      expect(
+        document.sections.find(({ id }) => id === 'derechos-arco')?.body,
+      ).toContain('/eliminar-cuenta');
     });
   });
 

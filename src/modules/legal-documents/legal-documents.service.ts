@@ -63,7 +63,9 @@ export class LegalDocumentsService {
       },
       update: {
         ...(title !== undefined ? { title } : {}),
-        ...(description !== undefined ? { description } : {}),
+        ...(description !== undefined || currentContent === defaults
+          ? { description: description ?? defaults.description }
+          : {}),
         sections: content as Prisma.InputJsonValue,
       },
     });
@@ -120,10 +122,7 @@ export class LegalDocumentsService {
     }
 
     if (typeof value !== 'object' || value === null) {
-      return {
-        fields: defaults.fields,
-        customSections: defaults.customSections,
-      };
+      return defaults;
     }
 
     const raw = value;
@@ -149,6 +148,10 @@ export class LegalDocumentsService {
               : {}),
           }))
       : [];
+
+    if (buildLegalSections(slug, fields, customSections).length === 0) {
+      return defaults;
+    }
 
     return { fields, customSections };
   }
@@ -180,10 +183,16 @@ export class LegalDocumentsService {
   }) {
     const slug = this.assertSlug(document.slug);
     const content = this.parseContent(slug, document.sections);
+    const defaults = DEFAULT_LEGAL_DOCUMENTS[slug];
 
     return {
       ...document,
-      ...content,
+      description:
+        content === defaults
+          ? document.description.trim() || defaults.description
+          : document.description,
+      fields: content.fields,
+      customSections: content.customSections,
       sections: buildLegalSections(
         slug,
         content.fields,
