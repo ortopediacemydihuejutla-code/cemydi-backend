@@ -215,6 +215,7 @@ describe('AuthEmailVerificationService', () => {
       id: 7,
       correo: 'user@example.com',
       nombre: 'Usuario',
+      activo: true,
       emailVerifiedAt: null,
     });
     prisma.authToken.findFirst.mockResolvedValue({ id: 'recent-token' });
@@ -223,6 +224,87 @@ describe('AuthEmailVerificationService', () => {
       service.resendEmailVerification({ correo: 'user@example.com' }),
     ).resolves.toEqual(RESEND_VERIFICATION_RESPONSE);
     expect(mail.sendEmailVerificationLink).not.toHaveBeenCalled();
+    expect(prisma.authToken.findFirst).toHaveBeenCalled();
+  });
+
+  it.each([
+    null,
+    {
+      id: 7,
+      correo: 'user@example.com',
+      nombre: 'Usuario',
+      activo: true,
+      emailVerifiedAt: new Date(),
+    },
+    {
+      id: 7,
+      correo: 'user@example.com',
+      nombre: 'Usuario',
+      activo: false,
+      emailVerifiedAt: null,
+    },
+  ])(
+    'returns the same public response without issuing codes for ineligible accounts: %p',
+    async (account) => {
+      prisma.user.findFirst.mockResolvedValue(account);
+      await expect(
+        service.resendEmailVerification({ correo: ' USER@example.com ' }),
+      ).resolves.toEqual(RESEND_VERIFICATION_RESPONSE);
+      expect(prisma.authToken.create).not.toHaveBeenCalled();
+      expect(mail.sendEmailVerificationLink).not.toHaveBeenCalled();
+    },
+  );
+
+  it('does not issue a code if verification completed before the issuing transaction', async () => {
+    prisma.user.findFirst.mockResolvedValue({
+      id: 7,
+      correo: 'user@example.com',
+      nombre: 'Usuario',
+      activo: true,
+      emailVerifiedAt: null,
+    });
+    prisma.user.findUnique.mockResolvedValue({
+      id: 7,
+      correo: 'user@example.com',
+      activo: true,
+      emailVerifiedAt: new Date(),
+    });
+    await expect(
+      service.resendEmailVerification({ correo: 'user@example.com' }),
+    ).resolves.toEqual(RESEND_VERIFICATION_RESPONSE);
+    expect(prisma.$queryRaw).toHaveBeenCalled();
+    expect(prisma.authToken.create).not.toHaveBeenCalled();
+    expect(mail.sendEmailVerificationLink).not.toHaveBeenCalled();
+  });
+
+  it('rechecks cooldown under the issuing lock', async () => {
+    prisma.authToken.findFirst.mockResolvedValue({ id: 'concurrent-token' });
+    await expect(
+      service.issueEmailVerificationLink(7, 'user@example.com', 'Usuario'),
+    ).resolves.toBe(false);
+    expect(prisma.authToken.create).not.toHaveBeenCalled();
+    expect(mail.sendEmailVerificationLink).not.toHaveBeenCalled();
+  });
+
+  it('rejects an old valid link after verification without revealing account status', async () => {
+    prisma.authToken.findFirst.mockResolvedValue({
+      id: 'old-link',
+      userId: 7,
+      correo: 'user@example.com',
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60000),
+    });
+    prisma.user.findUnique.mockResolvedValue({
+      id: 7,
+      correo: 'user@example.com',
+      activo: true,
+      emailVerifiedAt: new Date(),
+    });
+    await expect(
+      service.confirmEmailVerification('a'.repeat(64)),
+    ).rejects.toThrow('El enlace de verificación es inválido o expiró');
+    expect(prisma.authToken.updateMany).not.toHaveBeenCalled();
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
   it('does not verify a different email after a concurrent administrative change', async () => {

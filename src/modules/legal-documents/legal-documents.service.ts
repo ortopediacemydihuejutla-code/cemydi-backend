@@ -160,6 +160,7 @@ export class LegalDocumentsService {
     const defaults = DEFAULT_LEGAL_DOCUMENTS[slug];
     return {
       ...defaults,
+      updatedAt: null,
       sections: buildLegalSections(
         slug,
         defaults.fields,

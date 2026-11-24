@@ -276,6 +276,12 @@ describe('AuthService', () => {
 
   it('returns the same generic register response for new users without exposing user data', async () => {
     prismaService.user.findFirst.mockResolvedValue(null);
+    prismaService.user.findUnique.mockResolvedValue({
+      id: 2,
+      correo: 'new@example.com',
+      activo: true,
+      emailVerifiedAt: null,
+    });
     prismaService.user.create.mockResolvedValue({
       id: 2,
       correo: 'new@example.com',
@@ -296,6 +302,12 @@ describe('AuthService', () => {
 
   it('keeps the generic register response when the provider cannot send', async () => {
     prismaService.user.findFirst.mockResolvedValue(null);
+    prismaService.user.findUnique.mockResolvedValue({
+      id: 20,
+      correo: 'pending-send@example.com',
+      activo: true,
+      emailVerifiedAt: null,
+    });
     prismaService.user.create.mockResolvedValue({
       id: 20,
       correo: 'pending-send@example.com',
@@ -314,6 +326,7 @@ describe('AuthService', () => {
     ).resolves.toEqual(REGISTER_PUBLIC_RESPONSE);
 
     expect(prismaService.user.create).toHaveBeenCalled();
+    expect(mailService.sendEmailVerificationLink).toHaveBeenCalled();
   });
 
   it('returns the same generic resend response when the email does not exist', async () => {
@@ -331,6 +344,7 @@ describe('AuthService', () => {
       id: 3,
       correo: 'verified@example.com',
       nombre: 'Verified User',
+      activo: true,
       emailVerifiedAt: new Date(),
     });
 
@@ -346,6 +360,7 @@ describe('AuthService', () => {
       id: 4,
       correo: 'pending@example.com',
       nombre: 'Pending User',
+      activo: true,
       emailVerifiedAt: null,
     });
 

@@ -35,7 +35,7 @@ export class AuthEmailVerificationService {
       },
     });
 
-    if (user && !user.emailVerifiedAt) {
+    if (user?.activo && !user.emailVerifiedAt) {
       const cooldownStart = new Date(Date.now() - 60_000);
       const recentToken = await this.prisma.authToken.findFirst({
         where: {
@@ -160,7 +160,11 @@ export class AuthEmailVerificationService {
     await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "accounts"."users" WHERE "id" = ${userId} FOR UPDATE`;
       const account = await tx.user.findUnique({ where: { id: userId } });
-      if (!account?.activo || account.correo !== correo) {
+      if (
+        !account?.activo ||
+        account.emailVerifiedAt ||
+        account.correo !== correo
+      ) {
         throw new BadRequestException(
           'El enlace de verificación es inválido o expiró',
         );
@@ -220,8 +224,27 @@ export class AuthEmailVerificationService {
       this.authConfigService.emailVerificationExpiresMinutes;
     const expiresAt = new Date(now.getTime() + expirationMinutes * 60 * 1000);
 
-    await this.prisma.$transaction([
-      this.prisma.authToken.updateMany({
+    const issued = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "accounts"."users" WHERE "id" = ${userId} FOR UPDATE`;
+      const account = await tx.user.findUnique({ where: { id: userId } });
+      // Recheck under the same lock used by confirmation: a concurrent resend
+      // must not issue usable codes for an already verified/inactive account.
+      if (
+        !account?.activo ||
+        account.emailVerifiedAt ||
+        account.correo !== correo
+      )
+        return false;
+      const recent = await tx.authToken.findFirst({
+        where: {
+          userId,
+          purpose: AuthTokenPurpose.EMAIL_VERIFICATION_LINK,
+          createdAt: { gte: new Date(Date.now() - 60_000) },
+        },
+        select: { id: true },
+      });
+      if (recent) return false;
+      await tx.authToken.updateMany({
         where: {
           userId,
           purpose: AuthTokenPurpose.EMAIL_VERIFICATION_LINK,
@@ -230,8 +253,8 @@ export class AuthEmailVerificationService {
         data: {
           consumedAt: now,
         },
-      }),
-      this.prisma.authToken.create({
+      });
+      await tx.authToken.create({
         data: {
           userId,
           correo,
@@ -240,8 +263,10 @@ export class AuthEmailVerificationService {
           codeHash,
           expiresAt,
         },
-      }),
-    ]);
+      });
+      return true;
+    });
+    if (!issued) return false;
 
     const verificationUrl =
       this.authConfigService.buildFrontendEmailVerificationUrl(rawToken);

@@ -39,6 +39,7 @@ describe('LegalDocumentsService', () => {
       expect(result.document).toBeDefined();
       expect(result.document.slug).toBe('terminos-y-condiciones');
       expect(result.document.sections.length).toBeGreaterThan(0);
+      expect(result.document.updatedAt).toBeNull();
     });
 
     it('debe lanzar BadRequestException si el slug no es válido', async () => {
@@ -61,6 +62,7 @@ describe('LegalDocumentsService', () => {
       const result = await service.getPublicContent('politicas-de-privacidad');
       expect(result.document.title).toBe('Política de privacidad');
       expect(result.document.description).toBe('Descripcion');
+      expect(result.document.updatedAt).toBeInstanceOf(Date);
     });
 
     it('recupera el aviso cuando el documento guardado está vacío', async () => {
